@@ -7,10 +7,7 @@
     "description": "String formatting of curly braces notation for TS/JS.",
     "main": "./dist/bundle.umd.js",
     "types": "./dist/types/index.d.ts",
-    "dependencies": {
-        "core-js": "^3.41.0",
-        "regenerator-runtime": "^0.14.1"
-    },
+    "dependencies": {},
     "devDependencies": {
         "@babel/cli": "^7.26.4",
         "@babel/core": "^7.26.10",
