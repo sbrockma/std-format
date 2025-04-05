@@ -1,0 +1,1246 @@
+
+// Create string that is string s repeated count times
+function repeatStr(s: string, count: number): string {
+    return new Array(Math.max(0, count) + 1).join(s);
+}
+
+// Create number array that contains number n count times
+function repeatNum(n: number, count: number): number[] {
+    return new Array(Math.max(0, count)).fill(n);
+}
+
+// Test if number is integer.
+function isInteger(n: number): boolean {
+    return !isNaN(n) && isFinite(n) && n === Math.trunc(n);
+}
+
+// Exceoption class, trown on format and value errors.
+export class StdFormatError extends Error {
+    // private constructor. Use static functions below to create error objects.
+    private constructor(readonly message: string) {
+        super(message);
+        this.name = "StdFormatError";
+    }
+
+    // Create specifier is not implemented error.
+    static SpecifierIsNotImplemented(specifier: string) {
+        return new StdFormatError("Specifier '" + specifier + "' is not implemented.");
+    }
+
+    // Create value error.
+    static ValueError(value: string, base?: number) {
+        return new StdFormatError("Value error: " + value + base ? (", base: " + base) : "");
+    }
+
+    // Create invalid argument error.
+    static InvalidArgument(arg: unknown) {
+        return new StdFormatError("Invalid argument '" + String(arg) + "' (" + typeof arg + ").");
+    }
+
+    // Create invalid argument conversion error.
+    static InvalidArgumentConversion(arg: number | string | boolean, fsType: string) {
+        return new StdFormatError("Invalid argument '" + String(arg) + "' (" + typeof arg + ") to format specifier '" + fsType + "'.");
+    }
+
+    // Create invalid format specification error.
+    static InvalidFormatSpecification(fs: FormatSpecification) {
+        return new StdFormatError("Invalid format specification: '" + fs.toString() + "'.");
+    }
+
+    // Create invalid field number error.
+    static InvalidFieldNumber(fieldNumber: string) {
+        return new StdFormatError("Invalid field number: '" + fieldNumber + "'.");
+    }
+
+    // Create switch between auto/manual field numbering error.
+    static SwitchBetweenAutoAndManualFieldNumbering() {
+        return new StdFormatError("Switch between automatic and manual field numbering.");
+    }
+
+    // Create single curly brace encountered in format string error.
+    static SingleEncounteredInFormatString(char: "{" | "}") {
+        return new StdFormatError("Single '" + char + "' encountered in format string.");
+    }
+
+    // Create precision not allowed for integer error.
+    static PrecisionNotAllowedForInteger() {
+        return new StdFormatError("Precision not allowed for integer.");
+    }
+
+    // Create invalid specification hint error.
+    static InvalidSpecificationHint(specHint: string) {
+        return new StdFormatError("Invalid specification hint \"" + specHint + "\". Valid values are \"cpp\" and \"python\".");
+    }
+
+    // Create assertion failed internal error.
+    static AssertionFailed(msg?: string) {
+        return new StdFormatError("Assertion failed" + (msg === undefined ? "!" : (": " + msg)));
+    }
+
+    // Is this internal error?
+    isInternalError() {
+        return this.message.startsWith("Assertion failed");
+    }
+}
+
+// Assert function for internal validation.
+function assert(condition: boolean, msg?: string) {
+    if (!condition) {
+        throw StdFormatError.AssertionFailed(msg)
+    }
+}
+
+// The octal number prefix is "0o" in Python and "0" in C++.
+let octalPrefix: "0" | "0o" = "0o";
+let trueString: "true" | "True" = "True";
+let falseString: "false" | "False" = "False";
+
+// Use specification hint. Specification hint can be "python" or "cpp".
+export function stdSpecificationHint(specHint: "cpp" | "python") {
+    if(specHint === "cpp") {
+        // Set variables belonging to "cpp" specification.
+        octalPrefix = "0";
+        trueString = "true";
+        falseString = "false";
+    }
+    else if(specHint === "python") {
+        // Set variables belonging to "python" specification.
+        octalPrefix = "0o";
+        trueString = "True";
+        falseString = "False";
+    }
+    else {
+        // Invalid specification hint.
+        throw StdFormatError.InvalidSpecificationHint(specHint);
+    }
+}
+
+/**
+ * https://en.cppreference.com/w/cpp/utility/format/spec
+ * https://docs.python.org/3/library/string.html#formatspec
+ * 
+ * [[fill]align][sign]["z"]["#"]["0"][width][grouping_option]["." precision][L][type]
+ */
+
+// The format specification regex. THis is combination of c++ and python specifications.
+const FormatSpecificationRegExString =
+    "((?<fill>.?)(?<align>[<^>=]))?" + // fill and align
+    "(?<sign>[-+ ])?" + // sign
+    "(?<zeta>[z])?" + // z
+    "(?<sharp>[#])?" + // #
+    "(?<zero>[0])?" + // 0
+    "((?<width>\\d+)|\{(?<width_field_n>\\d*)\})?" + // width
+    "(?<grouping>[,_])?" +  // , or _
+    "(\.((?<precision>\\d+)|\{(?<precision_field_n>\\d*)\}))?" + // precision
+    "(?<locale>[L])?" + // L
+    "(?<type>[scbBodxXaAeEfFgG?%n])?"; // type
+
+// Replacement field regex.
+const ReplacementFieldRegEx = new RegExp(
+    "^\{" +
+    "(?<field_n>\\d+)?" +
+    "(\:(" + FormatSpecificationRegExString + "))?" +
+    "\}"
+);
+
+// Regex to find next curly bracet.
+const CurlyBracketRegEx = new RegExp("[{}]");
+
+// Regex top parse number, bases 2, 8 and 10.
+const NumberRegEx = new RegExp(
+    "^" +
+    "(?<sign>[+-]?)" +
+    "(?<digits>\\d+\.\\d+|\\d+)" +
+    "([eE](?<exponent>[+-]?\\d+))?" +
+    ""
+);
+
+// Regex top parse number, base 16.
+const HexNumberRegEx = new RegExp(
+    "^" +
+    "(?<sign>[+-]?)" +
+    "(?<digits>[0-9a-fA-F]+\.[0-9a-fA-F]+|[0-9a-fA-F]+)" +
+    "([pP](?<exponent>[+-][0-9]+))?" +
+    ""
+);
+
+// Regex for one or more digits.
+const DigitsRegex = /^\d+$/;
+
+// The format specification class
+class FormatSpecification {
+    readonly replFieldString: string;
+    readonly fill: string; // single character, default " "
+    readonly align: "<" | "^" | ">" | "=" | undefined;
+    readonly sign: "+" | "-" | " ";
+    readonly zeta: "z" | undefined;
+    readonly sharp: "#" | undefined;
+    readonly zero: "0" | undefined;
+    readonly width: number | undefined;
+    readonly grouping: "," | "_" | undefined;
+    readonly precision: number | undefined;
+    readonly locale: "L" | undefined;
+    readonly type: "" | "s" | "b" | "B" | "c" | "d" | "o" | "x" | "X" | "a" | "A" | "e" | "E" | "f" | "F" | "g" | "G" | "?" | "%" | "n";
+
+    constructor(replFieldMatch: RegExpExecArray, getNestedArgumentInt: (argId: string) => number) {
+        let fill = replFieldMatch.groups?.fill;
+        let align = replFieldMatch.groups?.align;
+        let sign = replFieldMatch.groups?.sign;
+        let zeta = replFieldMatch.groups?.zeta;
+        let sharp = replFieldMatch.groups?.sharp;
+        let zero = replFieldMatch.groups?.zero;
+        let width = replFieldMatch.groups?.width;
+        let width_field_n = replFieldMatch.groups?.width_field_n;
+        let grouping = replFieldMatch.groups?.grouping;
+        let precision = replFieldMatch.groups?.precision;
+        let precision_field_n = replFieldMatch.groups?.precision_field_n;
+        let locale = replFieldMatch.groups?.locale;
+        let type = replFieldMatch.groups?.type;
+
+        this.replFieldString = replFieldMatch[0];
+        this.fill = !fill ? " " : fill; // default " "
+        this.align = (align === "<" || align === "^" || align === ">" || align === "=") ? align : undefined;
+        this.sign = (sign === "-" || sign === "+" || sign === " ") ? sign : "-"
+        this.zeta = zeta === "z" ? zeta : undefined;
+        this.sharp = sharp === "#" ? sharp : undefined;
+        this.zero = zero === "0" ? zero : undefined;
+        this.width = width_field_n !== undefined ? getNestedArgumentInt(width_field_n) : (!!width ? +width : undefined);
+        this.grouping = (grouping === "," || grouping === "_") ? grouping : undefined;
+        this.precision = precision_field_n !== undefined ? getNestedArgumentInt(precision_field_n) : (!!precision ? +precision : undefined);
+        this.locale = locale === "L" ? locale : undefined;
+        this.type = (type === "" || type && "scbBodxXaAeEfFgG?%n".indexOf(type) >= 0) ? type as any : "";
+
+        // Unimplemented specifiers
+        const UnimplementedSpecifiers = "Lzn?_,";
+
+        // Throw exception if specifier is not implemented.
+        const checkSpecifierImplemented = (specifier: string | undefined) => {
+            if (specifier && UnimplementedSpecifiers.includes(specifier)) {
+                throw StdFormatError.SpecifierIsNotImplemented(specifier);
+            }
+        }
+
+        // Check for unimplemented specifiers
+        checkSpecifierImplemented(this.zeta);       // "z"
+        checkSpecifierImplemented(this.grouping);   // "," and "_"
+        checkSpecifierImplemented(this.locale);     // "L"
+        checkSpecifierImplemented(this.type);       // "n"
+    }
+
+    // Test if type is one of types given as argument.
+    // For example isType("", "d", "xX") tests if type is either "", "d", "x" or "X".
+    isType(...types: string[]) {
+        return types.some(type => this.type === type || this.type !== "" && type.indexOf(this.type) >= 0);
+    }
+
+    // Get number prefix.
+    // If sharp is "#" then the prefix is:
+    //      Hexadecimal:     "0x"
+    //      Binary:          "0b"
+    //      Octal (cpp):     "0"
+    //      Octal (python):  "0o"
+    // Else prefix is ""
+    getNumberPrefix() {
+        return this.sharp === "#" ? (
+            this.isType("xX") ? "0x" : this.isType("bB") ? "0b" : this.isType("o") ? octalPrefix : ""
+        ) : "";
+    }
+
+    // Get replacement field string.
+    toString() {
+        return this.replFieldString;
+    }
+}
+
+// NumberFormatter class is for formatting numbers.
+class NumberFormatter {
+    // Sign is 1 or -1 (or NaN if number is nan).
+    sign: number;
+
+    // Digits contains digits of the number. Each digit is between 0 <= digit <= base - 1.
+    // Special cases are nan and +-inf
+    //     * For nan digits is [NaN]
+    //     * For +inf digits is [+Infinity].
+    //     * For -inf digits is [-Infinity].
+    digits: number[];
+
+    // DotPos tells the position of dot in digits array.
+    // It is value between 1 <= dotPos <= digits.length
+    //     * If 1 then dot is after first digit in digits array (= scientific notation)
+    //     * If digits.length then dot is after last digit in digits array.
+    dotPos: number;
+
+    // Exp is the exponent of number. It is relative to dot position.
+    exp: number;
+
+    // Base of number can be 2, 8, 10 or a6.
+    readonly base: number;
+
+    // Constructor of NumberFormatter class.
+    // Passed arguments are number @value and format specification @fs.
+    constructor(value: number, readonly fs: FormatSpecification) {
+        // Set base
+        if (fs.isType("bB")) {
+            this.base = 2;
+        }
+        else if (fs.isType("o")) {
+            this.base = 8;
+        }
+        else if (fs.isType("xXaA")) {
+            this.base = 16;
+        }
+        else {
+            this.base = 10;
+        }
+
+        // If format specifier is "%" then convert value to percents by multiplying by 100.
+        if (fs.isType("%")) {
+            value *= 100;
+        }
+
+        // Handle special numbers nan and +-inf
+        if (isNaN(value)) {
+            // Set sign = NaN and digits = [NaN].
+            // Initialize dotPos and exp to something.
+            this.sign = NaN;
+            this.digits = [NaN];
+            this.dotPos = NaN;
+            this.exp = NaN;
+            return;
+        }
+        else if (Math.abs(value) === Infinity) {
+            // Set sign = +-1 and digits = [+-Infinity].
+            // Initialize dotPos and exp to something.
+            this.sign = value < 0 ? -1 : +1;
+            this.digits = [value];
+            this.dotPos = 1;
+            this.exp = 0;
+            return;
+        }
+
+        // Convert number to string representation.
+        // For hexadecimal floating points use floatToHexadecimal(), elseNumber.toString().
+        let str = this.base === 16 && !isInteger(value)
+            ? NumberFormatter.floatToHexadecimal(value)
+            : value.toString(this.base).toLowerCase();
+
+        // Add '-' sign for negative zero.
+        if (1.0 / value === -Infinity && !str.startsWith("-")) {
+            str = "-" + str;
+        }
+
+        // Parse number with regex.
+        let numberMatch = (this.base === 16 ? HexNumberRegEx : NumberRegEx).exec(str);
+
+        // No match, throw exception
+        if (!numberMatch || !numberMatch.groups?.digits) {
+            throw StdFormatError.ValueError(str, this.base);
+        }
+
+        // Get sign +1 or -1
+        this.sign = numberMatch.groups?.sign === "-" ? -1 : +1;
+
+        // Get exponent
+        let exp = numberMatch.groups?.exponent;
+        this.exp = exp ? +exp : 0;
+
+        // Get digits. Can use ! because it was tested above.
+        let digitsStr = numberMatch.groups?.digits!;
+
+        // Get dot pos from digits.
+        this.dotPos = digitsStr.indexOf(".");
+        if (this.dotPos < 0) {
+            // No dot present: set dot after digits.
+            this.dotPos = digitsStr.length;
+        }
+        else {
+            // Dot present: remove it from digits string.
+            digitsStr = digitsStr.substring(0, this.dotPos) + digitsStr.substring(this.dotPos + 1);
+        }
+
+        // Convert digits string to digits array.
+        this.digits = digitsStr.split("").map(d => "0123456789abcdef".indexOf(d));
+
+        // Convert this number to notation specified by format specification.
+        this.convertToNotation();
+    }
+
+    // Is this number "nan"?
+    private isNan() {
+        return this.digits.length === 1 && isNaN(this.digits[0]);
+    }
+
+    // Is this number "+-inf"?
+    private isInf() {
+        return this.digits.length === 1 && Math.abs(this.digits[0]) === Infinity;
+    }
+
+    // Is this number zero?
+    private isZero() {
+        return this.digits.length === 1 && this.digits[0] === 0;
+    }
+
+    // Is this number integer?
+    private isInteger() {
+        // It is integer if dot position + exponent is at the end of digits or further.
+        return (this.dotPos + this.exp) >= this.digits.length;
+    }
+
+    // Validate internal state.
+    private validateInternalState() {
+        if (this.isNan() || this.isInf()) {
+            return;
+        }
+
+        if (this.isZero()) {
+            assert(this.exp === 0, "Is zero but exp != 0");
+        }
+
+        assert(isFinite(this.exp), "exp is not finite");
+        assert(isFinite(this.dotPos), "dotPos is not finite");
+
+        assert(this.dotPos >= 1, "dotPos = " + this.dotPos + " < 1");
+        assert(this.dotPos <= this.digits.length, "dotPos = " + this.dotPos + " > digits.length = " + this.digits.length);
+    }
+
+    // Get copy of class properties sign, digits, dotPos and exp.
+    private save() {
+        let sign = this.sign;
+        let digits = this.digits.slice();
+        let dotPos = this.dotPos;
+        let exp = this.exp;
+        return { sign, digits, dotPos, exp }
+    }
+
+    // Restore saved class properties.
+    private restore(saved: { sign: number, digits: number[], dotPos: number, exp: number }) {
+        this.sign = saved.sign;
+        this.digits = saved.digits.slice()
+        this.dotPos = saved.dotPos;
+        this.exp = saved.exp;
+    }
+
+    // Convert number format so that exponent is removed (exp = 0).
+    private toZeroExponent() {
+        if (this.isNan() || this.isInf()) {
+            return;
+        }
+
+        // Move dot position by exponent and set exponent to zero.
+        this.dotPos += this.exp;
+        this.exp = 0;
+
+        // If dot position was moved right past end of digits then
+        // add zeroes from the end of digits to dot position.
+        if (this.dotPos > this.digits.length) {
+            this.digits.splice(this.digits.length, 0, ...repeatNum(0, this.dotPos - this.digits.length));
+        }
+
+        // If dot position was moved left past first digit then
+        // add zeroes to beginning so that dot position becomes 1.
+        if (this.dotPos < 1) {
+            this.digits.splice(0, 0, ...repeatNum(0, 1 - this.dotPos));
+            this.dotPos = 1;
+        }
+
+        // Validate internal state
+        this.validateInternalState();
+    }
+
+    // Convert to precision (number of digits). Performs rounding if necessary.
+    private toPrecision(precision: number, precisionType: "fixed" | "precision") {
+        if (this.isNan() || this.isInf()) {
+            return;
+        }
+
+        // Get digit count.
+        // In fixed type total digit count is number of digits after dot.
+        // Else digitCount is precision. 
+        let digitCount = precisionType === "fixed" ? (this.dotPos + precision) : precision;
+
+        if (digitCount === this.digits.length || digitCount < 1) {
+            // Nothing to do, digitCount equals digits.length or is less than 1.
+            return;
+        }
+        else if (digitCount > this.digits.length) {
+            // If digitCount > digits.length then need to add trailing zeroes to set digit count.
+            this.digits.splice(this.digits.length, 0, ...repeatNum(0, digitCount - this.digits.length));
+            return;
+        }
+
+        // Set starting position to first digit to be removed.
+        let pos = digitCount;
+
+        // Get first digit to be removed. It can be past number of digits so ?? 0.
+        let firstRemovedDigit = this.digits[pos] ?? 0;
+
+        // Remove digits from pos to end.
+        // And add zeroes from pos to dotPos
+        this.digits.splice(pos, this.digits.length - pos, ...repeatNum(0, this.dotPos - pos));
+
+        // Function to check digit if it will round up
+        const roundUp = (digit: number) => digit >= Math.ceil(this.base / 2);
+
+        // Check if first removed digit rounds up.
+        if (roundUp(firstRemovedDigit)) {
+            // Rounding is necessary.
+            while (true) {
+                // Shitf current digit position left
+                pos--;
+
+                // Is pos greater or equal to zero (handling existing digits)
+                if (pos >= 0) {
+                    // Digit in current position increased because there is rounding
+                    let curDigit = this.digits[pos] + 1;
+
+                    // Is current digit over max allowed value in base?
+                    if (curDigit >= this.base) {
+                        // Set current digit to zero
+                        this.digits[pos] = 0;
+                        // Continue while loop (rounding next digit)
+                        continue;
+                    }
+                    else {
+                        // Set current digit.
+                        this.digits[pos] = curDigit;
+                        // No more rounding necessary, current digit belongs to base.
+                        break;
+                    }
+                }
+                else {
+                    // Digit pos < 0, need to add "1" to start of digits
+                    this.digits.unshift(1);
+
+                    if (precisionType === "fixed") {
+                        // If type = "fixed" then increase dot pos to compensate 
+                        // because we just added new digit to start of digits.
+                        // Digits after dot position and exponent remains unaltered.
+                        this.dotPos++;
+                    }
+                    else {
+                        // If type = "precision" then need to keep total digit count 
+                        // unaltered, so remove digit (0) from right.
+                        this.digits.pop();
+
+                        // Increase exponent to compensate that dotPos now 
+                        // points one position too left. This keeps digit count 
+                        // left side of dot unaltered.
+                        this.exp++;
+                    }
+
+                    // DotPos was possibly increased over digits length
+                    if (this.dotPos > this.digits.length) {
+                        // Move dotPos back to end of digits.
+                        this.exp += this.dotPos - this.digits.length;
+                        this.dotPos = this.digits.length;
+                    }
+
+                    // We are done
+                    break;
+                }
+            }
+        }
+
+        // Validate internal state
+        this.validateInternalState();
+    }
+
+    // Convert number to fixed notation.
+    // Precision is number of digits after decimal point.
+    private toFixed(precision: number) {
+        if (this.isNan() || this.isInf()) {
+            return;
+        }
+
+        // Make exponent to zero.
+        this.toZeroExponent();
+
+        // Set fixed precision digits after dot
+        this.toPrecision(precision, "fixed");
+    }
+
+    // Convert number to scientific notation.
+    // Precision is number of digits after decimal point.
+    // So total digits is (p + 1).
+    private toScientific(precision: number) {
+        if (this.isNan() || this.isInf()) {
+            return;
+        }
+
+        // Move dot to position to right after first digit.
+        this.exp += this.dotPos - 1;
+        this.dotPos = 1;
+
+        // Set total (precision + 1) digits.
+        this.toPrecision(precision + 1, "precision");
+    }
+
+    // Convert number to integer. Truncated, no rounding.
+    private toIntegerTrunc() {
+        if (this.isNan() || this.isInf()) {
+            return;
+        }
+
+        // Make exponent to zero.
+        this.toZeroExponent();
+
+        // If dotPos < digits.length then there are digits after dot.
+        if (this.dotPos < this.digits.length) {
+            // Remove digits after dot
+            this.digits.splice(this.dotPos, this.digits.length - this.dotPos);
+        }
+
+        // Validate internal state
+        this.validateInternalState();
+    }
+
+    // Convert number to normalised hexadecimal exponential notation
+    private toNormalisedHexadecimalExponential() {
+        if (this.isNan() || this.isInf() || this.isZero()) {
+            return;
+        }
+
+        // Make exponent to zero
+        this.toZeroExponent();
+
+        // Some assertions
+        assert(this.exp === 0, "exp !== 0");
+        assert(this.base === 16, "base !== 16");
+        assert(this.dotPos >= 1, "dotPos < 1");
+
+        // Make scientific format setting dotPos to 1 and altering exponent.
+        // Exponent in hexadecimal exponential presentation is in binary.
+        // Shifting by one pos in hexadecimal shifts by four in binary. 
+        this.exp += 4 * (this.dotPos - 1);
+        this.dotPos = 1;
+
+        // Convert digits to binary string of zeroes and ones.
+        let binary = this.digits.map(d => {
+            // Each digit in hexadecimal has four digits in binary.
+            // Add leading zeroes to return binary string length of 4.
+            let b = Number(d).toString(2);
+            return repeatStr("0", 4 - b.length) + b;
+        }).join("");
+
+        // Multiply by two (shift digits to left) as long as 
+        // binary starts with "0000" (hex "0")
+        while (binary.startsWith("0000")) {
+            // Remove digit from left and add "0" to right.
+            binary = binary.substring(1) + "0";
+
+            // Decrease exponent to keep total value unaltered.
+            this.exp--;
+        }
+
+        // Divide by two (shift digits to right) until 
+        // binary binary starts with "0001" (hex "1")
+        while (!binary.startsWith("0001")) {
+            // Add "0" to left and remove digit from right.
+            binary = "0" + binary.substring(0, binary.length - 1);
+
+            // Increase exponent to keep total value unaltered.
+            this.exp++;
+        }
+
+        // Remove trailing zeroes, "0000" in binary is "0" in hex.
+        while (binary.endsWith("0000")) {
+            binary = binary.substring(0, binary.length - 4);
+        }
+
+        // Convert binary digits back to hexadecimal digits
+        this.digits = [];
+
+        // Repeat while there are binary digits left.
+        while (binary.length > 0) {
+            // Convert first 4 digits from binary and push to end of digits.
+            this.digits.push(Number.parseInt(binary.substring(0, 4), 2));
+
+            // Remove four binary digits that were just converted.
+            binary = binary.substring(4);
+        }
+
+        // Number is now in normalised hexadecimal exponential.
+
+        // Validate internal state
+        this.validateInternalState();
+    }
+
+    // Convert this number to notation specified by format specification.
+    private convertToNotation() {
+        if (this.isNan() || this.isInf()) {
+            return;
+        }
+
+        // Make dotPos = 1 (scientific)
+        this.exp += this.dotPos - 1;
+        this.dotPos = 1;
+
+        // Remove leading zeroes.
+        // Repeat while there is more than one digit and first digit is zero.
+        while (this.digits.length > 1 && this.digits[0] === 0) {
+            // Remove first digit.
+            this.digits.shift();
+
+            // Decrease exponent to keep number value unaltered, and dotPos remains 1.
+            this.exp--;
+        }
+
+        // Remove trailing zeroes.
+        // Repeat while there is more than one digits and last digit is zero.
+        while (this.digits.length > 1 && this.digits[this.digits.length - 1] === 0) {
+            // Remove last digit.
+            // No need to alter exponent, and dotPos remains 1.
+            this.digits.pop();
+        }
+
+        // Remove insignificant trailing zeroes (optionally leaving that one digit past dotPos)
+        const removeInsignificantTrailingZeroes = (leave: 0 | 1 = 0) => {
+            while (this.digits.length > Math.max(1, this.dotPos + leave) && this.digits[this.digits.length - 1] === 0) {
+                this.digits.pop();
+            }
+        }
+
+        // Format specification fs.
+        let { fs } = this;
+
+        // Now make conversion according to fs.type
+        if (fs.isType("") && (fs.precision !== undefined || !this.isInteger() || this.isZero())) {
+            // If type is default and has precision or is float or zero
+
+            // This is almost like the 'g'. Use p = as large as needed to represent
+            // the given value faithfully, if not given. Treat p = 0 as p = 1.
+            let p = Math.max(1, fs.precision ?? this.digits.length);
+
+            // Save number value. Possibly needs to be restored later.
+            let saved = this.save();
+
+            // Convert to scientific notation with precision (p - 1).
+            this.toScientific(p - 1);
+
+            // Switch to fixed if -4 < exp < p-1.
+            if (-4 <= this.exp && this.exp < p - 1) {
+                // Restore original format before switching to another notation.
+                this.restore(saved);
+
+                // Convert to fixed notation.
+                this.toFixed(Math.max(1, p - 1 - this.exp));
+
+                // Remove insignificant trailing zeroes.
+                // Include at least one digit past the decimal point.
+                removeInsignificantTrailingZeroes(1);
+            }
+            else {
+                // Remove insignificant trailing zeroes.
+                removeInsignificantTrailingZeroes();
+            }
+        }
+        else if (fs.isType("", "dbBoxXn")) {
+            // Else if type is default '' or integer
+
+            // For integers -0 = +0 = 0
+            if (this.isZero() && this.sign === -1) {
+                this.sign = 1;
+            }
+
+            // Number must be integer
+            if (!this.isInteger()) {
+                throw StdFormatError.InvalidArgumentConversion("float", fs.type);
+            }
+
+            // Precision not allowed for integer
+            if (fs.precision !== undefined) {
+                throw StdFormatError.PrecisionNotAllowedForInteger();
+            }
+
+            // Format to integer notation.
+            this.toIntegerTrunc();
+        }
+        else if (fs.isType("aA")) {
+            // Convert to normalised hexadecimal exponential notation.
+            this.toNormalisedHexadecimalExponential();
+
+            // If precision not given use as big precision as possible.
+            let p = fs.precision ?? (this.digits.length - 1);
+
+            // Convert to scientific notation. Normalised hexadecimal exponential notation
+            // already is in scientific notation but this sets precision and does rounding. 
+            this.toScientific(p);
+        }
+        else if (fs.isType("eE")) {
+            // Get precision. If not given, default is 6.
+            let p = fs.precision ?? 6;
+
+            // Convert to scientific notation
+            this.toScientific(p);
+        }
+        else if (fs.isType("fF%")) {
+            // Get precision. If not given, default is 6.
+            let p = fs.precision ?? 6;
+
+            // Convert to fixed notation.
+            this.toFixed(p);
+        }
+        else if (fs.isType("gG")) {
+            // Convert to general notation.
+
+            // Get precision. Treat p = 0 as p = 1. If not given, default is 6.
+            let p = Math.max(1, fs.precision ?? 6);
+
+            // Save number value. Possibly needs to be restored later.
+            let saved = this.save();
+
+            // Convert to scientific notation.
+            this.toScientific(p - 1);
+
+            // Switch to fixed notation if -4 <= exp < p.
+            if (-4 <= this.exp && this.exp < p) {
+                // restore number value before converting to fixed.
+                this.restore(saved);
+
+                // Convert to fixed notation. Precision is (p - 1 - exp).
+                this.toFixed(p - 1 - this.exp);
+            }
+
+            // Was sharp specifier '#' was given for 'g' and 'G'?
+            if (this.fs.sharp !== "#") {
+                // Remove insignificant trailing zeroes.
+                removeInsignificantTrailingZeroes();
+            }
+        }
+        else {
+            // All types should have been handled.
+            assert(false, "Unhandled type: " + this.fs.type);
+        }
+
+        // Validate internal state.
+        this.validateInternalState();
+    }
+
+    // Convert this number to string.
+    toString() {
+        // Get format specification fs.
+        let { fs } = this;
+
+        // This will be exponent string.
+        let exp: string;
+
+        // This will be digits string.
+        let digits: string;
+
+        // This will be prefix string. "0x" for hexadecimal, etc.
+        let prefix: string;
+
+        // This will be postfix string. "%" for percentage types, or "".
+        let postfix: string = fs.isType("%") ? "%" : "";
+
+        // This will be sign. "-", "+" or " ".
+        let sign: string = this.sign < 0 ? "-" : (fs.sign === "-" ? "" : fs.sign);
+
+        if (this.isNan()) {
+            // Is nan?
+            exp = "";
+            digits = "nan";
+            prefix = "";
+        }
+        else if (this.isInf()) {
+            // Is inf?
+            exp = "";
+            digits = "inf";
+            prefix = "";
+        }
+        else {
+            // Some notations do not show zero exponent.
+            let noZeroExp = !fs.isType("eEaA");
+
+            // Some notations show at least two digit exponent. If shorter add leading zero.
+            let needExp00 = fs.isType("", "eEgG");
+
+            if (this.exp === 0 && noZeroExp) {
+                // No zero exponent.
+                exp = "";
+            }
+            else {
+                // Get exponent to string. Absolute value for now.
+                exp = "" + Math.abs(this.exp);
+
+                // Add leading zero if exponent needs at least two digits.
+                if (exp.length < 2 && needExp00) {
+                    exp = "0" + exp;
+                }
+
+                // Format exponent string. Add "p" (norm. hex. exp. ntt) or "e",
+                // sign, and absolute value of exponent.
+                exp = (this.base === 16 ? "p" : "e") + (this.exp < 0 ? "-" : "+") + exp;
+            }
+
+            // Convert digits to string.
+            digits = this.digits.map(d => "0123456789abcdef"[d]).join("");
+
+            // Insert dot if it appears in between digits.
+            if (this.dotPos < digits.length) {
+                digits = digits.substring(0, this.dotPos) + "." + digits.substring(this.dotPos);
+            }
+
+            // Include dot after last digit on some notations if sharp '#' specifier was given.
+            if (this.dotPos === digits.length && fs.sharp === "#" && fs.isType("fFeEgGaA%")) {
+                digits += ".";
+            }
+
+            // Get prefix.
+            prefix = this.fs.getNumberPrefix();
+
+            // Remove octal prefix "0" if digits is "0" to prevent "00".
+            if (prefix === "0" && digits === "0") {
+                prefix = "";
+            }
+        }
+
+        // Get formatting width for number related filling.
+        let width = fs.width ?? 0;
+
+        // Get count of fill characters.
+        // It is width minus sign, prefix, digits, exponent, and postfix.
+        let fillCount = Math.max(0, width - sign.length - prefix.length - digits.length - exp.length - postfix.length);
+
+        // No filling for numbers if align is '<'.
+        if (fs.align === "<") {
+            fillCount = 0;
+        }
+
+        // Get fill character.
+        // If align is '=' then use fs.fill.
+        // Else use fs.zero if given or '' (no fill) otherwise.
+        let fillChar = fs.align === "=" ? fs.fill : (fs.zero ?? "");
+
+        // Form final string representation by adding all components and fill.
+        let str = sign + prefix + repeatStr(fillChar, fillCount) + digits + exp + postfix;
+
+        // Convert to uppercase if specified by format specification type.
+        return fs.isType("AGEFBX") ? str.toUpperCase() : str;
+    }
+
+    // Static function to convert number to hexadecimal floating point string.
+    // This is only code snippet that was got from chat gpt, modified by me.
+    static floatToHexadecimal(num: number) {
+        // Handle negative numbers.
+        const sign = num < 0 ? "-" : "";
+        num = Math.abs(num);
+
+        // Split the number into integer and fractional parts.
+        const intPart = Math.floor(num);
+        let fracPart = num - intPart;
+
+        // Convert the integer part to hexadecimal.
+        const intHex = intPart.toString(16);
+
+        // Convert the fractional part to hexadecimal.
+        let fracHex = "";
+
+        while (fracPart > 0) {
+            fracPart *= 16;
+            const digit = Math.floor(fracPart);
+            fracHex += digit.toString(16);
+            fracPart -= digit;
+        }
+
+        // Combine the integer and fractional parts.
+        return sign + intHex + (fracHex ? ("." + fracHex) : "");
+    }
+}
+
+// Formats the replacement field.
+// @arg is the argument given to stdFormat("", arg0, arg1, ...)
+// @fs is the parsed format specification.
+function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
+    let { align, fill, type } = fs;
+
+    // Convert to valid argument: string or number.
+    let validArg: number | string;
+
+    let isNumberCompatibleType = fs.isType("", "bBodxXaAeEfFgGn%");
+
+    if (typeof arg === "boolean") {
+        // Field value can be boolean.
+        if (fs.isType("", "s")) {
+            // Convert boolean to string, if type is default '' or string 's'.
+            validArg = arg ? trueString : falseString;
+        }
+        else if (isNumberCompatibleType) {
+            // Convert boolean to number 0 or 1.
+            validArg = arg ? 1 : 0;
+        }
+        else {
+            // Invalid argument conversion from boolean.
+            throw StdFormatError.InvalidArgumentConversion(arg, fs.type);
+        }
+    }
+    else if (typeof arg === "number") {
+        // Argument is number.
+        if (fs.isType("c")) {
+            // If type is 'c' then use argument as char code to convert it to char (string).
+            validArg = String.fromCharCode(arg);
+        }
+        else if (!isNumberCompatibleType) {
+            // Invalid argument conversion from number.
+            throw StdFormatError.InvalidArgumentConversion(arg, fs.type);
+        }
+        else {
+            // Else use number argument as it is.
+            validArg = arg;
+        }
+    }
+    else if (typeof arg === "string") {
+        // Argument is string.
+        if (fs.isType("dxXobB") && arg.length === 1) {
+            // If type is integer then use single char string argument
+            // as char and convert it to char code (integer).
+            validArg = arg.charCodeAt(0);
+        }
+        else {
+            // Else use string argument as it is.
+            validArg = arg;
+        }
+    }
+    else {
+        // Invalid argument type.
+        throw StdFormatError.InvalidArgument(arg);
+    }
+
+    // Next convert valid argument to string.
+    let argStr = "";
+
+    if (typeof validArg === "number") {
+        // Argument is number. Use NumberFormatter to format it to string.
+        argStr = new NumberFormatter(validArg, fs).toString();
+    }
+    else {
+        // Else argument  is string
+        if (fs.isType("", "s") || fs.isType("c") && validArg.length === 1) {
+            // If type is default '', string 's' or single char 'c' then use argument as it is (string).
+            argStr = validArg;
+        }
+        else {
+            // Unable to format string by given type scecifier.
+            throw StdFormatError.InvalidArgumentConversion(validArg, fs.type);
+        }
+    }
+
+    // Now argStr contains string representation of the argument.
+    // Apply fill and alignment according to format specification fs.
+
+    // Get width of field or 0 if not given.
+    let width = fs.width ?? 0;
+
+    // Is invalid align for string?
+    if (align === "=" && typeof validArg === "string") {
+        throw StdFormatError.InvalidFormatSpecification(fs);
+    }
+
+    // If align is undefined then set default '>' for numbers and else '<' for strings.
+    align ??= typeof validArg === "number" ? ">" : "<";
+
+    // Calculate fillCount
+    let fillCount = Math.max(0, width - argStr.length);
+
+    // Initialize replacement string.
+    let replacementStr: string = argStr;
+
+    // Modify replacement string if filling is required.
+    if (fillCount > 0 && fill.length > 0) {
+        switch (align) {
+            case "<":
+                // Field is left aligned. Add filling to right.
+                replacementStr = argStr + repeatStr(fill, fillCount);
+                break;
+            case "^":
+                // Field is center aligned. Add filling to left and right right.
+                replacementStr = repeatStr(fill, Math.floor(fillCount / 2)) + argStr + repeatStr(fill, Math.ceil(fillCount / 2));
+                break;
+            case ">":
+                // Field is right aligned. Add filling to left.
+                replacementStr = repeatStr(fill, fillCount) + argStr;
+                break;
+        }
+    }
+
+    // Return final replacement string.
+    return replacementStr;
+}
+
+// Main function to format string using curly bracket notation.
+export function stdFormat(formatString: string, ...formatArgs: unknown[]): string {
+    // Current string being parsed.
+    let parseString = formatString;
+
+    // Result string.
+    let resultString: string = "";
+
+    // Automatic field number that is used to obtain argument.
+    let automaticFieldNumber = 0;
+
+    // Has automatic or manual field numbering? Cannot have both.
+    let hasAutomaticFieldNumbering = false;
+    let hasManualFieldSpecification = false;
+
+    // Function to get argument from formatArgs[fieldNumber].
+    const getArgument = (fieldNumberStr: string): unknown => {
+        // Throw exception if field number string is not valid.
+        // It must be empty "", or contain digits only (= zero or positive integer).
+        if (fieldNumberStr !== "" && !DigitsRegex.test(fieldNumberStr)) {
+            throw StdFormatError.InvalidFieldNumber(fieldNumberStr);
+        }
+
+        // Get field number
+        let fieldNumber: number;
+
+        // Is field number string empty?
+        if (fieldNumberStr.length > 0) {
+            // Use manual field specification.
+            hasManualFieldSpecification = true;
+
+            // Convert field number string to number
+            fieldNumber = +fieldNumberStr;
+        }
+        else {
+            // Use automatic field numbering.
+            hasAutomaticFieldNumbering = true;
+
+            // Get ascending field number
+            fieldNumber = automaticFieldNumber++;
+        }
+
+        // Throw exception switching between automatic and manual field numbering.
+        if (hasAutomaticFieldNumbering && hasManualFieldSpecification) {
+            throw StdFormatError.SwitchBetweenAutoAndManualFieldNumbering();
+        }
+
+        // Throw exception if field number is out of bounds of arguments array.
+        if (fieldNumber < 0 || fieldNumber >= formatArgs.length) {
+            throw StdFormatError.InvalidFieldNumber("" + fieldNumber);
+        }
+
+        // Return argument.
+        return formatArgs[fieldNumber];
+    }
+
+    // Function to get nested argument integer. Width and precision in format specification can be
+    // in form of nested curly braces {:{width field number}.{precision field number}}
+    const getNestedArgumentInt = (fieldNumberStr: string): number => {
+        // Get the argument
+        let arg = getArgument(fieldNumberStr);
+
+        // Nested argument is used for width and precision in format specification, and
+        // must be integer number >= 0.
+        if (!arg || typeof arg !== "number" || !isInteger(arg) || arg < 0) {
+            throw StdFormatError.InvalidArgument(arg);
+        }
+
+        // Return nested argument integer
+        return arg;
+    }
+
+    // Function to parse replacement field.
+    const parseReplacementField = () => {
+        // Replacement field starts with "{".
+        if (parseString[0] !== "{") {
+            // Failed to parse replacement field, return false.
+            return false;
+        }
+
+        // Execute replacement field regex.
+        let replFieldMatch = ReplacementFieldRegEx.exec(parseString);
+
+        if (!replFieldMatch || !replFieldMatch[0]) {
+            // Failed to parse replacement field, return false.
+            return false;
+        }
+
+        // Remove matched replacement field from parsing string.
+        parseString = parseString.substring(replFieldMatch[0].length);
+
+        // Get field number fropm match.
+        let fieldNumber = replFieldMatch.groups?.field_n ?? "";
+
+        // Get argument.
+        let arg = getArgument(fieldNumber);
+
+        // Create format specification.
+        let fs = new FormatSpecification(replFieldMatch, getNestedArgumentInt);
+
+        // Format replacement field and add it to result string.
+        resultString += formatReplacementField(arg, fs);
+
+        // Parsed replacement field ok, return true.
+        return true;
+    }
+
+    // Function to parse format string.
+    const parseFormatString = () => {
+        // Loop until terminated by break.
+        while (true) {
+            // Jump to next curly brace "{" or "}".
+            let i = CurlyBracketRegEx.exec(parseString)?.index;
+
+            // Set i to end of parsing string, if did not find curly braces.
+            if (i === undefined || i < 0) {
+                i = parseString.length;
+            }
+
+            // Add ordinary string to result string.
+            resultString += parseString.substring(0, i);
+
+            // Jump over ordinary string on parsing string.
+            parseString = parseString.substring(i);
+
+            // Now parsing string starts with "{", "}", or is empty.
+
+            if (parseString.startsWith("{{") || parseString.startsWith("}}")) {
+                // If parsing string starts with double curly braces
+                // Then add single curly brace to result string.
+                resultString += parseString[0];
+
+                // Remove double curly braces from parsing string.
+                parseString = parseString.substring(2);
+
+                // Continue parsing on next loop.
+                continue;
+            }
+            else if (parseString[0] === "}") {
+                // Throw exception if parsing string starts with "}".
+                throw StdFormatError.SingleEncounteredInFormatString("}");
+            }
+            else if (parseString[0] === "{") {
+                // If parsing string starts with "{" then parse replacement field, and
+                // throw exception if it returns false (there was "{" but parsing failed).
+                if (!parseReplacementField()) {
+                    throw StdFormatError.SingleEncounteredInFormatString("{");
+                }
+
+                // Continue parsing on next loop.
+                continue;
+            }
+            else {
+                // Did not find any curly braces. Parsing was executed to end of string.
+                // Break out of while loop.
+                break;
+            }
+        }
+    }
+
+    try {
+        // Now parse format string.
+        parseFormatString();
+    }
+    catch (e) {
+        // Log internal error to console.
+        if (e instanceof StdFormatError && e.isInternalError()) {
+            console.error(e.toString());
+        }
+
+        // Throw exception forward.
+        throw e;
+    }
+
+    // Parsing is finished. Return result string.
+    return resultString;
+}
