@@ -97,13 +97,13 @@ let falseString: "false" | "False" = "False";
 
 // Use specification hint. Specification hint can be "python" or "cpp".
 export function stdSpecificationHint(specHint: "cpp" | "python") {
-    if(specHint === "cpp") {
+    if (specHint === "cpp") {
         // Set variables belonging to "cpp" specification.
         octalPrefix = "0";
         trueString = "true";
         falseString = "false";
     }
-    else if(specHint === "python") {
+    else if (specHint === "python") {
         // Set variables belonging to "python" specification.
         octalPrefix = "0o";
         trueString = "True";
@@ -145,24 +145,6 @@ const ReplacementFieldRegEx = new RegExp(
 
 // Regex to find next curly bracet.
 const CurlyBracketRegEx = new RegExp("[{}]");
-
-// Regex top parse number, bases 2, 8 and 10.
-const NumberRegEx = new RegExp(
-    "^" +
-    "(?<sign>[+-]?)" +
-    "(?<digits>\\d+\.\\d+|\\d+)" +
-    "([eE](?<exponent>[+-]?\\d+))?" +
-    ""
-);
-
-// Regex top parse number, base 16.
-const HexNumberRegEx = new RegExp(
-    "^" +
-    "(?<sign>[+-]?)" +
-    "(?<digits>[0-9a-fA-F]+\.[0-9a-fA-F]+|[0-9a-fA-F]+)" +
-    "([pP](?<exponent>[+-][0-9]+))?" +
-    ""
-);
 
 // Regex for one or more digits.
 const DigitsRegex = /^\d+$/;
@@ -318,48 +300,76 @@ class NumberFormatter {
             return;
         }
 
-        // Convert number to string representation.
-        // For hexadecimal floating points use floatToHexadecimal(), elseNumber.toString().
-        let str = this.base === 16 && !isInteger(value)
-            ? NumberFormatter.floatToHexadecimal(value)
-            : value.toString(this.base).toLowerCase();
+        // Set sign
+        this.sign = value < 0 ? -1 : +1;
 
-        // Add '-' sign for negative zero.
-        if (1.0 / value === -Infinity && !str.startsWith("-")) {
-            str = "-" + str;
+        // Is negative zero?
+        if (1.0 / value === -Infinity && this.sign > 0) {
+            this.sign = -1;
         }
 
-        // Parse number with regex.
-        let numberMatch = (this.base === 16 ? HexNumberRegEx : NumberRegEx).exec(str);
+        // Get absolute value
+        let absValue = Math.abs(value);
 
-        // No match, throw exception
-        if (!numberMatch || !numberMatch.groups?.digits) {
-            throw StdFormatError.ValueError(str, this.base);
+        // Split absolute value into integer and fractional parts.
+        let intPart = Math.floor(absValue);
+        let fracPart = absValue - intPart;
+
+        // Initialize digits to empty.
+        this.digits = [];
+
+        // Get integer part didigts. Repeat while remaining integer part > 0
+        while (intPart > 0) {
+            // Calculate digit
+            let digit = intPart % this.base;
+
+            // Add digit to left of digit array.
+            this.digits.unshift(digit);
+
+            // Make next digit to become lowest digit of integer part.
+            intPart = Math.floor(intPart / this.base);
         }
 
-        // Get sign +1 or -1
-        this.sign = numberMatch.groups?.sign === "-" ? -1 : +1;
+        // Set dot position after integer part digits, and exponent to zero.
+        this.dotPos = this.digits.length;
+        this.exp = 0;
 
-        // Get exponent
-        let exp = numberMatch.groups?.exponent;
-        this.exp = exp ? +exp : 0;
+        // Get fraction part digits. Repeat while remaining fraction part > 0.
+        while (fracPart > 0) {
+            // Multiply frac part to make left most digit integer.
+            fracPart *= this.base;
 
-        // Get digits. Can use ! because it was tested above.
-        let digitsStr = numberMatch.groups?.digits!;
+            // Left most digit is now integer part.
+            let digit = Math.floor(fracPart);
 
-        // Get dot pos from digits.
-        this.dotPos = digitsStr.indexOf(".");
-        if (this.dotPos < 0) {
-            // No dot present: set dot after digits.
-            this.dotPos = digitsStr.length;
+            // Remove digit from fractional part.
+            fracPart -= digit;
+
+            if (digit === 0 && this.digits.length === 0) {
+                // Digit is zero and digits is still empty, no integer, no fraction part.
+                // Getting smaller number, decrease exponent.
+                this.exp--;
+            }
+            else if (digit > 0 && this.digits.length === 0) {
+                // Got non-zero digit but digits is still empty, let's add first digit.
+                this.digits.push(digit);
+
+                // Decrease exponent, and set dot position after first digit.
+                this.exp--;
+                this.dotPos = 1;
+            }
+            else {
+                // Digits is not empty, lets just add new digit.
+                this.digits.push(digit);
+            }
         }
-        else {
-            // Dot present: remove it from digits string.
-            digitsStr = digitsStr.substring(0, this.dotPos) + digitsStr.substring(this.dotPos + 1);
-        }
 
-        // Convert digits string to digits array.
-        this.digits = digitsStr.split("").map(d => "0123456789abcdef".indexOf(d));
+        // Was zero?
+        if (this.digits.length === 0) {
+            this.digits = [0];
+            this.dotPos = 1;
+            this.exp = 0;
+        }
 
         // Convert this number to notation specified by format specification.
         this.convertToNotation();
@@ -917,34 +927,6 @@ class NumberFormatter {
 
         // Convert to uppercase if specified by format specification type.
         return fs.isType("AGEFBX") ? str.toUpperCase() : str;
-    }
-
-    // Static function to convert number to hexadecimal floating point string.
-    // This is only code snippet that was got from chat gpt, modified by me.
-    static floatToHexadecimal(num: number) {
-        // Handle negative numbers.
-        const sign = num < 0 ? "-" : "";
-        num = Math.abs(num);
-
-        // Split the number into integer and fractional parts.
-        const intPart = Math.floor(num);
-        let fracPart = num - intPart;
-
-        // Convert the integer part to hexadecimal.
-        const intHex = intPart.toString(16);
-
-        // Convert the fractional part to hexadecimal.
-        let fracHex = "";
-
-        while (fracPart > 0) {
-            fracPart *= 16;
-            const digit = Math.floor(fracPart);
-            fracHex += digit.toString(16);
-            fracPart -= digit;
-        }
-
-        // Combine the integer and fractional parts.
-        return sign + intHex + (fracHex ? ("." + fracHex) : "");
     }
 }
 
