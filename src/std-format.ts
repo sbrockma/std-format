@@ -275,11 +275,6 @@ class NumberFormatter {
             this.base = 10;
         }
 
-        // If format specifier is "%" then convert value to percents by multiplying by 100.
-        if (fs.isType("%")) {
-            value *= 100;
-        }
-
         // Handle special numbers nan and +-inf
         if (isNaN(value)) {
             // Set sign = NaN and digits = [NaN].
@@ -300,20 +295,18 @@ class NumberFormatter {
             return;
         }
 
-        // Get sign (also negative zero is negative).
-        this.sign = (value < 0 || 1.0 / value === -Infinity) ? -1 : +1;
-
-        // Get absolute value
-        let absValue = Math.abs(value);
-
-        // Split absolute value into integer and fractional parts.
-        let intPart = Math.floor(absValue);
-        let fracPart = absValue - intPart;
-
-        // Initialize digits to empty.
+        // Initialize digits, dot position and exponent.
         this.digits = [];
         this.dotPos = 0;
         this.exp = 0;
+
+        // Get sign (also negative zero is negative).
+        this.sign = (value < 0 || 1.0 / value === -Infinity) ? -1 : +1;
+
+        // Split absolute value into integer and fractional parts.
+        let absValue = Math.abs(value);
+        let intPart = Math.floor(absValue);
+        let fracPart = absValue - intPart;
 
         // Get integer part didigts. Repeat while remaining integer part > 0
         while (intPart > 0) {
@@ -390,6 +383,12 @@ class NumberFormatter {
         // The digitizer algorithm above works so that there should not be any leading or trailing zeroes.
         assert(this.digits.length === 1 || this.digits.length > 1 && this.digits[0] !== 0 && this.digits[this.digits.length - 1] !== 0,
             "Unexpected leading or trailing zero.");
+
+        // If format specifier is "%" then convert value to percents.
+        if (!this.isZero() && fs.isType("%")) {
+            // Multiply by 100 by moving exponent right two digits (base = 10).
+            this.exp += 2;
+        }
 
         // Make scientific notation (dot position = 1)
         this.exp += this.dotPos - 1;
