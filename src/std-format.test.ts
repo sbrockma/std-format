@@ -1,13 +1,16 @@
 import { stdFormat, stdSpecificationHint } from "std-format";
 
-describe("stdFormat", () => {
+describe("std format", () => {
     it("using curly braces", () => {
 
         expect(stdFormat("Test {{ }} {{}}", 1, 2)).toEqual("Test { } {}");
         expect(stdFormat("frac{{{0}}}{{{1}}}", 1, 2)).toEqual("frac{1}{2}");
 
-        expect(() => stdFormat("{")).toThrow();
-        expect(() => stdFormat("}")).toThrow();
+        expect(() => stdFormat("Hello {")).toThrow(); // Encounteger single '{'
+        expect(() => stdFormat("} Worls")).toThrow(); // Encounteger single '}'
+
+        expect(() => stdFormat(":{^5")).toThrow(); // Invalid fill character '{'
+        expect(() => stdFormat(":}^5")).toThrow(); // Invalid fill character '}'
     });
 
     it("field numbering", () => {
@@ -30,11 +33,24 @@ describe("stdFormat", () => {
         expect(() => stdFormat("{0:!^{}.{}f}", 123.45, 8, 1)).toThrow();
     });
 
-    it("grouping separators", () => {
-        // Grouping not yet implemented.
-        expect(() => stdFormat("{:_d}", 8)).toThrow();
+    it("grouping specifier ,", () => {
+        // Not yet implemented.
         expect(() => stdFormat("{:,d}", 8)).toThrow();
+    });
+
+    it("grouping specifier _", () => {
+        // Not yet implemented.
+        expect(() => stdFormat("{:_d}", 8)).toThrow();
+    });
+
+    it("type specifier n", () => {
+        // Not yet implemented.
         expect(() => stdFormat("{:n}", 8)).toThrow();
+    });
+
+    it("locale specifier L", () => {
+        // Not yet implemented.
+        expect(() => stdFormat("{:Ld}", 8)).toThrow();
     });
 
     it("sign", () => {
@@ -50,7 +66,7 @@ describe("stdFormat", () => {
         expect(stdFormat('{:-f}; {:-f}', 3.14, -3.14)).toEqual('3.140000; -3.140000');
     });
 
-    it("align", () => {
+    it("fill and align", () => {
         expect(stdFormat("{:6}", 42)).toEqual("    42");
         expect(stdFormat("{:6}", "x")).toEqual("x     ");
         expect(stdFormat("{:*<6}", "x")).toEqual("x*****");
@@ -79,9 +95,15 @@ describe("stdFormat", () => {
         expect(stdFormat("{:.{}f}", b, 5)).toEqual("3.14000");
         expect(stdFormat("{:10.5f}", b)).toEqual("   3.14000");
         expect(stdFormat("{:{}.{}f}", b, 10, 5)).toEqual("   3.14000");
+
+        expect(() => stdFormat("{:{}f}", Math.PI, 10.1)).toThrow(); // Width is not integer
+        expect(() => stdFormat("{:{}f}", Math.PI, -10)).toThrow();  // Width is negative
+
+        expect(() => stdFormat("{:.{}f}", Math.PI, 5.2)).toThrow(); // Precision is not integer
+        expect(() => stdFormat("{:.{}f}", Math.PI, -2)).toThrow();  // Precision is negative
     });
 
-    it("fill with align = '='", () => {
+    it("fill specifier =", () => {
         // Default fill ' '
         expect(stdFormat("{:10}", "test")).toEqual("test      ");
         expect(stdFormat("{:<8d}", 10)).toEqual("10      ");
@@ -160,7 +182,7 @@ describe("stdFormat", () => {
         expect(stdFormat("{:08}", -Infinity)).toEqual("-0000inf");
     });
 
-    it("type = '', value = bool (cpp)", () => {
+    it("type specifier <none>, bool (cpp)", () => {
         stdSpecificationHint("cpp");
         expect(stdFormat("{} {}", true, false)).toEqual("true false");
         expect(stdFormat("{:<7}", true)).toEqual("true   ");
@@ -168,7 +190,7 @@ describe("stdFormat", () => {
         expect(stdFormat("{:>7}", false)).toEqual("  false");
     });
 
-    it("type = '', value = bool (python)", () => {
+    it("type specifier <none>, bool (python)", () => {
         stdSpecificationHint("python");
         expect(stdFormat("{} {}", true, false)).toEqual("True False");
         expect(stdFormat("{:<7}", true)).toEqual("True   ");
@@ -176,11 +198,11 @@ describe("stdFormat", () => {
         expect(stdFormat("{:>7}", false)).toEqual("  False");
     });
 
-    it("type = '', value = string", () => {
+    it("type specifier <none>, string", () => {
         expect(stdFormat("{}", "string")).toEqual("string");
     });
 
-    it("type '', value = integer", () => {
+    it("type specifier <none>, integer", () => {
         expect(stdFormat("{}", 100)).toEqual("100");
         expect(stdFormat("{}", 10)).toEqual("10");
         expect(stdFormat("{}", 1)).toEqual("1");
@@ -192,7 +214,7 @@ describe("stdFormat", () => {
         expect(stdFormat("{:}", 999)).toEqual("999");
     });
 
-    it("type = '', value = float", () => {
+    it("type specifier <none>, float", () => {
         expect(stdFormat("{:.2}", Math.PI)).toEqual("3.1");
 
         expect(stdFormat("{:.1}", 10)).toEqual("1e+01");
@@ -213,14 +235,14 @@ describe("stdFormat", () => {
         expect(stdFormat("{:.2}", 678e-8)).toEqual("6.8e-06");
     });
 
-    it("type = 's'", () => {
+    it("type specifier s", () => {
         expect(stdFormat("{:s}", "Hello")).toEqual("Hello");
         expect(stdFormat("{:s}", "42")).toEqual("42");
 
         expect(() => stdFormat("{:s}", 42)).toThrow(); // error
     });
 
-    it("type = 'c'", () => {
+    it("type specifier c", () => {
         expect(stdFormat("{:c}", 65)).toEqual("A");
 
         // Single-char-string as char
@@ -229,21 +251,23 @@ describe("stdFormat", () => {
         expect(() => stdFormat("{:c}", "")).toThrow();
     });
 
-    it("type = '?'", () => {
-        // Throws, escape sequences not implemented
+    it("type specifier ?", () => {
+        // Not yet implemented
         expect(() => stdFormat("{:?}", "\t")).toThrow();
     });
 
-    it("type = 'd'", () => {
+    it("type specifier d", () => {
         expect(stdFormat("{:d}", -321)).toEqual("-321");
         expect(stdFormat("{:d}", "c")).toEqual("99"); // Single char string as char code
         expect(stdFormat("{:+06d}", String.fromCharCode(120))).toEqual("+00120");
         expect(stdFormat("{:+06d}", 120)).toEqual("+00120");
 
         expect(stdFormat("{:d} {:d}", true, false)).toEqual("1 0");
+
+        expect(() => stdFormat("{:d}", "hello")).toThrow();
     });
 
-    it("type = 'x' or 'X'", () => {
+    it("type specifier x and X", () => {
         expect(stdFormat("{:#06x}", 0xa)).toEqual("0x000a");
         expect(stdFormat("{:#06x}", -0xa)).toEqual("-0x00a");
         expect(stdFormat("{:x}", 314)).toEqual("13a");
@@ -252,24 +276,24 @@ describe("stdFormat", () => {
         expect(stdFormat("{:#X}", 314)).toEqual("0X13A");
     });
 
-    it("type = 'b' or 'B'", () => {
+    it("type specifier b and B", () => {
         expect(stdFormat("{:b}", 314)).toEqual("100111010");
         expect(stdFormat("{:#b}", 314)).toEqual("0b100111010");
     });
 
-    it("type = 'o'", () => {
+    it("type specifier o", () => {
         expect(stdFormat("{:o}", 834)).toEqual("1502");
         expect(stdFormat("{:o}", -834)).toEqual("-1502");
     });
 
-    it("type = 'o' (cpp prefix)", () => {
+    it("type specifier o (cpp prefix)", () => {
         stdSpecificationHint("cpp");
         expect(stdFormat("{:#o}", 834)).toEqual("01502");
         expect(stdFormat("{:#o}", -834)).toEqual("-01502");
         expect(stdFormat("{:#o}", 0)).toEqual("0");
     });
 
-    it("type = 'o' (python prefix)", () => {
+    it("type specifier o (python prefix)", () => {
         stdSpecificationHint("python");
         expect(stdFormat("{:#o}", 834)).toEqual("0o1502");
         expect(stdFormat("{:#o}", -834)).toEqual("-0o1502");
@@ -281,7 +305,7 @@ describe("stdFormat", () => {
         expect(() => stdFormat("{:.4B}", 32)).toThrow();
     });
 
-    it("type = 'f' or 'F'", () => {
+    it("type specifier f and F", () => {
         expect(stdFormat("{:.2f}", 0)).toEqual("0.00");
         expect(stdFormat("{:.1f}", 0)).toEqual("0.0");
         expect(stdFormat("{:.0f}", 0)).toEqual("0");
@@ -316,9 +340,11 @@ describe("stdFormat", () => {
         expect(stdFormat("{:.1f}", 99.99)).toEqual("100.0");
         expect(stdFormat("{:.1f}", 999.9)).toEqual("999.9");
         expect(stdFormat("{:.1f}", 9999)).toEqual("9999.0");
+
+        expect(() => stdFormat("{:.2f}", "100")).toThrow();
     });
 
-    it("type = 'e' or 'E'", () => {
+    it("type specifier e and E", () => {
         expect(stdFormat("{:.2e}", 0)).toEqual("0.00e+00");
         expect(stdFormat("{:.1e}", 0)).toEqual("0.0e+00");
         expect(stdFormat("{:.0E}", 0)).toEqual("0E+00");
@@ -351,7 +377,7 @@ describe("stdFormat", () => {
         expect(stdFormat("{:.0e}", a)).toEqual("1e+04");
     });
 
-    it("type = 'g' or 'G'", () => {
+    it("type specifier g and G", () => {
         expect(stdFormat("{:.2g}", 0)).toEqual("0");
         expect(stdFormat("{:.1g}", 0)).toEqual("0");
         expect(stdFormat("{:.0G}", 0)).toEqual("0");
@@ -398,7 +424,7 @@ describe("stdFormat", () => {
         expect(stdFormat("{:#.3g}", 1e-6)).toEqual("1.00e-06");
     });
 
-    it("type = 'a' or 'A'", () => {
+    it("type specifier a and A", () => {
         expect(stdFormat("{:+#.0a}", 0)).toEqual("+0.p+0");
         expect(stdFormat("{:#.2a}", 1)).toEqual("1.00p+0");
 
@@ -418,7 +444,7 @@ describe("stdFormat", () => {
         expect(stdFormat("{:.3a}", -1234567890e-20)).toEqual("-1.b26p-37");
     });
 
-    it("type = '%'", () => {
+    it("type specifier %", () => {
         expect(stdFormat("{:.0%}", 0)).toEqual("0%");
         expect(stdFormat("{:.1%}", 0)).toEqual("0.0%");
         expect(stdFormat("{:.2%}", 0)).toEqual("0.00%");
@@ -451,28 +477,13 @@ describe("stdFormat", () => {
         expect(() => stdFormat("{:x}", 1.23)).toThrow();
     });
 
-    it("miscellaneous", () => {
+    it("all together", () => {
         expect(stdFormat("{:*<+10.4f}", Math.PI, 314)).toEqual("+3.1416***");
         expect(stdFormat("{:+#09x}", 314)).toEqual("+0x00013a");
     });
 
-    it("throws", () => {
-        expect(() => stdFormat("{:{}f}", Math.PI, 10.1)).toThrow(); // Width is not integer
-        expect(() => stdFormat("{:{}f}", Math.PI, -10)).toThrow();  // Width is negative
-
-        expect(() => stdFormat("{:.{}f}", Math.PI, 5.2)).toThrow(); // Precision is not integer
-        expect(() => stdFormat("{:.{}f}", Math.PI, -2)).toThrow();  // Precision is negative
-
-        expect(() => stdFormat("{:d}", "hello")).toThrow();  // String with number type
-        expect(() => stdFormat("{:.2f}", "100")).toThrow();  // String with number type
-
-        expect(() => stdFormat(":{^5")).toThrow(); // Invalid fill character
-        expect(() => stdFormat(":}^5")).toThrow(); // Invalid fill character
-
-        expect(() => stdFormat("{:n}", 10)).toThrow(); // Locale specifiers not implemented
-        expect(() => stdFormat("{:Ld}", 10)).toThrow(); // Locale specifiers not implemented
-
+    it("invalid argument object", () => {
         expect(() => stdFormat("{}", {})).toThrow();
-        expect(() => stdFormat("{}", BigInt(0))).toThrow(); // BitInt not yet supported
+        expect(() => stdFormat("{}", BigInt(0))).toThrow(); // BigInt not yet implemented
     });
 });
