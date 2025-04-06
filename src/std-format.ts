@@ -300,13 +300,8 @@ class NumberFormatter {
             return;
         }
 
-        // Set sign
-        this.sign = value < 0 ? -1 : +1;
-
-        // Is negative zero?
-        if (1.0 / value === -Infinity && this.sign > 0) {
-            this.sign = -1;
-        }
+        // Get sign (also negative zero is negative).
+        this.sign = (value < 0 || 1.0 / value === -Infinity) ? -1 : +1;
 
         // Get absolute value
         let absValue = Math.abs(value);
