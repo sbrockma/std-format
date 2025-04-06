@@ -486,4 +486,9 @@ describe("std format", () => {
         expect(() => stdFormat("{}", {})).toThrow();
         expect(() => stdFormat("{}", BigInt(0))).toThrow(); // BigInt not yet implemented
     });
+
+    it("test number digitizer algorithm", () => {
+        expect(stdFormat("{:.3f}", 230.023)).toEqual("230.023");
+        expect(stdFormat("{:.5f}", 500.005)).toEqual("500.00500");
+    });
 });

@@ -312,50 +312,71 @@ class NumberFormatter {
 
         // Initialize digits to empty.
         this.digits = [];
+        this.dotPos = 0;
+        this.exp = 0;
 
         // Get integer part didigts. Repeat while remaining integer part > 0
         while (intPart > 0) {
             // Calculate digit
             let digit = intPart % this.base;
 
-            // Add digit to left of digit array.
-            this.digits.unshift(digit);
+            if (this.digits.length === 0 && digit === 0) {
+                // Do not add trailing zeroes, just increase exponent.
+                this.exp++;
+            }
+            else {
+                // Add digit to left of digits array.
+                this.digits.unshift(digit);
+
+                // Increase dot position so it keeps pointing after last digit.
+                this.dotPos++;
+            }
 
             // Make next digit to become lowest digit of integer part.
             intPart = Math.floor(intPart / this.base);
         }
 
-        // Set dot position after integer part digits, and exponent to zero.
-        this.dotPos = this.digits.length;
-        this.exp = 0;
+        // Get fraction part digits.
+        if (fracPart > 0) {
+            // Have to add trailing zeroes of integer part before adding fraction digits.
+            while (this.exp > 0) {
+                // Add trailing zero.
+                this.digits.push(0);
 
-        // Get fraction part digits. Repeat while remaining fraction part > 0.
-        while (fracPart > 0) {
-            // Multiply frac part to make left most digit integer.
-            fracPart *= this.base;
-
-            // Left most digit is now integer part.
-            let digit = Math.floor(fracPart);
-
-            // Remove digit from fractional part.
-            fracPart -= digit;
-
-            if (digit === 0 && this.digits.length === 0) {
-                // Digit is zero and digits is still empty, no integer, no fraction part.
-                // Getting smaller number, decrease exponent.
+                // Increase dot position to keep it pointing after last digit,
+                // and decrease exponent to keep total value unchanged.
+                this.dotPos++;
                 this.exp--;
             }
-            else if (digit > 0 && this.digits.length === 0) {
-                // Got non-zero digit but digits is still empty, let's add first digit.
-                this.digits.push(digit);
 
-                // Decrease exponent, and set dot position after first digit.
-                this.exp--;
-                this.dotPos = 1;
-            }
-            else {
-                // Digits is not empty, lets just add new digit.
-                this.digits.push(digit);
+            // Repeat while remaining fraction part > 0.
+            while (fracPart > 0) {
+                // Multiply frac part to make left most digit integer.
+                fracPart *= this.base;
+
+                // Left most digit is now integer part.
+                let digit = Math.floor(fracPart);
+
+                // Remove digit from fractional part.
+                fracPart -= digit;
+
+                if (digit === 0 && this.digits.length === 0) {
+                    // Digit is zero and digits is still empty, there is no integer nor fraction part.
+                    // Getting smaller number, decrease exponent.
+                    this.exp--;
+                }
+                else if (digit > 0 && this.digits.length === 0) {
+                    // Got non-zero digit but digits is still empty, let's add first fraction digit.
+                    this.digits.push(digit);
+
+                    // Decrease exponent, and set dot position after first digit.
+                    this.exp--;
+                    this.dotPos = 1;
+                }
+                else {
+                    // Digits is not empty, lets just add new fraction digit.
+                    this.digits.push(digit);
+                }
             }
         }
 
@@ -365,6 +386,14 @@ class NumberFormatter {
             this.dotPos = 1;
             this.exp = 0;
         }
+
+        // The digitizer algorithm above works so that there should not be any leading or trailing zeroes.
+        assert(this.digits.length === 1 || this.digits.length > 1 && this.digits[0] !== 0 && this.digits[this.digits.length - 1] !== 0,
+            "Unexpected leading or trailing zero.");
+
+        // Make scientific notation (dot position = 1)
+        this.exp += this.dotPos - 1;
+        this.dotPos = 1;
 
         // Convert this number to notation specified by format specification.
         this.convertToNotation();
@@ -674,28 +703,6 @@ class NumberFormatter {
     private convertToNotation() {
         if (this.isNan() || this.isInf()) {
             return;
-        }
-
-        // Make dotPos = 1 (scientific)
-        this.exp += this.dotPos - 1;
-        this.dotPos = 1;
-
-        // Remove leading zeroes.
-        // Repeat while there is more than one digit and first digit is zero.
-        while (this.digits.length > 1 && this.digits[0] === 0) {
-            // Remove first digit.
-            this.digits.shift();
-
-            // Decrease exponent to keep number value unaltered, and dotPos remains 1.
-            this.exp--;
-        }
-
-        // Remove trailing zeroes.
-        // Repeat while there is more than one digits and last digit is zero.
-        while (this.digits.length > 1 && this.digits[this.digits.length - 1] === 0) {
-            // Remove last digit.
-            // No need to alter exponent, and dotPos remains 1.
-            this.digits.pop();
         }
 
         // Remove insignificant trailing zeroes (optionally leaving that one digit past dotPos)
