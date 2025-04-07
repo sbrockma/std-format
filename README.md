@@ -25,7 +25,7 @@ This is early release. Hoping to fix bugs and implement more features in future.
 Or
     
     // Import named exports.
-    import { stdFormat, StdFormatError, stdSpecificationHint } from "@sbrockma/std-format";
+    import { stdFormat } from "@sbrockma/std-format";
     
     let str = stdFormat("Hello {}!", "World");
     
@@ -70,7 +70,8 @@ Here are some simple examples.
 ### Class StdFormatError
 
     try {
-        let str = stdFormat("{:s}", 42)); // Argument 42 is not string.
+        // Raises exception because 42 is not string.
+        let str = stdFormat("{:s}", 42));
     } 
     catch(e) {
         if(e instanceof StdFormatError) {
@@ -78,8 +79,10 @@ Here are some simple examples.
         }
     }
 
-### Function stdSpecificationHint
+### Function stdSpecificationHint(specificationHint)
 
+    import { stdSpecificationHint } from "@sbrockma/std-format";
+    
     stdSpecificationHint("cpp");
     stdSpecificationHint("python");
 
@@ -90,3 +93,16 @@ If "python" then:
 If "cpp" then:
 * Octal numbers have prefix "0"
 * Boolean string is "true" or "false"
+
+### Function stdLocalerHint(locale)
+
+    import { stdLocaleHint } from "@sbrockma/std-format";
+
+    // Use locale "en-UK"
+    stdLocaleHint("en-UK");
+
+    // Use default locale
+    stdLocaleHint();
+
+Locale's decimal separator and group separator are used in number formatting when
+using type specifier "n" or locale specifier "L".

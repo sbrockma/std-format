@@ -1,4 +1,4 @@
-import { stdFormat, stdSpecificationHint } from "std-format";
+import { stdFormat, stdLocaleHint, stdSpecificationHint } from "std-format";
 
 describe("std format", () => {
     it("using curly braces", () => {
@@ -107,14 +107,15 @@ describe("std format", () => {
         expect(() => stdFormat("{:_n}", 1)).toThrow();
     });
 
-    it("type specifier n", () => {
-        // Not yet implemented.
-        expect(() => stdFormat("{:n}", 8)).toThrow();
+    it("type specifier n (en-UK)", () => {
+        stdLocaleHint("en-UK");
+        expect(stdFormat("{:n}", 5555555555)).toEqual("5,555,555,555");
     });
 
-    it("locale specifier L", () => {
-        // Not yet implemented.
-        expect(() => stdFormat("{:Ld}", 8)).toThrow();
+    it("locale specifier L (en-UK)", () => {
+        stdLocaleHint("en-UK");
+        expect(stdFormat("{:Ld}", 4444444444)).toEqual("4,444,444,444");
+        expect(stdFormat("{:.2Lf}", 444444.4444)).toEqual("444,444.44");
     });
 
     it("sign", () => {

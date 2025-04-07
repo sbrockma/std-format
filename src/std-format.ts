@@ -139,6 +139,35 @@ export function stdSpecificationHint(specHint: "cpp" | "python") {
     }
 }
 
+// Get user/system locale
+function getUserLocale(): string | undefined {
+    if (navigator) {
+        return navigator.languages ? navigator.languages[0] : navigator?.language ?? Intl.DateTimeFormat().resolvedOptions().locale;
+    }
+    else {
+        return Intl.DateTimeFormat().resolvedOptions().locale;
+    }
+}
+
+// Set default locale. Use "en-UK" as fallback.
+let defaultLocale: string = getUserLocale() ?? "en-UK";
+
+// Locale's decimal and group separators.
+let localeDecimalSeparator = ".";
+let localeGroupSeparator = ",";
+
+// Set locale that will be used in locale based formatting.
+export function stdLocaleHint(locale?: string | undefined) {
+    let nf = Intl.NumberFormat(!locale ? defaultLocale : locale).formatToParts(33333.3);
+
+    // Extract decimal and group separators.
+    localeDecimalSeparator = nf.find(part => part.type === "decimal")?.value ?? ".";
+    localeGroupSeparator = nf.find(part => part.type === "group")?.value ?? ",";
+}
+
+// Init with default locale
+stdLocaleHint();
+
 /**
  * https://en.cppreference.com/w/cpp/utility/format/spec
  * https://docs.python.org/3/library/string.html#formatspec
@@ -217,13 +246,10 @@ class FormatSpecification {
         this.type = (type === "" || type && "scbBodxXaAeEfFgG?%n".indexOf(type) >= 0) ? type as any : "";
 
         // Unimplemented specifiers
-        if (this.locale !== undefined) {
-            throw StdFormatError.SpecifierIsNotImplemented(this.locale);
-        }
-        else if (this.zeta !== undefined) {
+        if (this.zeta !== undefined) {
             throw StdFormatError.SpecifierIsNotImplemented(this.zeta);
         }
-        else if (this.isType("n?")) {
+        else if (this.isType("?")) {
             throw StdFormatError.SpecifierIsNotImplemented(this.type);
         }
     }
@@ -865,6 +891,7 @@ class NumberFormatter {
                 return { decimalSeparator: ".", groupSeparator: ",", groupSize: 3 }
             }
             else {
+                // Cannot use ',' with fs.type.
                 throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, grouping);
             }
         }
@@ -878,8 +905,24 @@ class NumberFormatter {
                 return { decimalSeparator: ".", groupSeparator: "_", groupSize: 4 }
             }
             else {
+                // Cannot use '_' with fs.type.
                 throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, grouping);
             }
+        }
+        else if (fs.locale) {
+            // The L option causes the locale-specific form to be used. This option is only valid for arithmetic types.
+            if (fs.isType("deEfFgGaA")) {
+                // Use locale's decimal and group separators.
+                return { decimalSeparator: localeDecimalSeparator, groupSeparator: localeGroupSeparator, groupSize: 3 }
+            }
+            else {
+                // Cannot use 'L' with fs.type.
+                throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, fs.locale);
+            }
+        }
+        else if (fs.isType("n")) {
+            // Use locale's decimal and group separators.
+            return { decimalSeparator: localeDecimalSeparator, groupSeparator: localeGroupSeparator, groupSize: 3 }
         }
         else {
             // If no grouping then set grouping separator to empty string and group size to Infinity.
@@ -1017,11 +1060,29 @@ class NumberFormatter {
     }
 }
 
+// Check if string formating specifiers are valid.
+function validateStringFormatting(str: string, fs: FormatSpecification) {
+    if (fs.align === "=") {
+        // Align specifier '=' cannot be used with string.
+        throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, fs.align);
+    }
+    else if (fs.grouping !== undefined) {
+        // Grouping specifiers ',' and '_' cannot be used with string.
+        throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, fs.grouping);
+    }
+    else if (fs.locale !== undefined) {
+        // Locale specifier 'L' cannot be used with string.
+        throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, fs.locale);
+    }
+
+    return str;
+}
+
 // Formats the replacement field.
 // @arg is the argument given to stdFormat("", arg0, arg1, ...)
 // @fs is the parsed format specification.
 function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
-    let { align, fill, grouping, locale } = fs;
+    let { align, fill } = fs;
 
     // Convert to valid argument: string or number.
     let argStr: string;
@@ -1029,42 +1090,31 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
     // Is type specifier number compatible?
     let isFsTypeNumberCompatible = fs.isType("", "bBodxXaAeEfFgGn%");
 
-    function numberToString(arg: number | bigint): string {
+    function formatNumber(arg: number | bigint): string {
         // Default align for number is right.
         align ??= ">";
 
-        //Number to string using NumberFormatter.
+        // Format number to string.
         return new NumberFormatter(arg, fs).toString();
     }
 
-    function stringToString(arg: string): string {
+    function formatString(arg: string): string {
         // Default align for string is left.
         align ??= "<";
 
-        // Check for invalid specifiers to use with string
-        if (align === "=") {
-            throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, align);
-        }
-        else if (grouping !== undefined) {
-            throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, grouping);
-        }
-        else if (locale !== undefined) {
-            throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, locale);
-        }
-
-        // Return string
-        return arg;
+        // Validate string formatting.
+        return validateStringFormatting(arg, fs);
     }
 
     if (typeof arg === "boolean") {
         // Argument can be boolean.
         if (fs.isType("", "s")) {
             // Convert boolean to string, if type is default '' or string 's'.
-            argStr = stringToString(arg ? trueString : falseString);
+            argStr = formatString(arg ? trueString : falseString);
         }
         else if (isFsTypeNumberCompatible) {
             // Convert boolean to number 0 or 1.
-            argStr = numberToString(arg ? 1 : 0);
+            argStr = formatNumber(arg ? 1 : 0);
         }
         else {
             // Invalid argument conversion from boolean.
@@ -1075,11 +1125,11 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
         // Argument can be number or bigint.
         if (fs.isType("c")) {
             // If type is 'c' then use argument as char code to convert it to char (string).
-            argStr = stringToString(String.fromCharCode(getNumber(arg)));
+            argStr = formatString(String.fromCharCode(getNumber(arg)));
         }
         else if (isFsTypeNumberCompatible) {
             // Use number argument as it is.
-            argStr = numberToString(arg);
+            argStr = formatNumber(arg);
         }
         else {
             // Invalid argument conversion from number.
@@ -1091,11 +1141,11 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
         if (fs.isType("dxXobB") && arg.length === 1) {
             // If type is integer then use single char string argument
             // as char and convert it to char code (integer).
-            argStr = numberToString(arg.charCodeAt(0));
+            argStr = formatNumber(arg.charCodeAt(0));
         }
         else if (fs.isType("", "s") || fs.isType("c") && arg.length === 1) {
             // Else use string argument as it is.
-            argStr = stringToString(arg);
+            argStr = formatString(arg);
         }
         else {
             // Invalid argument conversion from string.
