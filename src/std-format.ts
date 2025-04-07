@@ -14,6 +14,20 @@ function isInteger(n: number): boolean {
     return !isNaN(n) && isFinite(n) && n === Math.trunc(n);
 }
 
+// Get number from number or bigint.
+function getNumber(n: number | bigint): number {
+    if (typeof n === "bigint") {
+        // Make sure bigint is in safe number range.
+        assert(n <= Number.MAX_SAFE_INTEGER && n >= Number.MIN_SAFE_INTEGER, "Cannot get number from bigint, too big value.");
+        // Return bigint as number.
+        return Number(n);
+    }
+    else {
+        // Return number.
+        return n;
+    }
+}
+
 // Exceoption class, trown on format and value errors.
 export class StdFormatError extends Error {
     // private constructor. Use static functions below to create error objects.
@@ -996,18 +1010,8 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
         return arg;
     }
 
-    function getNumber(n: number | bigint): number {
-        if (typeof n === "bigint") {
-            assert(n <= Number.MAX_SAFE_INTEGER && n >= Number.MIN_SAFE_INTEGER, "Cannot get number from bigint, too big value.");
-            return Number(n);
-        }
-        else {
-            return n;
-        }
-    }
-
     if (typeof arg === "boolean") {
-        // Field value can be boolean.
+        // Argument can be boolean.
         if (fs.isType("", "s")) {
             // Convert boolean to string, if type is default '' or string 's'.
             argStr = stringToString(arg ? trueString : falseString);
@@ -1022,7 +1026,7 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
         }
     }
     else if (typeof arg === "number" || typeof arg === "bigint") {
-        // Argument is number.
+        // Argument can be number or bigint.
         if (fs.isType("c")) {
             // If type is 'c' then use argument as char code to convert it to char (string).
             argStr = stringToString(String.fromCharCode(getNumber(arg)));
@@ -1037,7 +1041,7 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
         }
     }
     else if (typeof arg === "string") {
-        // Argument is string.
+        // Argument can be string.
         if (fs.isType("dxXobB") && arg.length === 1) {
             // If type is integer then use single char string argument
             // as char and convert it to char code (integer).

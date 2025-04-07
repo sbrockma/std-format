@@ -487,8 +487,9 @@ describe("std format", () => {
     });
 
     it("supported arguments", () => {
-        // string, char, number, bigint
-        expect(stdFormat("{:s} {:c} {:d} {:d}", "string", "c", 10, BigInt("999"))).toEqual("string c 10 999");
+        stdSpecificationHint("cpp");
+        // boolean, string, char, number, bigint
+        expect(stdFormat("{:s} {:s} {:c} {:d} {:d}", true, "string", "c", 10, BigInt("999"))).toEqual("true string c 10 999");
     });
 
     it("bigint", () => {

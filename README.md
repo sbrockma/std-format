@@ -62,8 +62,8 @@ Here are some simple examples.
     // Scientific notation
     stdFormat("{:.2e}", 1);
 
-    // Supported arguments are string, char, number and bigint
-    stdFormat("{:s} {:c} {:d} {:d}", "string", "c", 10, BigInt("999"));
+    // Supported arguments are boolean, string, char, number and bigint
+    stdFormat("{:s} {:s} {:c} {:d} {:d}", true, "string", "c", 10, BigInt("999"));
 
     // And so on...
 
