@@ -935,22 +935,44 @@ class NumberFormatter {
 // @arg is the argument given to stdFormat("", arg0, arg1, ...)
 // @fs is the parsed format specification.
 function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
-    let { align, fill, type } = fs;
+    let { align, fill } = fs;
 
     // Convert to valid argument: string or number.
-    let validArg: number | string;
+    let argStr: string;
 
-    let isNumberCompatibleType = fs.isType("", "bBodxXaAeEfFgGn%");
+    // Is type specifier number compatible?
+    let isFsTypeNumberCompatible = fs.isType("", "bBodxXaAeEfFgGn%");
+
+    function numberToString(arg: number): string {
+        // Default align for number is right.
+        align ??= ">";
+
+        //Number to string using NumberFormatter.
+        return new NumberFormatter(arg, fs).toString();
+    }
+
+    function stringToString(arg: string): string {
+        // Default align for string is left.
+        align ??= "<";
+
+        // Is invalid align for string.
+        if (align === "=") {
+            throw StdFormatError.InvalidFormatSpecification(fs);
+        }
+
+        // Return string
+        return arg;
+    }
 
     if (typeof arg === "boolean") {
         // Field value can be boolean.
         if (fs.isType("", "s")) {
             // Convert boolean to string, if type is default '' or string 's'.
-            validArg = arg ? trueString : falseString;
+            argStr = stringToString(arg ? trueString : falseString);
         }
-        else if (isNumberCompatibleType) {
+        else if (isFsTypeNumberCompatible) {
             // Convert boolean to number 0 or 1.
-            validArg = arg ? 1 : 0;
+            argStr = numberToString(arg ? 1 : 0);
         }
         else {
             // Invalid argument conversion from boolean.
@@ -961,15 +983,15 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
         // Argument is number.
         if (fs.isType("c")) {
             // If type is 'c' then use argument as char code to convert it to char (string).
-            validArg = String.fromCharCode(arg);
+            argStr = stringToString(String.fromCharCode(arg));
         }
-        else if (!isNumberCompatibleType) {
-            // Invalid argument conversion from number.
-            throw StdFormatError.InvalidArgumentConversion(arg, fs.type);
+        else if (isFsTypeNumberCompatible) {
+            // Use number argument as it is.
+            argStr = numberToString(arg);
         }
         else {
-            // Else use number argument as it is.
-            validArg = arg;
+            // Invalid argument conversion from number.
+            throw StdFormatError.InvalidArgumentConversion(arg, fs.type);
         }
     }
     else if (typeof arg === "string") {
@@ -977,11 +999,15 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
         if (fs.isType("dxXobB") && arg.length === 1) {
             // If type is integer then use single char string argument
             // as char and convert it to char code (integer).
-            validArg = arg.charCodeAt(0);
+            argStr = numberToString(arg.charCodeAt(0));
+        }
+        else if (fs.isType("", "s") || fs.isType("c") && arg.length === 1) {
+            // Else use string argument as it is.
+            argStr = stringToString(arg);
         }
         else {
-            // Else use string argument as it is.
-            validArg = arg;
+            // Invalid argument conversion from string.
+            throw StdFormatError.InvalidArgumentConversion(arg, fs.type);
         }
     }
     else {
@@ -989,38 +1015,10 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
         throw StdFormatError.InvalidArgument(arg);
     }
 
-    // Next convert valid argument to string.
-    let argStr = "";
-
-    if (typeof validArg === "number") {
-        // Argument is number. Use NumberFormatter to format it to string.
-        argStr = new NumberFormatter(validArg, fs).toString();
-    }
-    else {
-        // Else argument  is string
-        if (fs.isType("", "s") || fs.isType("c") && validArg.length === 1) {
-            // If type is default '', string 's' or single char 'c' then use argument as it is (string).
-            argStr = validArg;
-        }
-        else {
-            // Unable to format string by given type scecifier.
-            throw StdFormatError.InvalidArgumentConversion(validArg, fs.type);
-        }
-    }
-
-    // Now argStr contains string representation of the argument.
-    // Apply fill and alignment according to format specification fs.
+    // Next apply fill and alignment according to format specification.
 
     // Get width of field or 0 if not given.
     let width = fs.width ?? 0;
-
-    // Is invalid align for string?
-    if (align === "=" && typeof validArg === "string") {
-        throw StdFormatError.InvalidFormatSpecification(fs);
-    }
-
-    // If align is undefined then set default '>' for numbers and else '<' for strings.
-    align ??= typeof validArg === "number" ? ">" : "<";
 
     // Calculate fillCount
     let fillCount = Math.max(0, width - argStr.length);
