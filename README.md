@@ -10,7 +10,7 @@ This is early release. Hoping to fix bugs and implement more features in future.
 
 ## Install
 
-TODO
+    npm install @sbrockma/std-format
 
 ## Import
 

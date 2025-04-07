@@ -2,7 +2,7 @@
     "name": "@sbrockma/std-format",
     "version": "1.0.0",
     "author": "Stefan Brockmann <stefanprogram@hotmail.com>",
-    "private": true,
+    "private": false,
     "license": "zlib",
     "description": "String formatting of curly braces notation for TS/JS.",
     "homepage": "https://github.com/sbrockma/std-format#readme",

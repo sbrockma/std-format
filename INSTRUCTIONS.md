@@ -2,7 +2,7 @@
 
 ## Tasks
 
-### Run test
+### Run Test
 
     npm run test
 
