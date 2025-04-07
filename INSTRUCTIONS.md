@@ -19,3 +19,8 @@
 
     npm login
     npm publish --access public
+
+## Create Change Log
+
+    git log --pretty="- %s"
+
