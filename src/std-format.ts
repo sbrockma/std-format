@@ -38,7 +38,7 @@ export class StdFormatError extends Error {
     }
 
     // Create invalid argument conversion error.
-    static InvalidArgumentConversion(arg: number | string | boolean, fsType: string) {
+    static InvalidArgumentConversion(arg: number | bigint | string | boolean, fsType: string) {
         return new StdFormatError("Invalid argument '" + String(arg) + "' (" + typeof arg + ") to format specifier '" + fsType + "'.");
     }
 
@@ -260,7 +260,7 @@ class NumberFormatter {
 
     // Constructor of NumberFormatter class.
     // Passed arguments are number @value and format specification @fs.
-    constructor(value: number, readonly fs: FormatSpecification) {
+    constructor(value: number | bigint, readonly fs: FormatSpecification) {
         // Set base
         if (fs.isType("bB")) {
             this.base = 2;
@@ -275,101 +275,133 @@ class NumberFormatter {
             this.base = 10;
         }
 
-        // Handle special numbers nan and +-inf
-        if (isNaN(value)) {
-            // Set sign = NaN and digits = [NaN].
-            // Initialize dotPos and exp to something.
-            this.sign = NaN;
-            this.digits = [NaN];
-            this.dotPos = NaN;
-            this.exp = NaN;
-            return;
-        }
-        else if (Math.abs(value) === Infinity) {
-            // Set sign = +-1 and digits = [+-Infinity].
-            // Initialize dotPos and exp to something.
-            this.sign = value < 0 ? -1 : +1;
-            this.digits = [value];
-            this.dotPos = 1;
-            this.exp = 0;
-            return;
-        }
-
-        // Initialize digits, dot position and exponent.
+        // Initialize sign, digits, dot position and exponent to initial values.
+        this.sign = 1;
         this.digits = [];
         this.dotPos = 0;
         this.exp = 0;
 
-        // Get sign (also negative zero is negative).
-        this.sign = (value < 0 || 1.0 / value === -Infinity) ? -1 : +1;
-
-        // Split absolute value into integer and fractional parts.
-        let absValue = Math.abs(value);
-        let intPart = Math.floor(absValue);
-        let fracPart = absValue - intPart;
-
-        // Get integer part didigts. Repeat while remaining integer part > 0
-        while (intPart > 0) {
-            // Calculate digit
-            let digit = intPart % this.base;
-
-            if (this.digits.length === 0 && digit === 0) {
-                // Do not add trailing zeroes, just increase exponent.
-                this.exp++;
+        if (typeof value === "number") {
+            // Handle special numbers nan and +-inf
+            if (isNaN(value)) {
+                // Set sign = NaN and digits = [NaN].
+                // Initialize dotPos and exp to something.
+                this.sign = NaN;
+                this.digits = [NaN];
+                this.dotPos = NaN;
+                this.exp = NaN;
+                return;
             }
-            else {
-                // Add digit to left of digits array.
-                this.digits.unshift(digit);
-
-                // Increase dot position so it keeps pointing after last digit.
-                this.dotPos++;
+            else if (Math.abs(value) === Infinity) {
+                // Set sign = +-1 and digits = [+-Infinity].
+                // Initialize dotPos and exp to something.
+                this.sign = value < 0 ? -1 : +1;
+                this.digits = [value];
+                this.dotPos = 1;
+                this.exp = 0;
+                return;
             }
 
-            // Make next digit to become lowest digit of integer part.
-            intPart = Math.floor(intPart / this.base);
-        }
+            // Get sign (also negative zero is negative).
+            this.sign = (value < 0 || 1.0 / value === -Infinity) ? -1 : +1;
 
-        // Get fraction part digits.
-        if (fracPart > 0) {
-            // Have to add trailing zeroes of integer part before adding fraction digits.
-            while (this.exp > 0) {
-                // Add trailing zero.
-                this.digits.push(0);
+            // Split absolute value into integer and fractional parts.
+            let absValue = Math.abs(value);
+            let intPart = Math.floor(absValue);
+            let fracPart = absValue - intPart;
 
-                // Increase dot position to keep it pointing after last digit,
-                // and decrease exponent to keep total value unchanged.
-                this.dotPos++;
-                this.exp--;
-            }
+            // Get integer part digits. Repeat while remaining integer part > 0
+            while (intPart > 0) {
+                // Calculate digit
+                let digit = intPart % this.base;
 
-            // Repeat while remaining fraction part > 0.
-            while (fracPart > 0) {
-                // Multiply frac part to make left most digit integer.
-                fracPart *= this.base;
-
-                // Left most digit is now integer part.
-                let digit = Math.floor(fracPart);
-
-                // Remove digit from fractional part.
-                fracPart -= digit;
-
-                if (digit === 0 && this.digits.length === 0) {
-                    // Digit is zero and digits is still empty, there is no integer nor fraction part.
-                    // Getting smaller number, decrease exponent.
-                    this.exp--;
-                }
-                else if (digit > 0 && this.digits.length === 0) {
-                    // Got non-zero digit but digits is still empty, let's add first fraction digit.
-                    this.digits.push(digit);
-
-                    // Decrease exponent, and set dot position after first digit.
-                    this.exp--;
-                    this.dotPos = 1;
+                if (this.digits.length === 0 && digit === 0) {
+                    // Do not add trailing zeroes, just increase exponent.
+                    this.exp++;
                 }
                 else {
-                    // Digits is not empty, lets just add new fraction digit.
-                    this.digits.push(digit);
+                    // Add digit to left of digits array.
+                    this.digits.unshift(digit);
+
+                    // Increase dot position so it keeps pointing after last digit.
+                    this.dotPos++;
                 }
+
+                // Make next digit to become lowest digit of integer part.
+                intPart = Math.trunc(intPart / this.base);
+            }
+
+            // Get fraction part digits.
+            if (fracPart > 0) {
+                // Have to add trailing zeroes of integer part before adding fraction digits.
+                while (this.exp > 0) {
+                    // Add trailing zero.
+                    this.digits.push(0);
+
+                    // Increase dot position to keep it pointing after last digit,
+                    // and decrease exponent to keep total value unchanged.
+                    this.dotPos++;
+                    this.exp--;
+                }
+
+                // Repeat while remaining fraction part > 0.
+                while (fracPart > 0) {
+                    // Multiply frac part to make left most digit integer.
+                    fracPart *= this.base;
+
+                    // Left most digit is now integer part.
+                    let digit = Math.floor(fracPart);
+
+                    // Remove digit from fractional part.
+                    fracPart -= digit;
+
+                    if (digit === 0 && this.digits.length === 0) {
+                        // Digit is zero and digits is still empty, there is no integer nor fraction part.
+                        // Getting smaller number, decrease exponent.
+                        this.exp--;
+                    }
+                    else if (digit > 0 && this.digits.length === 0) {
+                        // Got non-zero digit but digits is still empty, let's add first fraction digit.
+                        this.digits.push(digit);
+
+                        // Decrease exponent, and set dot position after first digit.
+                        this.exp--;
+                        this.dotPos = 1;
+                    }
+                    else {
+                        // Digits is not empty, lets just add new fraction digit.
+                        this.digits.push(digit);
+                    }
+                }
+            }
+        }
+        else if (typeof value === "bigint") {
+            // Get sign.
+            this.sign = value < 0 ? -1 : +1;
+
+            // Get absolute integer parts.
+            let intPart = value < 0 ? -value : value;
+
+            // Get integer part digits. Repeat while remaining integer part > 0
+            while (intPart > 0) {
+                // Calculate digit
+                let digit = Number(intPart % BigInt(this.base));
+
+                if (this.digits.length === 0 && digit === 0) {
+                    // Do not add trailing zeroes, just increase exponent.
+                    this.exp++;
+                }
+                else {
+                    // Add digit to left of digits array.
+                    this.digits.unshift(digit);
+
+                    // Increase dot position so it keeps pointing after last digit.
+                    this.dotPos++;
+                }
+
+                // Make next digit to become lowest digit of integer part.
+                // bigint division truncates.
+                intPart = intPart / BigInt(this.base);
             }
         }
 
@@ -943,7 +975,7 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
     // Is type specifier number compatible?
     let isFsTypeNumberCompatible = fs.isType("", "bBodxXaAeEfFgGn%");
 
-    function numberToString(arg: number): string {
+    function numberToString(arg: number | bigint): string {
         // Default align for number is right.
         align ??= ">";
 
@@ -964,6 +996,16 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
         return arg;
     }
 
+    function getNumber(n: number | bigint): number {
+        if (typeof n === "bigint") {
+            assert(n <= Number.MAX_SAFE_INTEGER && n >= Number.MIN_SAFE_INTEGER, "Cannot get number from bigint, too big value.");
+            return Number(n);
+        }
+        else {
+            return n;
+        }
+    }
+
     if (typeof arg === "boolean") {
         // Field value can be boolean.
         if (fs.isType("", "s")) {
@@ -979,11 +1021,11 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
             throw StdFormatError.InvalidArgumentConversion(arg, fs.type);
         }
     }
-    else if (typeof arg === "number") {
+    else if (typeof arg === "number" || typeof arg === "bigint") {
         // Argument is number.
         if (fs.isType("c")) {
             // If type is 'c' then use argument as char code to convert it to char (string).
-            argStr = stringToString(String.fromCharCode(arg));
+            argStr = stringToString(String.fromCharCode(getNumber(arg)));
         }
         else if (isFsTypeNumberCompatible) {
             // Use number argument as it is.

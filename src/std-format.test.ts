@@ -484,10 +484,37 @@ describe("std format", () => {
 
     it("invalid argument object", () => {
         expect(() => stdFormat("{}", {})).toThrow();
-        expect(() => stdFormat("{}", BigInt(0))).toThrow(); // BigInt not yet implemented
     });
 
-    it("test number digitizer algorithm", () => {
+    it("supported arguments", () => {
+        // string, char, number, bigint
+        expect(stdFormat("{:s} {:c} {:d} {:d}", "string", "c", 10, BigInt("999"))).toEqual("string c 10 999");
+    });
+
+    it("bigint", () => {
+        // bigint has no separate negative/positive zero, just zero
+        expect(stdFormat("{}", BigInt("-0"))).toEqual("0");
+        expect(stdFormat("{}", BigInt("+0"))).toEqual("0");
+
+        expect(stdFormat("{:d}", BigInt("123456789012345678901234567890"))).toEqual("123456789012345678901234567890");
+        expect(stdFormat("{:d}", BigInt("-123456789012345678901234567890"))).toEqual("-123456789012345678901234567890");
+
+        expect(stdFormat("{}", BigInt("90000000000000000000000"))).toEqual("90000000000000000000000");
+        expect(stdFormat("{}", BigInt("0000000009"))).toEqual("9");
+
+        expect(stdFormat("{:.02f}", BigInt(1234))).toEqual("1234.00");
+        expect(stdFormat("{:.02f}", BigInt(9876))).toEqual("9876.00");
+
+        expect(stdFormat("{:.02e}", BigInt(1234))).toEqual("1.23e+03");
+        expect(stdFormat("{:.02e}", BigInt(9876))).toEqual("9.88e+03");
+
+        expect(stdFormat("{:d}", BigInt("0x0A"))).toEqual("10");
+        expect(stdFormat("{:x}", BigInt("0x0A"))).toEqual("a");
+        expect(stdFormat("{}", BigInt("0b0011"))).toEqual("3");
+    });
+
+    it("number digitizer algorithm", () => {
+        // Handle zeroes around decimal dot
         expect(stdFormat("{:.3f}", 230.023)).toEqual("230.023");
         expect(stdFormat("{:.5f}", 500.005)).toEqual("500.00500");
     });
