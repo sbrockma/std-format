@@ -213,6 +213,27 @@ describe("std format", () => {
         expect(stdFormat("{:.2e}", +0.0)).toEqual("0.00e+00");
         expect(stdFormat("{:+.2e}", -0.0)).toEqual("-0.00e+00");
         expect(stdFormat("{:+.2e}", +0.0)).toEqual("+0.00e+00");
+
+        expect(stdFormat("{:.2f}", +0.0005)).toEqual("0.00");
+        expect(stdFormat("{:.2f}", -0.0005)).toEqual("-0.00");
+
+    });
+
+    it("specifier 'z'", () => {
+        expect(stdFormat("{:zg}", +0)).toEqual("0");
+        expect(stdFormat("{:zg}", -0)).toEqual("0");
+
+        expect(stdFormat("{:z.2f}", +0.0005)).toEqual("0.00");
+        expect(stdFormat("{:z.2f}", -0.0005)).toEqual("0.00");
+
+        // Only valid for foating point types.
+        expect(() => stdFormat("{:z}", -0)).toThrow();
+        expect(() => stdFormat("{:zd}", -0)).toThrow();
+    });
+
+    it("type specifier '?'", () => {
+        // Not yet implemented.
+        expect(() => stdFormat("{:?}", 0)).toThrow();
     });
 
     it("nan", () => {

@@ -246,10 +246,7 @@ class FormatSpecification {
         this.type = (type === "" || type && "scbBodxXaAeEfFgG?%n".indexOf(type) >= 0) ? type as any : "";
 
         // Unimplemented specifiers
-        if (this.zeta !== undefined) {
-            throw StdFormatError.SpecifierIsNotImplemented(this.zeta);
-        }
-        else if (this.isType("?")) {
+        if (this.isType("?")) {
             throw StdFormatError.SpecifierIsNotImplemented(this.type);
         }
     }
@@ -467,7 +464,8 @@ class NumberFormatter {
 
     // Is this number zero?
     private isZero() {
-        return this.digits.length === 1 && this.digits[0] === 0;
+        // After conversion zero can have more than one zero digits, for exmaple "0.00".
+        return this.digits.length >= 1 && this.digits.every(d => d === 0);
     }
 
     // Is this number integer?
@@ -859,6 +857,17 @@ class NumberFormatter {
         else {
             // All types should have been handled.
             assert(false, "Unhandled type: " + this.fs.type);
+        }
+
+        if (fs.zeta === "z") {
+            // The 'z' option coerces negative zero floating-point values to positive zero after rounding
+            // to the format precision. This option is only valid for floating-point presentation types.
+            if (!fs.isType("eEfFgGaA")) {
+                throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, fs.zeta);
+            }
+            else if (this.isZero() && this.sign === -1) {
+                this.sign = 1;
+            }
         }
 
         // Validate internal state.
