@@ -746,8 +746,8 @@ class NumberFormatter {
         let { fs } = this;
 
         // Now make conversion according to fs.type
-        if (fs.isType("") && (fs.precision !== undefined || !this.isInteger() || this.isZero())) {
-            // If type is default and has precision or is float or zero
+        if (fs.isType("") && (fs.precision !== undefined || !this.isInteger())) {
+            // If type is default, and has precision or is not integer.
 
             // This is almost like the 'g'. Use p = as large as needed to represent
             // the given value faithfully, if not given. Treat p = 0 as p = 1.
@@ -857,11 +857,13 @@ class NumberFormatter {
         if (fs.zeta === "z") {
             // The 'z' option coerces negative zero floating-point values to positive zero after rounding
             // to the format precision. This option is only valid for floating-point presentation types.
-            if (!fs.isType("eEfFgGaA")) {
-                throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, fs.zeta);
+            if (fs.isType("eEfFgGaA")) {
+                if (this.isZero() && this.sign === -1) {
+                    this.sign = 1;
+                }
             }
-            else if (this.isZero() && this.sign === -1) {
-                this.sign = 1;
+            else {
+                throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, fs.zeta);
             }
         }
 
