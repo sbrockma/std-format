@@ -14,6 +14,16 @@ function isInteger(n: number): boolean {
     return !isNaN(n) && isFinite(n) && n === Math.trunc(n);
 }
 
+// Function to convert digit value to digit character.
+function mapDigitToChar(d: number) {
+    return "0123456789abcdef"[d];
+}
+
+// Is value negative. For number  -0 is negative and +0 is positive.
+function isNegative(n: number | bigint) {
+    return typeof n === "bigint" ? (n < 0) : (n < 0 || 1.0 / n === -Infinity);
+}
+
 // Get number from number or bigint.
 function getNumber(n: number | bigint): number {
     if (typeof n === "bigint") {
@@ -224,19 +234,6 @@ class FormatSpecification {
         return types.some(type => this.type === type || this.type !== "" && type.indexOf(this.type) >= 0);
     }
 
-    // Get number prefix.
-    // If sharp is "#" then the prefix is:
-    //      Hexadecimal:     "0x"
-    //      Binary:          "0b"
-    //      Octal (cpp):     "0"
-    //      Octal (python):  "0o"
-    // Else prefix is ""
-    getNumberPrefix() {
-        return this.sharp === "#" ? (
-            this.isType("xX") ? "0x" : this.isType("bB") ? "0b" : this.isType("o") ? octalPrefix : ""
-        ) : "";
-    }
-
     // Get replacement field string.
     toString() {
         return this.replFieldString;
@@ -285,7 +282,7 @@ class NumberFormatter {
         }
 
         // Initialize sign, digits, dot position and exponent to initial values.
-        this.sign = 1;
+        this.sign = isNegative(value) ? -1 : +1;
         this.digits = [];
         this.dotPos = 0;
         this.exp = 0;
@@ -294,25 +291,21 @@ class NumberFormatter {
             // Handle special numbers nan and +-inf
             if (isNaN(value)) {
                 // Set sign = NaN and digits = [NaN].
-                // Initialize dotPos and exp to something.
                 this.sign = NaN;
                 this.digits = [NaN];
+                // Initialize dotPos and exp to something.
                 this.dotPos = NaN;
                 this.exp = NaN;
                 return;
             }
             else if (Math.abs(value) === Infinity) {
-                // Set sign = +-1 and digits = [+-Infinity].
+                // this.sign is already valid.
+                this.digits = [Math.abs(value)];
                 // Initialize dotPos and exp to something.
-                this.sign = value < 0 ? -1 : +1;
-                this.digits = [value];
                 this.dotPos = 1;
                 this.exp = 0;
                 return;
             }
-
-            // Get sign (also negative zero is negative).
-            this.sign = (value < 0 || 1.0 / value === -Infinity) ? -1 : +1;
 
             // Split absolute value into integer and fractional parts.
             let absValue = Math.abs(value);
@@ -385,9 +378,6 @@ class NumberFormatter {
             }
         }
         else if (typeof value === "bigint") {
-            // Get sign.
-            this.sign = value < 0 ? -1 : +1;
-
             // Get absolute integer parts.
             let intPart = value < 0 ? -value : value;
 
@@ -446,7 +436,7 @@ class NumberFormatter {
 
     // Is this number "+-inf"?
     private isInf() {
-        return this.digits.length === 1 && Math.abs(this.digits[0]) === Infinity;
+        return this.digits.length === 1 && this.digits[0] === Infinity;
     }
 
     // Is this number zero?
@@ -849,6 +839,21 @@ class NumberFormatter {
         this.validateInternalState();
     }
 
+    // Get number prefix.
+    // If sharp is "#" then the prefix is:
+    //      Hexadecimal:     "0x"
+    //      Binary:          "0b"
+    //      Octal (cpp):     "0"
+    //      Octal (python):  "0o"
+    // Else prefix is ""
+    getNumberPrefix() {
+        let { fs } = this;
+
+        return fs.sharp === "#" ? (
+            fs.isType("xX") ? "0x" : fs.isType("bB") ? "0b" : fs.isType("o") ? octalPrefix : ""
+        ) : "";
+    }
+
     // Get grouping properties
     private getGroupingProps(): { decimalSeparator: string, groupSeparator: string, groupSize: number } {
         let { fs } = this;
@@ -942,15 +947,12 @@ class NumberFormatter {
             // Get grouping props.
             let groupingProps = this.getGroupingProps();
 
-            // Function to convert digit to character.
-            const mapDigitToChar = (d: number) => "0123456789abcdef"[d];
-
             // Split digits to integer and fractional parts.
             let intDigits = this.digits.slice(0, this.dotPos);
             let fracDigits = this.digits.slice(this.dotPos);
 
             // Is there grouping?
-            if (groupingProps.groupSeparator === "" || groupingProps.groupSize === Infinity) {
+            if (groupingProps.groupSeparator === "" || intDigits.length <= groupingProps.groupSize) {
                 // There is no grouping. Add integer digits.
                 digits = intDigits.map(mapDigitToChar).join("");
             }
@@ -982,7 +984,7 @@ class NumberFormatter {
             }
 
             // Get prefix.
-            prefix = this.fs.getNumberPrefix();
+            prefix = this.getNumberPrefix();
 
             // Remove octal prefix "0" if digits is "0" to prevent "00".
             if (prefix === "0" && digits === "0") {
