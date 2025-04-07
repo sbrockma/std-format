@@ -244,11 +244,6 @@ class FormatSpecification {
         this.precision = precision_field_n !== undefined ? getNestedArgumentInt(precision_field_n) : (!!precision ? +precision : undefined);
         this.locale = locale === "L" ? locale : undefined;
         this.type = (type === "" || type && "scbBodxXaAeEfFgG?%n".indexOf(type) >= 0) ? type as any : "";
-
-        // Unimplemented specifiers
-        if (this.isType("?")) {
-            throw StdFormatError.SpecifierIsNotImplemented(this.type);
-        }
     }
 
     // Test if type is one of types given as argument.
@@ -1082,6 +1077,10 @@ function validateStringFormatting(str: string, fs: FormatSpecification) {
     else if (fs.locale !== undefined) {
         // Locale specifier 'L' cannot be used with string.
         throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, fs.locale);
+    }
+    else if (fs.isType("?")) {
+        // Here should format escape sequence string.
+        throw StdFormatError.SpecifierIsNotImplemented(fs.type);
     }
 
     return str;
