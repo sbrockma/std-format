@@ -654,25 +654,6 @@ class NumberFormatter {
         this.toPrecision(precision + 1, "precision");
     }
 
-    // Convert number to integer. Truncated, no rounding.
-    private toIntegerTrunc() {
-        if (this.isNan() || this.isInf()) {
-            return;
-        }
-
-        // Make exponent to zero.
-        this.toZeroExponent();
-
-        // If dotPos < digits.length then there are digits after dot.
-        if (this.dotPos < this.digits.length) {
-            // Remove digits after dot
-            this.digits.splice(this.dotPos, this.digits.length - this.dotPos);
-        }
-
-        // Validate internal state
-        this.validateInternalState();
-    }
-
     // Convert number to normalised hexadecimal exponential notation
     private toNormalisedHexadecimalExponential() {
         if (this.isNan() || this.isInf() || this.isZero()) {
@@ -794,23 +775,23 @@ class NumberFormatter {
         else if (fs.isType("", "dbBoxXn")) {
             // Else if type is default '' or integer
 
-            // For integers -0 = +0 = 0
-            if (this.isZero() && this.sign === -1) {
-                this.sign = 1;
-            }
-
-            // Number must be integer
-            if (!this.isInteger()) {
-                throw StdFormatError.InvalidArgumentConversion("float", fs.type);
-            }
-
             // Precision not allowed for integer
             if (fs.precision !== undefined) {
                 throw StdFormatError.PrecisionNotAllowedForInteger();
             }
 
-            // Format to integer notation.
-            this.toIntegerTrunc();
+            // For integers -0 = +0 = 0
+            if (this.isZero() && this.sign === -1) {
+                this.sign = 1;
+            }
+
+            // Make exponent to zero.
+            this.toZeroExponent();
+
+            // Number must be integer
+            if (!this.isInteger()) {
+                throw StdFormatError.InvalidArgumentConversion("float", fs.type);
+            }
         }
         else if (fs.isType("aA")) {
             // Convert to normalised hexadecimal exponential notation.
