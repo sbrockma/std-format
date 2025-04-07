@@ -13,6 +13,9 @@ babel.config.json
 karma.conf.js
 tsconfig.json
 typedoc.json
-webpack.config.json
+webpack.config.js
 
 workspace.code-workspace
+
+CHANGE.md
+INSTRUCTIONS.md
