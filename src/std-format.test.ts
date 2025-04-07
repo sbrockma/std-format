@@ -34,13 +34,77 @@ describe("std format", () => {
     });
 
     it("grouping specifier ,", () => {
-        // Not yet implemented.
-        expect(() => stdFormat("{:,d}", 8)).toThrow();
+        // Apply grouping with type specifiers "deEfFgG"
+        expect(stdFormat("{:,d}", 12)).toEqual("12");
+        expect(stdFormat("{:,d}", 123)).toEqual("123");
+        expect(stdFormat("{:,d}", 1234)).toEqual("1,234");
+        expect(stdFormat("{:,d}", 12345)).toEqual("12,345");
+        expect(stdFormat("{:,d}", 123456)).toEqual("123,456");
+        expect(stdFormat("{:,d}", 1234567)).toEqual("1,234,567");
+        expect(stdFormat("{:,d}", 12345678)).toEqual("12,345,678");
+
+        expect(stdFormat("{:,.4e}", 123456.123456)).toEqual("1.2346e+05");
+        expect(stdFormat("{:,.4E}", 123456.123456)).toEqual("1.2346E+05");
+        expect(stdFormat("{:,.4f}", 123456.123456)).toEqual("123,456.1235");
+        expect(stdFormat("{:,.4F}", 123456.123456)).toEqual("123,456.1235");
+        expect(stdFormat("{:,.4g}", 123456.123456)).toEqual("1.235e+05");
+        expect(stdFormat("{:,.4G}", 123456.123456)).toEqual("1.235E+05");
+
+        expect(stdFormat("{:,d}", BigInt("5555555555555555555555555555555555555555"))).
+            toEqual("5,555,555,555,555,555,555,555,555,555,555,555,555,555");
+
+        // Unsupported type specifiers
+        expect(() => stdFormat("{:,}", 1)).toThrow();
+        expect(() => stdFormat("{:,b}", 1)).toThrow();
+        expect(() => stdFormat("{:,B}", 1)).toThrow();
+        expect(() => stdFormat("{:,o}", 1)).toThrow();
+        expect(() => stdFormat("{:,x}", 1)).toThrow();
+        expect(() => stdFormat("{:,X}", 1)).toThrow();
+        expect(() => stdFormat("{:,s}", 1)).toThrow();
+        expect(() => stdFormat("{:,c}", 1)).toThrow();
+        expect(() => stdFormat("{:,a}", 1)).toThrow();
+        expect(() => stdFormat("{:,A}", 1)).toThrow();
+        expect(() => stdFormat("{:,?}", 1)).toThrow();
+        expect(() => stdFormat("{:,%}", 1)).toThrow();
+        expect(() => stdFormat("{:,n}", 1)).toThrow();
     });
 
     it("grouping specifier _", () => {
-        // Not yet implemented.
-        expect(() => stdFormat("{:_d}", 8)).toThrow();
+        // Apply grouping with type specifiers "deEfFgG"
+        expect(stdFormat("{:_d}", 12)).toEqual("12");
+        expect(stdFormat("{:_d}", 123)).toEqual("123");
+        expect(stdFormat("{:_d}", 1234)).toEqual("1_234");
+        expect(stdFormat("{:_d}", 12345)).toEqual("12_345");
+        expect(stdFormat("{:_d}", 123456)).toEqual("123_456");
+        expect(stdFormat("{:_d}", 1234567)).toEqual("1_234_567");
+        expect(stdFormat("{:_d}", 12345678)).toEqual("12_345_678");
+
+        expect(stdFormat("{:_.4e}", 123456.123456)).toEqual("1.2346e+05");
+        expect(stdFormat("{:_.4E}", 123456.123456)).toEqual("1.2346E+05");
+        expect(stdFormat("{:_.4f}", 123456.123456)).toEqual("123_456.1235");
+        expect(stdFormat("{:_.4F}", 123456.123456)).toEqual("123_456.1235");
+        expect(stdFormat("{:_.4g}", 123456.123456)).toEqual("1.235e+05");
+        expect(stdFormat("{:_.4G}", 123456.123456)).toEqual("1.235E+05");
+
+        // Apply grouping with type specifiers "bBoxX" (group size = 4)
+        expect(stdFormat("{:_b}", 555)).toEqual("10_0010_1011");
+        expect(stdFormat("{:#_B}", 555)).toEqual("0B10_0010_1011");
+        expect(stdFormat("{:_o}", 444666888)).toEqual("32_4021_2010");
+        expect(stdFormat("{:#_x}", 8765432)).toEqual("0x85_bff8");
+        expect(stdFormat("{:_X}", 8765432)).toEqual("85_BFF8");
+
+        expect(stdFormat("{:_d}", BigInt("-5555555555555555555555555555555555555555"))).
+            toEqual("-5_555_555_555_555_555_555_555_555_555_555_555_555_555");
+
+        // Unsupported type specifiers
+        expect(() => stdFormat("{:_}", 1)).toThrow();
+        expect(() => stdFormat("{:_s}", 1)).toThrow();
+        expect(() => stdFormat("{:_c}", 1)).toThrow();
+        expect(() => stdFormat("{:_a}", 1)).toThrow();
+        expect(() => stdFormat("{:_A}", 1)).toThrow();
+        expect(() => stdFormat("{:_?}", 1)).toThrow();
+        expect(() => stdFormat("{:_%}", 1)).toThrow();
+        expect(() => stdFormat("{:_n}", 1)).toThrow();
     });
 
     it("type specifier n", () => {

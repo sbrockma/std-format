@@ -56,11 +56,6 @@ export class StdFormatError extends Error {
         return new StdFormatError("Invalid argument '" + String(arg) + "' (" + typeof arg + ") to format specifier '" + fsType + "'.");
     }
 
-    // Create invalid format specification error.
-    static InvalidFormatSpecification(fs: FormatSpecification) {
-        return new StdFormatError("Invalid format specification: '" + fs.toString() + "'.");
-    }
-
     // Create invalid field number error.
     static InvalidFieldNumber(fieldNumber: string) {
         return new StdFormatError("Invalid field number: '" + fieldNumber + "'.");
@@ -83,7 +78,12 @@ export class StdFormatError extends Error {
 
     // Create invalid specification hint error.
     static InvalidSpecificationHint(specHint: string) {
-        return new StdFormatError("Invalid specification hint \"" + specHint + "\". Valid values are \"cpp\" and \"python\".");
+        return new StdFormatError("Invalid specification hint '" + specHint + "'. Valid values are 'cpp' and 'python'.");
+    }
+
+    // Create invalid specification hint error.
+    static CannotUseTypeSpecifierWith(typeSpecifier: string, specifier: string) {
+        return new StdFormatError("Cannot use type specifier '" + typeSpecifier + "' with specifier '" + specifier + "'.");
     }
 
     // Create assertion failed internal error.
@@ -176,7 +176,7 @@ class FormatSpecification {
     readonly grouping: "," | "_" | undefined;
     readonly precision: number | undefined;
     readonly locale: "L" | undefined;
-    readonly type: "" | "s" | "b" | "B" | "c" | "d" | "o" | "x" | "X" | "a" | "A" | "e" | "E" | "f" | "F" | "g" | "G" | "?" | "%" | "n";
+    readonly type: "" | "s" | "c" | "b" | "B" | "d" | "o" | "x" | "X" | "a" | "A" | "e" | "E" | "f" | "F" | "g" | "G" | "?" | "%" | "n";
 
     constructor(replFieldMatch: RegExpExecArray, getNestedArgumentInt: (argId: string) => number) {
         let fill = replFieldMatch.groups?.fill;
@@ -207,20 +207,15 @@ class FormatSpecification {
         this.type = (type === "" || type && "scbBodxXaAeEfFgG?%n".indexOf(type) >= 0) ? type as any : "";
 
         // Unimplemented specifiers
-        const UnimplementedSpecifiers = "Lzn?_,";
-
-        // Throw exception if specifier is not implemented.
-        const checkSpecifierImplemented = (specifier: string | undefined) => {
-            if (specifier && UnimplementedSpecifiers.includes(specifier)) {
-                throw StdFormatError.SpecifierIsNotImplemented(specifier);
-            }
+        if (this.locale !== undefined) {
+            throw StdFormatError.SpecifierIsNotImplemented(this.locale);
         }
-
-        // Check for unimplemented specifiers
-        checkSpecifierImplemented(this.zeta);       // "z"
-        checkSpecifierImplemented(this.grouping);   // "," and "_"
-        checkSpecifierImplemented(this.locale);     // "L"
-        checkSpecifierImplemented(this.type);       // "n"
+        else if (this.zeta !== undefined) {
+            throw StdFormatError.SpecifierIsNotImplemented(this.zeta);
+        }
+        else if (this.isType("n?")) {
+            throw StdFormatError.SpecifierIsNotImplemented(this.type);
+        }
     }
 
     // Test if type is one of types given as argument.
@@ -854,6 +849,39 @@ class NumberFormatter {
         this.validateInternalState();
     }
 
+    // Get grouping properties
+    private getGroupingProps(): { decimalSeparator: string, groupSeparator: string, groupSize: number } {
+        let { fs } = this;
+        let { grouping } = fs;
+
+        if (grouping === ",") {
+            // Get grouping properties with group specifier ',' for supported type specifiers.
+            if (fs.isType("deEfFgG")) {
+                return { decimalSeparator: ".", groupSeparator: ",", groupSize: 3 }
+            }
+            else {
+                throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, grouping);
+            }
+        }
+        else if (grouping === "_") {
+            // Get grouping properties with group specifier '_' for supported type specifiers.
+            if (fs.isType("deEfFgG")) {
+                return { decimalSeparator: ".", groupSeparator: "_", groupSize: 3 }
+            }
+            else if (fs.isType("bBoxX")) {
+                // With binary, octal and hexadecimal type specifiers group size is 4.
+                return { decimalSeparator: ".", groupSeparator: "_", groupSize: 4 }
+            }
+            else {
+                throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, grouping);
+            }
+        }
+        else {
+            // If no grouping then set grouping separator to empty string and group size to Infinity.
+            return { decimalSeparator: ".", groupSeparator: "", groupSize: Infinity }
+        }
+    }
+
     // Convert this number to string.
     toString() {
         // Get format specification fs.
@@ -887,10 +915,10 @@ class NumberFormatter {
             prefix = "";
         }
         else {
-            // Some notations do not show zero exponent.
+            // Some type specifiers do not show zero exponent.
             let noZeroExp = !fs.isType("eEaA");
 
-            // Some notations show at least two digit exponent. If shorter add leading zero.
+            // Some type specifiers add zero prefix to single digit exponent.
             let needExp00 = fs.isType("", "eEgG");
 
             if (this.exp === 0 && noZeroExp) {
@@ -911,16 +939,45 @@ class NumberFormatter {
                 exp = (this.base === 16 ? "p" : "e") + (this.exp < 0 ? "-" : "+") + exp;
             }
 
-            // Convert digits to string.
-            digits = this.digits.map(d => "0123456789abcdef"[d]).join("");
+            // Get grouping props.
+            let groupingProps = this.getGroupingProps();
 
-            // Insert dot if it appears in between digits.
-            if (this.dotPos < digits.length) {
-                digits = digits.substring(0, this.dotPos) + "." + digits.substring(this.dotPos);
+            // Function to convert digit to character.
+            const mapDigitToChar = (d: number) => "0123456789abcdef"[d];
+
+            // Split digits to integer and fractional parts.
+            let intDigits = this.digits.slice(0, this.dotPos);
+            let fracDigits = this.digits.slice(this.dotPos);
+
+            // Is there grouping?
+            if (groupingProps.groupSeparator === "" || groupingProps.groupSize === Infinity) {
+                // There is no grouping. Add integer digits.
+                digits = intDigits.map(mapDigitToChar).join("");
+            }
+            else {
+                // There is grouping.
+                digits = "";
+
+                // Get group count.
+                let groupCount = Math.ceil(intDigits.length / groupingProps.groupSize);
+
+                // Add groups' digits separated by group separator.
+                for (let g = groupCount - 1; g >= 0; g--) {
+                    let start = intDigits.length - (g + 1) * groupingProps.groupSize;
+                    let end = intDigits.length - g * groupingProps.groupSize;
+                    let groupDigits = intDigits.slice(Math.max(0, start), end).map(mapDigitToChar).join("");
+                    digits += groupDigits + (g > 0 ? groupingProps.groupSeparator : "");
+                }
             }
 
-            // Include dot after last digit on some notations if sharp '#' specifier was given.
-            if (this.dotPos === digits.length && fs.sharp === "#" && fs.isType("fFeEgGaA%")) {
+            // Is there fraction digits?
+            if (fracDigits.length > 0) {
+                // Add decimal separator and fraction digits.
+                digits += groupingProps.decimalSeparator + fracDigits.map(mapDigitToChar).join("");
+            }
+
+            // Include dot after last digit if sharp specifier is '#' with some type specifiers.
+            if (this.dotPos === this.digits.length && fs.sharp === "#" && fs.isType("fFeEgGaA%")) {
                 digits += ".";
             }
 
@@ -962,7 +1019,7 @@ class NumberFormatter {
 // @arg is the argument given to stdFormat("", arg0, arg1, ...)
 // @fs is the parsed format specification.
 function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
-    let { align, fill } = fs;
+    let { align, fill, grouping, locale } = fs;
 
     // Convert to valid argument: string or number.
     let argStr: string;
@@ -982,9 +1039,15 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
         // Default align for string is left.
         align ??= "<";
 
-        // Is invalid align for string.
+        // Check for invalid specifiers to use with string
         if (align === "=") {
-            throw StdFormatError.InvalidFormatSpecification(fs);
+            throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, align);
+        }
+        else if (grouping !== undefined) {
+            throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, grouping);
+        }
+        else if (locale !== undefined) {
+            throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, locale);
         }
 
         // Return string
