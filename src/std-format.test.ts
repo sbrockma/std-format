@@ -1,13 +1,24 @@
 import { stdFormat, stdLocaleHint, stdSpecificationHint } from "std-format";
 
+function stdFormatSpec(spec: "cpp" | "python", fmt: string, ...args: unknown[]) {
+    stdSpecificationHint(spec);
+    return stdFormat(fmt, ...args);
+}
+
+function stdFormatLocale(locale: string, fmt: string, ...args: unknown[]) {
+    stdLocaleHint(locale);
+    return stdFormat(fmt, ...args);
+}
+
 describe("std format", () => {
     it("using curly braces", () => {
 
         expect(stdFormat("Test {{ }} {{}}", 1, 2)).toEqual("Test { } {}");
+        expect(stdFormat("frac{{{}}}{{{}}}", 1, 2)).toEqual("frac{1}{2}");
         expect(stdFormat("frac{{{0}}}{{{1}}}", 1, 2)).toEqual("frac{1}{2}");
 
-        expect(() => stdFormat("Hello {")).toThrow(); // Encounteger single '{'
-        expect(() => stdFormat("} Worls")).toThrow(); // Encounteger single '}'
+        expect(() => stdFormat("Hello {")).toThrow(); // Single '{'
+        expect(() => stdFormat("} Worls")).toThrow(); // Single '}'
 
         expect(() => stdFormat(":{^5")).toThrow(); // Invalid fill character '{'
         expect(() => stdFormat(":}^5")).toThrow(); // Invalid fill character '}'
@@ -107,15 +118,13 @@ describe("std format", () => {
         expect(() => stdFormat("{:_n}", 1)).toThrow();
     });
 
-    it("type specifier n (en-UK)", () => {
-        stdLocaleHint("en-UK");
-        expect(stdFormat("{:n}", 5555555555)).toEqual("5,555,555,555");
+    it("type specifier n", () => {
+        expect(stdFormatLocale("en-UK", "{:n}", 5555555555)).toEqual("5,555,555,555");
     });
 
-    it("locale specifier L (en-UK)", () => {
-        stdLocaleHint("en-UK");
-        expect(stdFormat("{:Ld}", 4444444444)).toEqual("4,444,444,444");
-        expect(stdFormat("{:.2Lf}", 444444.4444)).toEqual("444,444.44");
+    it("locale specifier L", () => {
+        expect(stdFormatLocale("en-UK", "{:Ld}", 4444444444)).toEqual("4,444,444,444");
+        expect(stdFormatLocale("en-UK", "{:.2Lf}", 444444.4444)).toEqual("444,444.44");
     });
 
     it("sign", () => {
@@ -247,20 +256,16 @@ describe("std format", () => {
         expect(stdFormat("{:08}", -Infinity)).toEqual("-0000inf");
     });
 
-    it("type specifier <none>, bool (cpp)", () => {
-        stdSpecificationHint("cpp");
-        expect(stdFormat("{} {}", true, false)).toEqual("true false");
-        expect(stdFormat("{:<7}", true)).toEqual("true   ");
-        expect(stdFormat("{:^7}", true)).toEqual(" true  ");
-        expect(stdFormat("{:>7}", false)).toEqual("  false");
-    });
+    it("type specifier <none>, bool", () => {
+        expect(stdFormatSpec("cpp", "{} {}", true, false)).toEqual("true false");
+        expect(stdFormatSpec("cpp", "{:<7}", true)).toEqual("true   ");
+        expect(stdFormatSpec("cpp", "{:^7}", true)).toEqual(" true  ");
+        expect(stdFormatSpec("cpp", "{:>7}", false)).toEqual("  false");
 
-    it("type specifier <none>, bool (python)", () => {
-        stdSpecificationHint("python");
-        expect(stdFormat("{} {}", true, false)).toEqual("True False");
-        expect(stdFormat("{:<7}", true)).toEqual("True   ");
-        expect(stdFormat("{:^7}", true)).toEqual(" True  ");
-        expect(stdFormat("{:>7}", false)).toEqual("  False");
+        expect(stdFormatSpec("python", "{} {}", true, false)).toEqual("True False");
+        expect(stdFormatSpec("python", "{:<7}", true)).toEqual("True   ");
+        expect(stdFormatSpec("python", "{:^7}", true)).toEqual(" True  ");
+        expect(stdFormatSpec("python", "{:>7}", false)).toEqual("  False");
     });
 
     it("type specifier <none>, string", () => {
@@ -352,17 +357,13 @@ describe("std format", () => {
     });
 
     it("type specifier o (cpp prefix)", () => {
-        stdSpecificationHint("cpp");
-        expect(stdFormat("{:#o}", 834)).toEqual("01502");
-        expect(stdFormat("{:#o}", -834)).toEqual("-01502");
-        expect(stdFormat("{:#o}", 0)).toEqual("0");
-    });
+        expect(stdFormatSpec("cpp", "{:#o}", 834)).toEqual("01502");
+        expect(stdFormatSpec("cpp", "{:#o}", -834)).toEqual("-01502");
+        expect(stdFormatSpec("cpp", "{:#o}", 0)).toEqual("0");
 
-    it("type specifier o (python prefix)", () => {
-        stdSpecificationHint("python");
-        expect(stdFormat("{:#o}", 834)).toEqual("0o1502");
-        expect(stdFormat("{:#o}", -834)).toEqual("-0o1502");
-        expect(stdFormat("{:#o}", 0)).toEqual("0o0");
+        expect(stdFormatSpec("python", "{:#o}", 834)).toEqual("0o1502");
+        expect(stdFormatSpec("python", "{:#o}", -834)).toEqual("-0o1502");
+        expect(stdFormatSpec("python", "{:#o}", 0)).toEqual("0o0");
     });
 
     it("precision for integer", () => {
@@ -552,9 +553,8 @@ describe("std format", () => {
     });
 
     it("supported arguments", () => {
-        stdSpecificationHint("cpp");
         // boolean, string, char, number, bigint
-        expect(stdFormat("{:s} {:s} {:c} {:d} {:d}", true, "string", "c", 10, BigInt("999"))).toEqual("true string c 10 999");
+        expect(stdFormatSpec("cpp", "{:s} {:s} {:c} {:d} {:d}", true, "string", "c", 10, BigInt("999"))).toEqual("true string c 10 999");
     });
 
     it("bigint", () => {
