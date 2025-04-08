@@ -37,11 +37,13 @@ describe("std format", () => {
         // Nested fields
         expect(stdFormat("{:!^{}.{}f}", 123.45, 8, 1)).toEqual("!123.5!!");
         expect(stdFormat("{2:!^{1}.{0}f}", 1, 8, 123.45)).toEqual("!123.5!!");
+        expect(stdFormat("{:0{}d}", 1, 4)).toEqual("0001");
 
         // Cannot switch between manual and automatic field numbering
         expect(() => stdFormat("{}{1}", 0, 1)).toThrow();
         expect(() => stdFormat("{0}{}", 0, 1)).toThrow();
-        expect(() => stdFormat("{0:!^{}.{}f}", 123.45, 8, 1)).toThrow();
+        expect(() => stdFormat("{2:!^{}.{}f}", 123.45, 8, 1)).toThrow();
+        expect(() => stdFormat("{:!^{1}.{0}f}", 123.45, 8, 1)).toThrow();
     });
 
     it("grouping specifier ,", () => {
