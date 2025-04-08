@@ -93,16 +93,22 @@ Here are some simple examples.
 
     import { stdSpecificationHint } from "@sbrockma/std-format";
     
-    stdSpecificationHint("cpp");
     stdSpecificationHint("python");
+    stdSpecificationHint("cpp");
+    stdSpecificationHint("js");
 
-If "python" then:
+If specification hint is "python" then:
 * Octal numbers have prefix "0o"
-* Boolean string is "True" or "False"
+* Boolean strings are "True" and "False"
+* This is default because python format spec was first source of information.
 
-If "cpp" then:
+If specification hint is "cpp" then:
 * Octal numbers have prefix "0"
-* Boolean string is "true" or "false"
+* Boolean strings are "true" and "false"
+
+If specification hint is "js" then:
+* Octal numbers have prefix "0o"
+* Boolean strings are "true" and "false"
 
 ### Function stdLocalerHint(locale)
 

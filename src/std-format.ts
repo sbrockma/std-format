@@ -120,7 +120,7 @@ let trueString: "true" | "True" = "True";
 let falseString: "false" | "False" = "False";
 
 // Use specification hint. Specification hint can be "python" or "cpp".
-export function stdSpecificationHint(specHint: "cpp" | "python") {
+export function stdSpecificationHint(specHint: "cpp" | "python" | "js") {
     if (specHint === "cpp") {
         // Set variables belonging to "cpp" specification.
         octalPrefix = "0";
@@ -132,6 +132,12 @@ export function stdSpecificationHint(specHint: "cpp" | "python") {
         octalPrefix = "0o";
         trueString = "True";
         falseString = "False";
+    }
+    else if (specHint === "js") {
+        // Set variables JavaScript way.
+        octalPrefix = "0o";
+        trueString = "true";
+        falseString = "false";
     }
     else {
         // Invalid specification hint.
