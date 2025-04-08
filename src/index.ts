@@ -1,11 +1,11 @@
 // Import
-import { stdFormat, stdSpecificationHint, StdFormatError } from "./std-format";
+import { stdFormat, stdSpecificationHint, stdLocaleHint, StdFormatError } from "./std-format";
 
 // Create default export
-const DefaultExport = { stdFormat, stdSpecificationHint, StdFormatError }
+const DefaultExport = { stdFormat, stdSpecificationHint, stdLocaleHint, StdFormatError }
 
 // Default export
 export default DefaultExport;
 
 // Named exports
-export { stdFormat, stdSpecificationHint, StdFormatError }
+export { stdFormat, stdSpecificationHint, stdLocaleHint, StdFormatError }
