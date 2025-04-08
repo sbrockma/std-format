@@ -996,6 +996,27 @@ class NumberFormatter {
         }
     }
 
+    // Get char code
+    private getCharCode() {
+        // Only call for type specifier 'c'. Number is in integer form.
+        assert(
+            this.fs.isType("c") &&
+            this.sign === 1 &&
+            this.dotPos === this.digits.length &&
+            this.exp === 0,
+            "Invalid call to getCharCode().");
+
+        // Calculate char code from digits.
+        let charCode = 0;
+
+        for (let i = 0, e = 1; i < this.digits.length; i++, e *= 10) {
+            // Add digits from right to left, each multiplied by 10^i.
+            charCode += this.digits[this.digits.length - 1 - i] * e;
+        }
+
+        return charCode;
+    }
+
     // Convert this number to string.
     private toString() {
         // Get format specification fs.
@@ -1027,6 +1048,12 @@ class NumberFormatter {
             exp = "";
             digits = "inf";
             prefix = "";
+        }
+        else if (fs.isType("c")) {
+            // Is char? Set digits string to contain single char obtained from char code.
+            digits = String.fromCharCode(this.getCharCode());
+            // Other props empty.
+            sign = exp = prefix = "";
         }
         else {
             // Some type specifiers do not show zero exponent.
@@ -1060,7 +1087,7 @@ class NumberFormatter {
             let intDigits = this.digits.slice(0, this.dotPos);
             let fracDigits = this.digits.slice(this.dotPos);
 
-            if (groupingProps.groupSeparator === "" || intDigits.length <= groupingProps.groupSize || fs.isType("c")) {
+            if (groupingProps.groupSeparator === "" || intDigits.length <= groupingProps.groupSize) {
                 // There is no grouping (or need plain digits to extract char code).
                 // Add integer digits.
                 digits = intDigits.map(mapDigitToChar).join("");
@@ -1099,18 +1126,6 @@ class NumberFormatter {
             if (prefix === "0" && digits === "0") {
                 prefix = "";
             }
-        }
-
-        // Is 'c' char type specifier?
-        if (fs.isType("c")) {
-            // Get char code
-            let charCode = Number(sign + prefix + digits + exp + postfix);
-
-            // And get string from char code, and set into digits.
-            digits = String.fromCharCode(charCode);
-
-            // Formatting char code, there is no sign, prefix, exp, nor postfix.
-            sign = prefix = exp = postfix = "";
         }
 
         // Get formatting width for number related filling.
