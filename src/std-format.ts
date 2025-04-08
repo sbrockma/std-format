@@ -284,7 +284,7 @@ class NumberFormatter {
 
     // Constructor of NumberFormatter class.
     // Passed arguments are number @value and format specification @fs.
-    constructor(value: number | bigint, readonly fs: FormatSpecification) {
+    private constructor(value: number | bigint, readonly fs: FormatSpecification) {
         // Set base
         if (fs.isType("bB")) {
             this.base = 2;
@@ -878,7 +878,7 @@ class NumberFormatter {
     //      Octal (cpp):     "0"
     //      Octal (python):  "0o"
     // Else prefix is ""
-    getNumberPrefix() {
+    private getNumberPrefix() {
         let { fs } = this;
 
         return fs.sharp === "#" ? (
@@ -937,7 +937,7 @@ class NumberFormatter {
     }
 
     // Convert this number to string.
-    toString() {
+    private toString() {
         // Get format specification fs.
         let { fs } = this;
 
@@ -1064,38 +1064,44 @@ class NumberFormatter {
         // Convert to uppercase if specified by format specification type.
         return fs.isType("AGEFBX") ? str.toUpperCase() : str;
     }
+
+    static formatNumber(n: number | bigint, fs: FormatSpecification): string {
+        return new NumberFormatter(n, fs).toString();
+    }
 }
 
-function applyStringFormatting(str: string, fs: FormatSpecification) {
-    // Check if string formatting specifiers are valid.
-    if (fs.align === "=") {
-        // Align specifier '=' cannot be used with string.
-        throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, fs.align);
-    }
-    else if (fs.grouping !== undefined) {
-        // Grouping specifiers ',' and '_' cannot be used with string.
-        throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, fs.grouping);
-    }
-    else if (fs.locale !== undefined) {
-        // Locale specifier 'L' cannot be used with string.
-        throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, fs.locale);
-    }
-    else if (fs.zero !== undefined) {
-        // Zero filling is for numeric types.
-        throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, fs.zero);
-    }
-    else if (fs.isType("?")) {
-        // Here should format escape sequence string.
-        throw StdFormatError.SpecifierIsNotImplemented(fs.type);
-    }
+namespace StringFormatter {
+    export function formatString(str: string, fs: FormatSpecification) {
+        // Check if string formatting specifiers are valid.
+        if (fs.align === "=") {
+            // Align specifier '=' cannot be used with string.
+            throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, fs.align);
+        }
+        else if (fs.grouping !== undefined) {
+            // Grouping specifiers ',' and '_' cannot be used with string.
+            throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, fs.grouping);
+        }
+        else if (fs.locale !== undefined) {
+            // Locale specifier 'L' cannot be used with string.
+            throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, fs.locale);
+        }
+        else if (fs.zero !== undefined) {
+            // Zero filling is for numeric types.
+            throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, fs.zero);
+        }
+        else if (fs.isType("?")) {
+            // Here should format escape sequence string.
+            throw StdFormatError.SpecifierIsNotImplemented(fs.type);
+        }
 
-    // For string presentation types precision field indicates the maximum
-    // field size - in other words, how many characters will be used from the field content.
-    if (fs.isType("s") && fs.precision !== undefined && str.length > fs.precision) {
-        str = str.substring(0, fs.precision);
-    }
+        // For string presentation types precision field indicates the maximum
+        // field size - in other words, how many characters will be used from the field content.
+        if (fs.isType("s") && fs.precision !== undefined && str.length > fs.precision) {
+            str = str.substring(0, fs.precision);
+        }
 
-    return str;
+        return str;
+    }
 }
 
 // Formats the replacement field.
@@ -1115,7 +1121,7 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
         align ??= ">";
 
         // Format number to string.
-        return new NumberFormatter(arg, fs).toString();
+        return NumberFormatter.formatNumber(arg, fs);
     }
 
     function formatString(arg: string): string {
@@ -1123,7 +1129,7 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
         align ??= "<";
 
         // Apply string formatting.
-        return applyStringFormatting(arg, fs);
+        return StringFormatter.formatString(arg, fs);
     }
 
     if (typeof arg === "boolean") {
