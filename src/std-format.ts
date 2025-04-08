@@ -1080,6 +1080,10 @@ function applyStringFormatting(str: string, fs: FormatSpecification) {
         // Locale specifier 'L' cannot be used with string.
         throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, fs.locale);
     }
+    else if (fs.zero !== undefined) {
+        // Zero filling is for numeric types.
+        throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, fs.zero);
+    }
     else if (fs.isType("?")) {
         // Here should format escape sequence string.
         throw StdFormatError.SpecifierIsNotImplemented(fs.type);

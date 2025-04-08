@@ -160,6 +160,17 @@ describe("std format", () => {
         expect(stdFormat("{:*^30}", "centered")).toEqual("***********centered***********");
     });
 
+    it("specifier '0'", () => {
+        expect(stdFormat("{:015.2f}", 1234.5678)).toEqual("000000001234.57");
+        expect(stdFormat("{:15.02f}", 1234.5678)).toEqual("        1234.57");
+
+        expect(stdFormat("{:#8x}", 1)).toEqual("     0x1");
+        expect(stdFormat("{:#08x}", 1)).toEqual("0x000001");
+
+        expect(stdFormat("{:#15b}", -7)).toEqual("         -0b111");
+        expect(stdFormat("{:#015b}", -7)).toEqual("-0b000000000111");
+    });
+
     it("width and precision", () => {
         let b = 3.14;
         expect(stdFormat("{:.2f}", 0)).toEqual("0.00");
