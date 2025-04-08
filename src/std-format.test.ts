@@ -193,6 +193,14 @@ describe("std format", () => {
         expect(stdFormat("{:.3s}", "Hello World!")).toEqual("Hel");
         expect(stdFormat("{:.4s}", "Hello World!")).toEqual("Hell");
         expect(stdFormat("{:.5s}", "Hello World!")).toEqual("Hello");
+
+        expect(stdFormat("{:*^5.5s}", "A")).toEqual("**A**");
+        expect(stdFormat("{:*^5.5s}", "AA")).toEqual("*AA**");
+        expect(stdFormat("{:*^5.5s}", "AAA")).toEqual("*AAA*");
+        expect(stdFormat("{:*^5.5s}", "AAAA")).toEqual("AAAA*");
+        expect(stdFormat("{:*^5.5s}", "AAAAA")).toEqual("AAAAA");
+        expect(stdFormat("{:*^5.5s}", "AAAAAA")).toEqual("AAAAA");
+        expect(stdFormat("{:*^5.5s}", "AAAAAAA")).toEqual("AAAAA");
     });
 
     it("fill specifier =", () => {
