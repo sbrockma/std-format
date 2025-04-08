@@ -110,6 +110,8 @@ If specification hint is "js" then:
 * Octal numbers have prefix "0o"
 * Boolean strings are "true" and "false"
 
+**Note!** stdSpecificationHint will be deprecated in version 2 and default behaviour will be the "js" option to respect ES6 octal literal prefix "0o" and javascript's boolean variables true/false as lower case strings. If formatting octal numbers or boolean strings it is recommended to use the "js" option.
+
 ### Function stdLocalerHint(locale)
 
     import { stdLocaleHint } from "@sbrockma/std-format";
