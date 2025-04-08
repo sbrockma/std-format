@@ -1132,7 +1132,11 @@ class NumberFormatter {
 namespace StringFormatter {
     export function formatString(str: string, fs: FormatSpecification) {
         // Check if string formatting specifiers are valid.
-        if (fs.align === "=") {
+        if (!fs.isType("", "s?")) {
+            // Not valid string argument.
+            throw StdFormatError.InvalidArgumentConversion(str, fs.type);
+        }
+        else if (fs.align === "=") {
             // '=' not allowed with fs.type.
             throw StdFormatError.SpecifierNotAllowedWithType(fs.align, fs.type);
         }
@@ -1144,9 +1148,21 @@ namespace StringFormatter {
             // 'L' not allowed with string.
             throw StdFormatError.SpecifierNotAllowedWithType(fs.locale, fs.type);
         }
+        else if (fs.sign !== undefined) {
+            // Sign is not allowed with fs.type.
+            throw StdFormatError.SpecifierNotAllowedWithType(fs.sign, fs.type);
+        }
+        else if (fs.sharp !== undefined) {
+            // '#' is not allowed with fs.type.
+            throw StdFormatError.SpecifierNotAllowedWithType(fs.sharp, fs.type);
+        }
         else if (fs.zero !== undefined) {
             // '0' is not allowed with fs.type.
             throw StdFormatError.SpecifierNotAllowedWithType(fs.zero, fs.type);
+        }
+        else if (fs.zeta !== undefined) {
+            // 'z' is not allowed with fs.type.
+            throw StdFormatError.SpecifierNotAllowedWithType(fs.zeta, fs.type);
         }
         else if (fs.isType("?")) {
             // Here should format escape sequence string.
@@ -1155,7 +1171,7 @@ namespace StringFormatter {
 
         // For string presentation types precision field indicates the maximum
         // field size - in other words, how many characters will be used from the field content.
-        if (fs.isType("s") && fs.precision !== undefined && str.length > fs.precision) {
+        if (fs.precision !== undefined && str.length > fs.precision) {
             str = str.substring(0, fs.precision);
         }
 
@@ -1223,7 +1239,7 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
             // If type is integer then use single char string as char and convert it to char code (integer).
             argStr = formatNumber(arg.charCodeAt(0));
         }
-        else if (fs.isType("", "s")) {
+        else if (fs.isType("", "s?")) {
             // Else use string argument as it is.
             argStr = formatString(arg);
         }

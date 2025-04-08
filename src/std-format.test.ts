@@ -354,7 +354,24 @@ describe("std format", () => {
         expect(stdFormat("{:s}", "Hello")).toEqual("Hello");
         expect(stdFormat("{:s}", "42")).toEqual("42");
 
-        expect(() => stdFormat("{:s}", 42)).toThrow(); // error
+        expect(() => stdFormat("{:s}", 42)).toThrow();
+
+        // Fill and align
+        expect(stdFormat("{:15s}", "Banana")).toEqual("Banana         ");
+        expect(stdFormat("{:!<15s}", "Banana")).toEqual("Banana!!!!!!!!!");
+        expect(stdFormat("{:!^15.3s}", "Banana")).toEqual("!!!!!!Ban!!!!!!");
+        expect(stdFormat("{:!>15s}", "Banana")).toEqual("!!!!!!!!!Banana");
+        expect(() => stdFormat("{:015s}", "Banana")).toThrow();
+        expect(() =>stdFormat("{:!=15s}", "Banana")).toThrow();
+
+        // Specifiers not allowed with 's'
+        expect(() => stdFormat("{:,s}", "Hello")).toThrow();
+        expect(() => stdFormat("{:_s}", "Hello")).toThrow();
+        expect(() => stdFormat("{:Ls}", "Hello")).toThrow();
+        expect(() => stdFormat("{:+s}", "Hello")).toThrow();
+        expect(() => stdFormat("{:#s}", "Hello")).toThrow();
+        expect(() => stdFormat("{:0s}", "Hello")).toThrow();
+        expect(() => stdFormat("{:zs}", "Hello")).toThrow();
     });
 
     it("type specifier c", () => {
