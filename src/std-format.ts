@@ -110,11 +110,6 @@ export class StdFormatError extends Error {
             "' in \"" + fs.replacementFieldString + "\".");
     }
 
-    // Create invalid char code error.
-    static InvalidCharCode(charCode: number | bigint) {
-        return new StdFormatError("Invalid char code: " + charCode);
-    }
-
     // Create assertion failed internal error.
     static AssertionFailed(msg?: string) {
         return new StdFormatError("Assertion failed" + (msg === undefined ? "!" : (": " + msg)));
@@ -337,7 +332,7 @@ class NumberFormatter {
                 assert(charCode >= 0 && charCode <= 65535 && Number.isInteger(charCode) && Number.isFinite(charCode), "Invalid char code.");
             }
             catch (e) {
-                throw StdFormatError.InvalidCharCode(value);
+                throw StdFormatError.InvalidArgument(value, fs);
             }
 
             // Get invalid specifier that is not allowed with type 'c.
