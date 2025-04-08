@@ -1,4 +1,7 @@
 # Change Log
+## 1.1.1
+### Fixes
+- Forgot stdLocaleHint from exports.
 
 ## 1.1.0
 ### New Features
