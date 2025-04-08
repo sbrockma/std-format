@@ -360,10 +360,30 @@ describe("std format", () => {
     it("type specifier c", () => {
         expect(stdFormat("{:c}", 65)).toEqual("A");
 
-        // Single-char-string as char
+        // Fill and align
+        expect(stdFormat("{:5c}", 65)).toEqual("    A");
+        expect(stdFormat("{:05c}", 65)).toEqual("0000A");
+        expect(stdFormat("{:x<5c}", 65)).toEqual("Axxxx");
+        expect(stdFormat("{:x^5c}", 65)).toEqual("xxAxx");
+        expect(stdFormat("{:x>5c}", 65)).toEqual("xxxxA");
+        expect(stdFormat("{:x=5c}", 65)).toEqual("xxxxA");
+        expect(() => stdFormat("{:x=5.2c}", 65)).toThrow();
+
+        // Use single char string as char (in c++ you could use char 'A').
         expect(stdFormat("{:c}", "A")).toEqual("A");
-        expect(() => stdFormat("{:c}", "AA")).toThrow();
         expect(() => stdFormat("{:c}", "")).toThrow();
+        expect(() => stdFormat("{:c}", "Hello")).toThrow();
+
+        // Char code must be in range 0..0xFFFF.
+        expect(() => stdFormat("{:c}", -1)).toThrow();
+        expect(() => stdFormat("{:c}", 65536)).toThrow();
+        expect(() => stdFormat("{:c}", BigInt("888888888888888888888888"))).toThrow();
+
+        // Invalid specifier with type specifier 'c'
+        expect(() => stdFormat("{:zc}", 'A')).toThrow();
+        expect(() => stdFormat("{:#c}", 'A')).toThrow();
+        expect(() => stdFormat("{:,c}", 'A')).toThrow();
+        expect(() => stdFormat("{:_c}", 'A')).toThrow();
     });
 
     it("type specifier ?", () => {
@@ -372,8 +392,11 @@ describe("std format", () => {
     });
 
     it("type specifier d", () => {
+        expect(stdFormat("{:d}", 321)).toEqual("321");
         expect(stdFormat("{:d}", -321)).toEqual("-321");
-        expect(stdFormat("{:d}", "c")).toEqual("99"); // Single char string as char code
+
+        // Use single char string as char (in c++ you could use char 'c').
+        expect(stdFormat("{:d}", "c")).toEqual("99");
         expect(stdFormat("{:+06d}", String.fromCharCode(120))).toEqual("+00120");
         expect(stdFormat("{:+06d}", 120)).toEqual("+00120");
 

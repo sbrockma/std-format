@@ -96,6 +96,11 @@ export class StdFormatError extends Error {
         return new StdFormatError("Specifier '" + specifier + "' not allowed with type specifier '" + type + "'.");
     }
 
+    // Create invalid char code error.
+    static InvalidCharCode(charCode: number | bigint) {
+        return new StdFormatError("Invalid char code: " + charCode);
+    }
+
     // Create assertion failed internal error.
     static AssertionFailed(msg?: string) {
         return new StdFormatError("Assertion failed" + (msg === undefined ? "!" : (": " + msg)));
@@ -213,7 +218,7 @@ class FormatSpecification {
     readonly replFieldString: string;
     readonly fill: string; // single character, default " "
     readonly align: "<" | "^" | ">" | "=" | undefined;
-    readonly sign: "+" | "-" | " ";
+    readonly sign: "+" | "-" | " " | undefined;
     readonly zeta: "z" | undefined;
     readonly sharp: "#" | undefined;
     readonly zero: "0" | undefined;
@@ -241,7 +246,7 @@ class FormatSpecification {
         this.replFieldString = replFieldMatch[0];
         this.fill = !fill ? " " : fill; // default " "
         this.align = (align === "<" || align === "^" || align === ">" || align === "=") ? align : undefined;
-        this.sign = (sign === "-" || sign === "+" || sign === " ") ? sign : "-"
+        this.sign = (sign === "-" || sign === "+" || sign === " ") ? sign : undefined;
         this.zeta = zeta === "z" ? zeta : undefined;
         this.sharp = sharp === "#" ? sharp : undefined;
         this.zero = zero === "0" ? zero : undefined;
@@ -303,6 +308,39 @@ class NumberFormatter {
         }
         else {
             this.base = 10;
+        }
+
+        // Check for valid char code
+        if (fs.isType("c")) {
+            let charCode: number;
+
+            try {
+                charCode = getNumber(value);
+            }
+            catch (e) {
+                throw StdFormatError.InvalidCharCode(value);
+            }
+
+            if (charCode < 0 || charCode > 65535 || !Number.isInteger(charCode) || !Number.isFinite(charCode)) {
+                // Invalid char code.
+                throw StdFormatError.InvalidCharCode(charCode);
+            }
+            else if (fs.sign !== undefined) {
+                // sign not allowed with integer specifier type 'c'
+                throw StdFormatError.SpecifierNotAllowedWithType(fs.sign, fs.type);
+            }
+            else if (fs.zeta !== undefined) {
+                // 'z'' not allowed with integer specifier type 'c'
+                throw StdFormatError.SpecifierNotAllowedWithType(fs.zeta, fs.type);
+            }
+            else if (fs.sharp !== undefined) {
+                // '#' not allowed with integer specifier type 'c'
+                throw StdFormatError.SpecifierNotAllowedWithType(fs.sharp, fs.type);
+            }
+            else if (fs.grouping !== undefined) {
+                // Grouping not allowed with integer specifier type 'c'
+                throw StdFormatError.SpecifierNotAllowedWithType(fs.grouping, fs.type);
+            }
         }
 
         // Initialize sign, digits, dot position and exponent to initial values.
@@ -782,7 +820,7 @@ class NumberFormatter {
                 removeInsignificantTrailingZeroes();
             }
         }
-        else if (fs.isType("", "dbBoxXn")) {
+        else if (fs.isType("", "cdbBoxXn")) {
             // Else if type is default '' or integer
 
             // Precision not allowed for integer
@@ -950,20 +988,20 @@ class NumberFormatter {
         // Get format specification fs.
         let { fs } = this;
 
-        // This will be exponent string.
+        // Exponent string.
         let exp: string;
 
-        // This will be digits string.
+        // Digits string.
         let digits: string;
 
-        // This will be prefix string. "0x" for hexadecimal, etc.
+        // Prefix string. "0x" for hexadecimal, etc.
         let prefix: string;
 
-        // This will be postfix string. "%" for percentage types, or "".
+        // Postfix string. "%" for percentage types, or "".
         let postfix: string = fs.isType("%") ? "%" : "";
 
-        // This will be sign. "-", "+" or " ".
-        let sign: string = this.sign < 0 ? "-" : (fs.sign === "-" ? "" : fs.sign);
+        // Set sign. "-", "+", " " or "".
+        let sign: string = this.sign < 0 ? "-" : ((fs.sign === "+" || fs.sign === " ") ? fs.sign : "");
 
         if (this.isNan()) {
             // Is nan?
@@ -1009,9 +1047,9 @@ class NumberFormatter {
             let intDigits = this.digits.slice(0, this.dotPos);
             let fracDigits = this.digits.slice(this.dotPos);
 
-            // Is there grouping?
-            if (groupingProps.groupSeparator === "" || intDigits.length <= groupingProps.groupSize) {
-                // There is no grouping. Add integer digits.
+            if (groupingProps.groupSeparator === "" || intDigits.length <= groupingProps.groupSize || fs.isType("c")) {
+                // There is no grouping (or need plain digits to extract char code).
+                // Add integer digits.
                 digits = intDigits.map(mapDigitToChar).join("");
             }
             else {
@@ -1048,6 +1086,18 @@ class NumberFormatter {
             if (prefix === "0" && digits === "0") {
                 prefix = "";
             }
+        }
+
+        // Is 'c' char type specifier?
+        if (fs.isType("c")) {
+            // Get char code
+            let charCode = Number(sign + prefix + digits + exp + postfix);
+
+            // And get string from char code, and set into digits.
+            digits = String.fromCharCode(charCode);
+
+            // Formatting char code, there is no sign, prefix, exp, nor postfix.
+            sign = prefix = exp = postfix = "";
         }
 
         // Get formatting width for number related filling.
@@ -1123,7 +1173,7 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
     let argStr: string;
 
     // Is type specifier number compatible?
-    let isFsTypeNumberCompatible = fs.isType("", "bBodxXaAeEfFgGn%");
+    let isFsTypeNumberCompatible = fs.isType("", "cbBodxXaAeEfFgGn%");
 
     function formatNumber(arg: number | bigint): string {
         // Default align for number is right.
@@ -1158,11 +1208,7 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
     }
     else if (typeof arg === "number" || typeof arg === "bigint") {
         // Argument can be number or bigint.
-        if (fs.isType("c")) {
-            // If type is 'c' then use argument as char code to convert it to char (string).
-            argStr = formatString(String.fromCharCode(getNumber(arg)));
-        }
-        else if (isFsTypeNumberCompatible) {
+        if (isFsTypeNumberCompatible) {
             // Use number argument as it is.
             argStr = formatNumber(arg);
         }
@@ -1173,12 +1219,11 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
     }
     else if (typeof arg === "string") {
         // Argument can be string.
-        if (fs.isType("dxXobB") && arg.length === 1) {
-            // If type is integer then use single char string argument
-            // as char and convert it to char code (integer).
+        if (fs.isType("cdxXobB") && arg.length === 1) {
+            // If type is integer then use single char string as char and convert it to char code (integer).
             argStr = formatNumber(arg.charCodeAt(0));
         }
-        else if (fs.isType("", "s") || fs.isType("c") && arg.length === 1) {
+        else if (fs.isType("", "s")) {
             // Else use string argument as it is.
             argStr = formatString(arg);
         }
