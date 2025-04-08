@@ -92,8 +92,8 @@ export class StdFormatError extends Error {
     }
 
     // Create invalid specification hint error.
-    static CannotUseTypeSpecifierWith(typeSpecifier: string, specifier: string) {
-        return new StdFormatError("Cannot use type specifier '" + typeSpecifier + "' with specifier '" + specifier + "'.");
+    static SpecifierNotAllowedWithType(specifier: string, type: string) {
+        return new StdFormatError("Specifier '" + specifier + "' not allowed with type specifier '" + type + "'.");
     }
 
     // Create assertion failed internal error.
@@ -855,15 +855,18 @@ class NumberFormatter {
         }
 
         if (fs.zeta === "z") {
-            // The 'z' option coerces negative zero floating-point values to positive zero after rounding
-            // to the format precision. This option is only valid for floating-point presentation types.
+            // The 'z' option coerces negative zero floating-point values to
+            // positive zero after rounding  to the format precision.
             if (fs.isType("eEfFgGaA")) {
+                // This option is only valid for floating-point presentation types.
+                // Change -0 to 0.
                 if (this.isZero() && this.sign === -1) {
                     this.sign = 1;
                 }
             }
             else {
-                throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, fs.zeta);
+                // Else 'z' not allowed with fs.type.
+                throw StdFormatError.SpecifierNotAllowedWithType(fs.zeta, fs.type);
             }
         }
 
@@ -897,8 +900,8 @@ class NumberFormatter {
                 return { decimalSeparator: ".", groupSeparator: ",", groupSize: 3 }
             }
             else {
-                // Cannot use ',' with fs.type.
-                throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, grouping);
+                // ',' not allowed with fs.type.
+                throw StdFormatError.SpecifierNotAllowedWithType(grouping, fs.type);
             }
         }
         else if (grouping === "_") {
@@ -911,8 +914,8 @@ class NumberFormatter {
                 return { decimalSeparator: ".", groupSeparator: "_", groupSize: 4 }
             }
             else {
-                // Cannot use '_' with fs.type.
-                throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, grouping);
+                // '_' not allowed with fs.type.
+                throw StdFormatError.SpecifierNotAllowedWithType(grouping, fs.type);
             }
         }
         else if (fs.locale) {
@@ -922,8 +925,8 @@ class NumberFormatter {
                 return { decimalSeparator: localeDecimalSeparator, groupSeparator: localeGroupSeparator, groupSize: 3 }
             }
             else {
-                // Cannot use 'L' with fs.type.
-                throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, fs.locale);
+                // 'L' not allowed with fs.type.
+                throw StdFormatError.SpecifierNotAllowedWithType(fs.locale, fs.type);
             }
         }
         else if (fs.isType("n")) {
@@ -1074,20 +1077,20 @@ namespace StringFormatter {
     export function formatString(str: string, fs: FormatSpecification) {
         // Check if string formatting specifiers are valid.
         if (fs.align === "=") {
-            // Align specifier '=' cannot be used with string.
-            throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, fs.align);
+            // '=' not allowed with fs.type.
+            throw StdFormatError.SpecifierNotAllowedWithType(fs.align, fs.type);
         }
         else if (fs.grouping !== undefined) {
-            // Grouping specifiers ',' and '_' cannot be used with string.
-            throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, fs.grouping);
+            // ',' and '_' not allowed with string.
+            throw StdFormatError.SpecifierNotAllowedWithType(fs.grouping, fs.type);
         }
         else if (fs.locale !== undefined) {
-            // Locale specifier 'L' cannot be used with string.
-            throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, fs.locale);
+            // 'L' not allowed with string.
+            throw StdFormatError.SpecifierNotAllowedWithType(fs.locale, fs.type);
         }
         else if (fs.zero !== undefined) {
-            // Zero filling is for numeric types.
-            throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, fs.zero);
+            // '0' is not allowed with fs.type.
+            throw StdFormatError.SpecifierNotAllowedWithType(fs.zero, fs.type);
         }
         else if (fs.isType("?")) {
             // Here should format escape sequence string.
