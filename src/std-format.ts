@@ -44,6 +44,7 @@ export class StdFormatError extends Error {
     private constructor(readonly message: string) {
         super(message);
         this.name = "StdFormatError";
+        // console.log(message);
     }
 
     // Create specifier is not implemented error.
@@ -51,19 +52,16 @@ export class StdFormatError extends Error {
         return new StdFormatError("Specifier '" + specifier + "' is not implemented.");
     }
 
-    // Create value error.
-    static ValueError(value: string, base?: number) {
-        return new StdFormatError("Value error: " + value + base ? (", base: " + base) : "");
-    }
-
     // Create invalid argument error.
-    static InvalidArgument(arg: unknown) {
-        return new StdFormatError("Invalid argument '" + String(arg) + "' (" + typeof arg + ").");
+    static InvalidArgument(arg: unknown, fs: FormatSpecification) {
+        return new StdFormatError(
+            "Invalid " + typeof arg + " argument '" + String(arg) + "' with type specifier '" + fs.type +
+            "' in \"" + fs.replacementFieldString + "\".");
     }
 
-    // Create invalid argument conversion error.
-    static InvalidArgumentConversion(arg: number | bigint | string | boolean, fsType: string) {
-        return new StdFormatError("Invalid argument '" + String(arg) + "' (" + typeof arg + ") to format specifier '" + fsType + "'.");
+    // Create invalid nested argument error.
+    static InvalidNestedArgument(arg: unknown, fs: FormatSpecification) {
+        return new StdFormatError("Invalid nested argument '" + String(arg) + "' in \"" + fs.replacementFieldString + "\".");
     }
 
     // Create invalid field number error.
@@ -77,8 +75,8 @@ export class StdFormatError extends Error {
     }
 
     // Create single curly brace encountered in format string error.
-    static SingleEncounteredInFormatString(char: "{" | "}") {
-        return new StdFormatError("Single '" + char + "' encountered in format string.");
+    static EncounteredSingleCurlyBrace(char: "{" | "}") {
+        return new StdFormatError("Encountered single curly brace '" + char + "' in format string.");
     }
 
     // Create invalid replacement field error.
@@ -86,9 +84,18 @@ export class StdFormatError extends Error {
         return new StdFormatError("Invalid replacement field \"" + str + "\".");
     }
 
-    // Create precision not allowed for integer error.
-    static PrecisionNotAllowedForInteger() {
-        return new StdFormatError("Precision not allowed for integer.");
+    // Create precision not allowed error.
+    static PrecisionNotAllowed(fs: FormatSpecification) {
+        return new StdFormatError(
+            "Precision not allowed with type specifier '" + fs.type +
+            "' in \"" + fs.replacementFieldString + "\".");
+    }
+
+    // Create float not allowed with error.
+    static FloatNotAllowedWith(fs: FormatSpecification) {
+        return new StdFormatError(
+            "Float not allowed with type specifier '" + fs.type +
+            "' in \"" + fs.replacementFieldString + "\".");
     }
 
     // Create invalid specification hint error.
@@ -96,9 +103,11 @@ export class StdFormatError extends Error {
         return new StdFormatError("Invalid specification hint '" + specHint + "'. Valid values are 'cpp' and 'python'.");
     }
 
-    // Create invalid specification hint error.
-    static SpecifierNotAllowedWithType(specifier: string, type: string) {
-        return new StdFormatError("Specifier '" + specifier + "' not allowed with type specifier '" + type + "'.");
+    // Create specifier not allowed error.
+    static SpecifierNotAllowed(specifier: string, fs: FormatSpecification) {
+        return new StdFormatError(
+            "Specifier '" + specifier + "' not allowed with type specifier '" + fs.type +
+            "' in \"" + fs.replacementFieldString + "\".");
     }
 
     // Create invalid char code error.
@@ -228,7 +237,7 @@ const DigitsRegex = /^\d+$/;
 
 // The format specification class
 class FormatSpecification {
-    readonly replFieldString: string;
+    readonly replacementFieldString: string;
     readonly fill: string; // single character, default " "
     readonly align: "<" | "^" | ">" | "=" | undefined;
     readonly sign: "+" | "-" | " " | undefined;
@@ -241,7 +250,7 @@ class FormatSpecification {
     readonly locale: "L" | undefined;
     readonly type: "" | "s" | "c" | "b" | "B" | "d" | "o" | "x" | "X" | "a" | "A" | "e" | "E" | "f" | "F" | "g" | "G" | "?" | "%" | "n";
 
-    constructor(replFieldMatch: RegExpExecArray, getNestedArgumentInt: (argId: string) => number) {
+    constructor(replFieldMatch: RegExpExecArray, getNestedArgumentInt: (argId: string, fs: FormatSpecification) => number) {
         let fill = replFieldMatch.groups?.fill;
         let align = replFieldMatch.groups?.align;
         let sign = replFieldMatch.groups?.sign;
@@ -256,29 +265,26 @@ class FormatSpecification {
         let locale = replFieldMatch.groups?.locale;
         let type = replFieldMatch.groups?.type;
 
-        this.replFieldString = replFieldMatch[0];
+        this.replacementFieldString = replFieldMatch[0];
         this.fill = !fill ? " " : fill; // default " "
         this.align = (align === "<" || align === "^" || align === ">" || align === "=") ? align : undefined;
         this.sign = (sign === "-" || sign === "+" || sign === " ") ? sign : undefined;
         this.zeta = zeta === "z" ? zeta : undefined;
         this.sharp = sharp === "#" ? sharp : undefined;
         this.zero = zero === "0" ? zero : undefined;
-        this.width = width_field_n !== undefined ? getNestedArgumentInt(width_field_n) : (!!width ? +width : undefined);
         this.grouping = (grouping === "," || grouping === "_") ? grouping : undefined;
-        this.precision = precision_field_n !== undefined ? getNestedArgumentInt(precision_field_n) : (!!precision ? +precision : undefined);
         this.locale = locale === "L" ? locale : undefined;
         this.type = (type === "" || type && "scbBodxXaAeEfFgG?%n".indexOf(type) >= 0) ? type as any : "";
+
+        // Do these last because getNestedArgumentInt needs this object.
+        this.width = width_field_n !== undefined ? getNestedArgumentInt(width_field_n, this) : (!!width ? +width : undefined);
+        this.precision = precision_field_n !== undefined ? getNestedArgumentInt(precision_field_n, this) : (!!precision ? +precision : undefined);
     }
 
     // Test if type is one of types given as argument.
     // For example isType("", "d", "xX") tests if type is either "", "d", "x" or "X".
     isType(...types: string[]) {
         return types.some(type => this.type === type || this.type !== "" && type.indexOf(this.type) >= 0);
-    }
-
-    // Get replacement field string.
-    toString() {
-        return this.replFieldString;
     }
 }
 
@@ -328,27 +334,17 @@ class NumberFormatter {
             try {
                 // Is char code valid integer and in range?
                 let charCode = getNumber(value);
-                assert(charCode >= 0 && charCode <= 65535 && Number.isInteger(charCode) && Number.isFinite(charCode));
+                assert(charCode >= 0 && charCode <= 65535 && Number.isInteger(charCode) && Number.isFinite(charCode), "Invalid char code.");
             }
             catch (e) {
                 throw StdFormatError.InvalidCharCode(value);
             }
 
-            if (fs.sign !== undefined) {
-                // sign not allowed with integer specifier type 'c'
-                throw StdFormatError.SpecifierNotAllowedWithType(fs.sign, fs.type);
-            }
-            else if (fs.zeta !== undefined) {
-                // 'z'' not allowed with integer specifier type 'c'
-                throw StdFormatError.SpecifierNotAllowedWithType(fs.zeta, fs.type);
-            }
-            else if (fs.sharp !== undefined) {
-                // '#' not allowed with integer specifier type 'c'
-                throw StdFormatError.SpecifierNotAllowedWithType(fs.sharp, fs.type);
-            }
-            else if (fs.grouping !== undefined) {
-                // Grouping not allowed with integer specifier type 'c'
-                throw StdFormatError.SpecifierNotAllowedWithType(fs.grouping, fs.type);
+            // Get invalid specifier that is not allowed with type 'c.
+            let invalidSpecifier = fs.sign ?? fs.zeta ?? fs.sharp ?? fs.grouping;
+
+            if (invalidSpecifier !== undefined) {
+                throw StdFormatError.SpecifierNotAllowed(invalidSpecifier, fs);
             }
         }
 
@@ -834,7 +830,7 @@ class NumberFormatter {
 
             // Precision not allowed for integer
             if (fs.precision !== undefined) {
-                throw StdFormatError.PrecisionNotAllowedForInteger();
+                throw StdFormatError.PrecisionNotAllowed(fs);
             }
 
             // For integers -0 = +0 = 0
@@ -847,7 +843,7 @@ class NumberFormatter {
 
             // Number must be integer
             if (!this.isInteger()) {
-                throw StdFormatError.InvalidArgumentConversion("float", fs.type);
+                throw StdFormatError.FloatNotAllowedWith(fs);
             }
         }
         else if (fs.isType("aA")) {
@@ -919,7 +915,7 @@ class NumberFormatter {
             }
             else {
                 // Else 'z' not allowed with fs.type.
-                throw StdFormatError.SpecifierNotAllowedWithType(fs.zeta, fs.type);
+                throw StdFormatError.SpecifierNotAllowed(fs.zeta, fs);
             }
         }
 
@@ -954,7 +950,7 @@ class NumberFormatter {
             }
             else {
                 // ',' not allowed with fs.type.
-                throw StdFormatError.SpecifierNotAllowedWithType(grouping, fs.type);
+                throw StdFormatError.SpecifierNotAllowed(grouping, fs);
             }
         }
         else if (grouping === "_") {
@@ -968,7 +964,7 @@ class NumberFormatter {
             }
             else {
                 // '_' not allowed with fs.type.
-                throw StdFormatError.SpecifierNotAllowedWithType(grouping, fs.type);
+                throw StdFormatError.SpecifierNotAllowed(grouping, fs);
             }
         }
         else if (fs.locale) {
@@ -979,7 +975,7 @@ class NumberFormatter {
             }
             else {
                 // 'L' not allowed with fs.type.
-                throw StdFormatError.SpecifierNotAllowedWithType(fs.locale, fs.type);
+                throw StdFormatError.SpecifierNotAllowed(fs.locale, fs);
             }
         }
         else if (fs.isType("n")) {
@@ -1158,37 +1154,21 @@ namespace StringFormatter {
         // Check if string formatting specifiers are valid.
         if (!fs.isType("", "s?")) {
             // Not valid string argument.
-            throw StdFormatError.InvalidArgumentConversion(str, fs.type);
+            throw StdFormatError.InvalidArgument(str, fs);
         }
         else if (fs.align === "=") {
             // '=' not allowed with fs.type.
-            throw StdFormatError.SpecifierNotAllowedWithType(fs.align, fs.type);
+            throw StdFormatError.SpecifierNotAllowed(fs.align, fs);
         }
-        else if (fs.grouping !== undefined) {
-            // ',' and '_' not allowed with string.
-            throw StdFormatError.SpecifierNotAllowedWithType(fs.grouping, fs.type);
+
+        let invalidSpecifier = fs.grouping ?? fs.locale ?? fs.sign ?? fs.sharp ?? fs.zero ?? fs.zeta;
+
+        if (invalidSpecifier !== undefined) {
+            // Specifier not allowed with string.
+            throw StdFormatError.SpecifierNotAllowed(invalidSpecifier, fs);
         }
-        else if (fs.locale !== undefined) {
-            // 'L' not allowed with string.
-            throw StdFormatError.SpecifierNotAllowedWithType(fs.locale, fs.type);
-        }
-        else if (fs.sign !== undefined) {
-            // Sign is not allowed with fs.type.
-            throw StdFormatError.SpecifierNotAllowedWithType(fs.sign, fs.type);
-        }
-        else if (fs.sharp !== undefined) {
-            // '#' is not allowed with fs.type.
-            throw StdFormatError.SpecifierNotAllowedWithType(fs.sharp, fs.type);
-        }
-        else if (fs.zero !== undefined) {
-            // '0' is not allowed with fs.type.
-            throw StdFormatError.SpecifierNotAllowedWithType(fs.zero, fs.type);
-        }
-        else if (fs.zeta !== undefined) {
-            // 'z' is not allowed with fs.type.
-            throw StdFormatError.SpecifierNotAllowedWithType(fs.zeta, fs.type);
-        }
-        else if (fs.isType("?")) {
+
+        if (fs.isType("?")) {
             // Here should format escape sequence string.
             throw StdFormatError.SpecifierIsNotImplemented(fs.type);
         }
@@ -1243,7 +1223,7 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
         }
         else {
             // Invalid argument conversion from boolean.
-            throw StdFormatError.InvalidArgumentConversion(arg, fs.type);
+            throw StdFormatError.InvalidArgument(arg, fs);
         }
     }
     else if (typeof arg === "number" || typeof arg === "bigint") {
@@ -1254,7 +1234,7 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
         }
         else {
             // Invalid argument conversion from number.
-            throw StdFormatError.InvalidArgumentConversion(arg, fs.type);
+            throw StdFormatError.InvalidArgument(arg, fs);
         }
     }
     else if (typeof arg === "string") {
@@ -1269,12 +1249,12 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
         }
         else {
             // Invalid argument conversion from string.
-            throw StdFormatError.InvalidArgumentConversion(arg, fs.type);
+            throw StdFormatError.InvalidArgument(arg, fs);
         }
     }
     else {
         // Invalid argument type.
-        throw StdFormatError.InvalidArgument(arg);
+        throw StdFormatError.InvalidArgument(arg, fs);
     }
 
     // Next apply fill and alignment according to format specification.
@@ -1368,14 +1348,14 @@ export function stdFormat(formatString: string, ...formatArgs: unknown[]): strin
 
     // Function to get nested argument integer. Width and precision in format specification can be
     // in form of nested curly braces {:{width field number}.{precision field number}}
-    const getNestedArgumentInt = (fieldNumberStr: string): number => {
+    const getNestedArgumentInt = (fieldNumberStr: string, fs: FormatSpecification): number => {
         // Get the argument
         let arg = getArgument(fieldNumberStr);
 
         // Nested argument is used for width and precision in format specification, and
         // must be integer number >= 0.
         if (!arg || typeof arg !== "number" || !isInteger(arg) || arg < 0) {
-            throw StdFormatError.InvalidArgument(arg);
+            throw StdFormatError.InvalidNestedArgument(arg, fs);
         }
 
         // Return nested argument integer
@@ -1456,7 +1436,7 @@ export function stdFormat(formatString: string, ...formatArgs: unknown[]): strin
             }
             else if (parseString[0] === "}") {
                 // Throw exception if parsing string starts with "}".
-                throw StdFormatError.SingleEncounteredInFormatString("}");
+                throw StdFormatError.EncounteredSingleCurlyBrace("}");
             }
             else if (parseString[0] === "{") {
                 // If parsing string starts with "{" then parse replacement field, and
@@ -1470,7 +1450,7 @@ export function stdFormat(formatString: string, ...formatArgs: unknown[]): strin
                     }
                     else {
                         // Got single '{' followed by random stuff.
-                        throw StdFormatError.SingleEncounteredInFormatString("{");
+                        throw StdFormatError.EncounteredSingleCurlyBrace("{");
                     }
                 }
 
