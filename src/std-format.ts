@@ -940,7 +940,7 @@ class NumberFormatter {
 
         if (grouping === ",") {
             // Get grouping properties with group specifier ',' for supported type specifiers.
-            if (fs.isType("deEfFgG")) {
+            if (fs.isType("deEfFgG%")) {
                 return { decimalSeparator: ".", groupSeparator: ",", groupSize: 3 }
             }
             else {
@@ -950,7 +950,7 @@ class NumberFormatter {
         }
         else if (grouping === "_") {
             // Get grouping properties with group specifier '_' for supported type specifiers.
-            if (fs.isType("deEfFgG")) {
+            if (fs.isType("deEfFgG%")) {
                 return { decimalSeparator: ".", groupSeparator: "_", groupSize: 3 }
             }
             else if (fs.isType("bBoxX")) {

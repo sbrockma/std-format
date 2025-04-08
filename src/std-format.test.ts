@@ -60,6 +60,7 @@ describe("std format", () => {
         expect(stdFormat("{:,.4F}", 123456.123456)).toEqual("123,456.1235");
         expect(stdFormat("{:,.4g}", 123456.123456)).toEqual("1.235e+05");
         expect(stdFormat("{:,.4G}", 123456.123456)).toEqual("1.235E+05");
+        expect(stdFormat("{:,.2%}", 123)).toEqual("12,300.00%");
 
         expect(stdFormat("{:,d}", BigInt("5555555555555555555555555555555555555555"))).
             toEqual("5,555,555,555,555,555,555,555,555,555,555,555,555,555");
@@ -76,7 +77,6 @@ describe("std format", () => {
         expect(() => stdFormat("{:,a}", 1)).toThrow();
         expect(() => stdFormat("{:,A}", 1)).toThrow();
         expect(() => stdFormat("{:,?}", 1)).toThrow();
-        expect(() => stdFormat("{:,%}", 1)).toThrow();
         expect(() => stdFormat("{:,n}", 1)).toThrow();
     });
 
@@ -96,6 +96,7 @@ describe("std format", () => {
         expect(stdFormat("{:_.4F}", 123456.123456)).toEqual("123_456.1235");
         expect(stdFormat("{:_.4g}", 123456.123456)).toEqual("1.235e+05");
         expect(stdFormat("{:_.4G}", 123456.123456)).toEqual("1.235E+05");
+        expect(stdFormat("{:_.2%}", 123)).toEqual("12_300.00%");
 
         // Apply grouping with type specifiers "bBoxX" (group size = 4)
         expect(stdFormat("{:_b}", 555)).toEqual("10_0010_1011");
@@ -114,7 +115,6 @@ describe("std format", () => {
         expect(() => stdFormat("{:_a}", 1)).toThrow();
         expect(() => stdFormat("{:_A}", 1)).toThrow();
         expect(() => stdFormat("{:_?}", 1)).toThrow();
-        expect(() => stdFormat("{:_%}", 1)).toThrow();
         expect(() => stdFormat("{:_n}", 1)).toThrow();
     });
 
