@@ -325,20 +325,16 @@ class NumberFormatter {
 
         // Check for valid char code
         if (fs.isType("c")) {
-            let charCode: number;
-
             try {
-                charCode = getNumber(value);
+                // Is char code valid integer and in range?
+                let charCode = getNumber(value);
+                assert(charCode >= 0 && charCode <= 65535 && Number.isInteger(charCode) && Number.isFinite(charCode));
             }
             catch (e) {
                 throw StdFormatError.InvalidCharCode(value);
             }
 
-            if (charCode < 0 || charCode > 65535 || !Number.isInteger(charCode) || !Number.isFinite(charCode)) {
-                // Invalid char code.
-                throw StdFormatError.InvalidCharCode(charCode);
-            }
-            else if (fs.sign !== undefined) {
+            if (fs.sign !== undefined) {
                 // sign not allowed with integer specifier type 'c'
                 throw StdFormatError.SpecifierNotAllowedWithType(fs.sign, fs.type);
             }
