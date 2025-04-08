@@ -1,4 +1,15 @@
 # Change Log
+
+## 1.2.0
+### New Features
+- Added specification hint "js".
+### Fixes
+- Enable grouping with type specifier '%'
+- More checks with string type specifier 's'.
+- Char formatting with type specifier 'c'.
+### Docs
+- Added note that stdSpecificationHint will be deprecated in version 2.
+
 ## 1.1.1
 ### Fixes
 - Forgot stdLocaleHint from exports.
