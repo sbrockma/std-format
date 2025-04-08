@@ -1,4 +1,4 @@
-import { stdFormat, stdLocaleHint, stdSpecificationHint } from "std-format";
+import { stdFormat, stdLocaleHint, stdSpecificationHint } from "./index";
 
 function stdFormatSpec(spec: "cpp" | "python", fmt: string, ...args: unknown[]) {
     stdSpecificationHint(spec);
