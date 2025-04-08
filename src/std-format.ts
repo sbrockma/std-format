@@ -81,6 +81,11 @@ export class StdFormatError extends Error {
         return new StdFormatError("Single '" + char + "' encountered in format string.");
     }
 
+    // Create invalid replacement field error.
+    static InvalidReplacementField(str: string) {
+        return new StdFormatError("Invalid replacement field \"" + str + "\".");
+    }
+
     // Create precision not allowed for integer error.
     static PrecisionNotAllowedForInteger() {
         return new StdFormatError("Precision not allowed for integer.");
@@ -204,6 +209,14 @@ const ReplacementFieldRegEx = new RegExp(
     "^\{" +
     "(?<field_n>\\d+)?" +
     "(\:(" + FormatSpecificationRegExString + "))?" +
+    "\}"
+);
+
+// Regex to test if string loosely matches of replacement field.
+const LooseMatchReplacementFieldRegEx = new RegExp(
+    "^\{" +
+    "[^{}]*" +
+    "(:([^{}]*" + "\{[^{}]*\}" + "){0,2}[^{}]*)?" +
     "\}"
 );
 
@@ -1393,6 +1406,12 @@ export function stdFormat(formatString: string, ...formatArgs: unknown[]): strin
         return true;
     }
 
+    // Get replacement field string that looks like replacement field but could be invalid.
+    const getLooseMatchReplacementFieldString = (): string | undefined => {
+        let m = LooseMatchReplacementFieldRegEx.exec(parseString);
+        return (!m || m.length === 0) ? undefined : m[0];
+    }
+
     // Function to parse format string.
     const parseFormatString = () => {
         // Loop until terminated by break.
@@ -1432,7 +1451,16 @@ export function stdFormat(formatString: string, ...formatArgs: unknown[]): strin
                 // If parsing string starts with "{" then parse replacement field, and
                 // throw exception if it returns false (there was "{" but parsing failed).
                 if (!parseReplacementField()) {
-                    throw StdFormatError.SingleEncounteredInFormatString("{");
+                    // For more precise error message get loose match replacement field string.
+                    let str = getLooseMatchReplacementFieldString();
+                    if (str) {
+                        // Got loose match of replacement field string that just failed to parse.
+                        throw StdFormatError.InvalidReplacementField(str);
+                    }
+                    else {
+                        // Got single '{' followed by random stuff.
+                        throw StdFormatError.SingleEncounteredInFormatString("{");
+                    }
                 }
 
                 // Continue parsing on next loop.

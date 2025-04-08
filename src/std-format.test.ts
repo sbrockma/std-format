@@ -20,8 +20,15 @@ describe("std format", () => {
         expect(() => stdFormat("Hello {")).toThrow(); // Single '{'
         expect(() => stdFormat("} Worls")).toThrow(); // Single '}'
 
-        expect(() => stdFormat(":{^5")).toThrow(); // Invalid fill character '{'
-        expect(() => stdFormat(":}^5")).toThrow(); // Invalid fill character '}'
+        expect(() => stdFormat("{:{^5}")).toThrow(); // Invalid fill character '{'
+        expect(() => stdFormat("{:}^5}")).toThrow(); // Invalid fill character '}'
+    });
+
+    it("invalid replacement field", () => {
+        expect(() => stdFormat("{***}", 1, 2)).toThrow();
+        expect(() => stdFormat("{x:q}", 1, 2)).toThrow();
+        expect(() => stdFormat("{:{}D}", 1, 2)).toThrow();
+        expect(() =>stdFormat("{:{}{}}", 0, 5, 2)).toThrow(); // Missing '.' between braces {:{}.{}}
     });
 
     it("field numbering", () => {
@@ -364,7 +371,7 @@ describe("std format", () => {
         expect(stdFormat("{:!^15.3s}", "Banana")).toEqual("!!!!!!Ban!!!!!!");
         expect(stdFormat("{:!>15s}", "Banana")).toEqual("!!!!!!!!!Banana");
         expect(() => stdFormat("{:015s}", "Banana")).toThrow();
-        expect(() =>stdFormat("{:!=15s}", "Banana")).toThrow();
+        expect(() => stdFormat("{:!=15s}", "Banana")).toThrow();
 
         // Specifiers not allowed with 's'
         expect(() => stdFormat("{:,s}", "Hello")).toThrow();
