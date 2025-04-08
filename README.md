@@ -35,8 +35,18 @@ Both Python and C++ format specifications are parsed.
 
 The format is:
 
-    [[fill]align][sign]["z"]["#"]["0"][width][grouping]["." precision]["L"][type]
+    [[fill]align][sign]['z']['#']['0'][width][grouping]['.' precision]['L'][type]
 
+* [fill] (optional) any character except '{' or '}'
+* [align] (optional) '<', '^', '>' or '='
+* [sign] (optional ) '+', '-' or ' '
+* ['z'] (optional) coerse -0 to 0 on float types
+* ['#'] (optional) alternate form
+* ['0'] (optional) zero padding
+* [width] (optional) minimum total width
+* [precision] (optional) precision
+* ['L'] (optinlal) locale aware formatting
+* [type] (optional) 's', 'c', 'b', 'B', 'o', 'd', 'x', 'X', 'a', 'A', 'e', 'E', 'f', 'F', 'g', 'G', '%', 'n', or '?' ('?' not yet implemented)
 
 Not all specifiers are yet implemented.
 
