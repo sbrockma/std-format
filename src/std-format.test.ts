@@ -175,6 +175,13 @@ describe("std format", () => {
 
         expect(() => stdFormat("{:.{}f}", Math.PI, 5.2)).toThrow(); // Precision is not integer
         expect(() => stdFormat("{:.{}f}", Math.PI, -2)).toThrow();  // Precision is negative
+
+        expect(stdFormat("{:.0s}", "Hello World!")).toEqual("");
+        expect(stdFormat("{:.1s}", "Hello World!")).toEqual("H");
+        expect(stdFormat("{:.2s}", "Hello World!")).toEqual("He");
+        expect(stdFormat("{:.3s}", "Hello World!")).toEqual("Hel");
+        expect(stdFormat("{:.4s}", "Hello World!")).toEqual("Hell");
+        expect(stdFormat("{:.5s}", "Hello World!")).toEqual("Hello");
     });
 
     it("fill specifier =", () => {

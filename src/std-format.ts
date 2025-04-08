@@ -1066,8 +1066,8 @@ class NumberFormatter {
     }
 }
 
-// Check if string formating specifiers are valid.
-function validateStringFormatting(str: string, fs: FormatSpecification) {
+function applyStringFormatting(str: string, fs: FormatSpecification) {
+    // Check if string formatting specifiers are valid.
     if (fs.align === "=") {
         // Align specifier '=' cannot be used with string.
         throw StdFormatError.CannotUseTypeSpecifierWith(fs.type, fs.align);
@@ -1083,6 +1083,12 @@ function validateStringFormatting(str: string, fs: FormatSpecification) {
     else if (fs.isType("?")) {
         // Here should format escape sequence string.
         throw StdFormatError.SpecifierIsNotImplemented(fs.type);
+    }
+
+    // For string presentation types precision field indicates the maximum
+    // field size - in other words, how many characters will be used from the field content.
+    if (fs.isType("s") && fs.precision !== undefined && str.length > fs.precision) {
+        str = str.substring(0, fs.precision);
     }
 
     return str;
@@ -1112,8 +1118,8 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
         // Default align for string is left.
         align ??= "<";
 
-        // Validate string formatting.
-        return validateStringFormatting(arg, fs);
+        // Apply string formatting.
+        return applyStringFormatting(arg, fs);
     }
 
     if (typeof arg === "boolean") {
