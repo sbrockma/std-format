@@ -48,8 +48,8 @@ export class StdFormatError extends Error {
     }
 
     // Create specifier is not implemented error.
-    static SpecifierIsNotImplemented(specifier: string) {
-        return new StdFormatError("Specifier '" + specifier + "' is not implemented.");
+    static SpecifierIsNotImplemented(specifier: string, fs: FormatSpecification) {
+        return new StdFormatError("Specifier '" + specifier + "' is not implemented, used in \"" + fs.replacementFieldString + "\".");
     }
 
     // Create invalid argument error.
@@ -59,14 +59,19 @@ export class StdFormatError extends Error {
             "' in \"" + fs.replacementFieldString + "\".");
     }
 
+    // Create invalid float argument error.
+    static InvalidFloatArgument(fs: FormatSpecification) {
+        return new StdFormatError("Invalid floating point argument with type specifier '" + fs.type + "', in \"" + fs.replacementFieldString + "\".");
+    }
+
     // Create invalid nested argument error.
     static InvalidNestedArgument(arg: unknown, fs: FormatSpecification) {
         return new StdFormatError("Invalid nested argument '" + String(arg) + "' in \"" + fs.replacementFieldString + "\".");
     }
 
     // Create invalid field number error.
-    static InvalidFieldNumber(fieldNumber: string) {
-        return new StdFormatError("Invalid field number: '" + fieldNumber + "'.");
+    static InvalidFieldNumber(fieldNumber: string, replacementFieldStr: string) {
+        return new StdFormatError("Invalid field number '" + fieldNumber + "', in \"" + replacementFieldStr + "\".");
     }
 
     // Create switch between auto/manual field numbering error.
@@ -74,7 +79,7 @@ export class StdFormatError extends Error {
         return new StdFormatError("Switch between automatic and manual field numbering.");
     }
 
-    // Create single curly brace encountered in format string error.
+    // Create encounteger single curly brace error.
     static EncounteredSingleCurlyBrace(char: "{" | "}") {
         return new StdFormatError("Encountered single curly brace '" + char + "' in format string.");
     }
@@ -86,16 +91,7 @@ export class StdFormatError extends Error {
 
     // Create precision not allowed error.
     static PrecisionNotAllowed(fs: FormatSpecification) {
-        return new StdFormatError(
-            "Precision not allowed with type specifier '" + fs.type +
-            "' in \"" + fs.replacementFieldString + "\".");
-    }
-
-    // Create float not allowed with error.
-    static FloatNotAllowedWith(fs: FormatSpecification) {
-        return new StdFormatError(
-            "Float not allowed with type specifier '" + fs.type +
-            "' in \"" + fs.replacementFieldString + "\".");
+        return new StdFormatError("Precision not allowed with type specifier '" + fs.type + "', in \"" + fs.replacementFieldString + "\".");
     }
 
     // Create invalid specification hint error.
@@ -199,7 +195,7 @@ stdLocaleHint();
 
 // The format specification regex. THis is combination of c++ and python specifications.
 const FormatSpecificationRegExString =
-    "((?<fill>.?)(?<align>[<^>=]))?" + // fill and align
+    "((?<fill>[^{}]?)(?<align>[<^>=]))?" + // fill (any char except '{' or '}') and align
     "(?<sign>[-+ ])?" + // sign
     "(?<zeta>[z])?" + // z
     "(?<sharp>[#])?" + // #
@@ -840,7 +836,7 @@ class NumberFormatter {
 
             // Number must be integer
             if (!this.isInteger()) {
-                throw StdFormatError.FloatNotAllowedWith(fs);
+                throw StdFormatError.InvalidFloatArgument(fs);
             }
         }
         else if (fs.isType("aA")) {
@@ -1171,7 +1167,7 @@ namespace StringFormatter {
 
         if (fs.isType("?")) {
             // Here should format escape sequence string.
-            throw StdFormatError.SpecifierIsNotImplemented(fs.type);
+            throw StdFormatError.SpecifierIsNotImplemented(fs.type, fs);
         }
 
         // For string presentation types precision field indicates the maximum
@@ -1307,11 +1303,11 @@ export function stdFormat(formatString: string, ...formatArgs: unknown[]): strin
     let hasManualFieldSpecification = false;
 
     // Function to get argument from formatArgs[fieldNumber].
-    const getArgument = (fieldNumberStr: string): unknown => {
+    const getArgument = (fieldNumberStr: string, replacementFieldStr: string): unknown => {
         // Throw exception if field number string is not valid.
         // It must be empty "", or contain digits only (= zero or positive integer).
         if (fieldNumberStr !== "" && !DigitsRegex.test(fieldNumberStr)) {
-            throw StdFormatError.InvalidFieldNumber(fieldNumberStr);
+            throw StdFormatError.InvalidFieldNumber(fieldNumberStr, replacementFieldStr);
         }
 
         // Get field number
@@ -1340,7 +1336,7 @@ export function stdFormat(formatString: string, ...formatArgs: unknown[]): strin
 
         // Throw exception if field number is out of bounds of arguments array.
         if (fieldNumber < 0 || fieldNumber >= formatArgs.length) {
-            throw StdFormatError.InvalidFieldNumber("" + fieldNumber);
+            throw StdFormatError.InvalidFieldNumber("" + fieldNumber, replacementFieldStr);
         }
 
         // Return argument.
@@ -1351,7 +1347,7 @@ export function stdFormat(formatString: string, ...formatArgs: unknown[]): strin
     // in form of nested curly braces {:{width field number}.{precision field number}}
     const getNestedArgumentInt = (fieldNumberStr: string, fs: FormatSpecification): number => {
         // Get the argument
-        let arg = getArgument(fieldNumberStr);
+        let arg = getArgument(fieldNumberStr, fs.replacementFieldString);
 
         // Nested argument is used for width and precision in format specification, and
         // must be integer number >= 0.
@@ -1386,7 +1382,7 @@ export function stdFormat(formatString: string, ...formatArgs: unknown[]): strin
         let fieldNumber = replFieldMatch.groups?.field_n ?? "";
 
         // Get argument.
-        let arg = getArgument(fieldNumber);
+        let arg = getArgument(fieldNumber, replFieldMatch[0]);
 
         // Create format specification.
         let fs = new FormatSpecification(replFieldMatch, getNestedArgumentInt);

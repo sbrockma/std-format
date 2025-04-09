@@ -17,11 +17,11 @@ describe("std format", () => {
         expect(stdFormat("frac{{{}}}{{{}}}", 1, 2)).toEqual("frac{1}{2}");
         expect(stdFormat("frac{{{0}}}{{{1}}}", 1, 2)).toEqual("frac{1}{2}");
 
-        expect(() => stdFormat("Hello {")).toThrow(); // Single '{'
-        expect(() => stdFormat("} Worls")).toThrow(); // Single '}'
+        expect(() => stdFormat("Hello { World!")).toThrow(); // Single '{'
+        expect(() => stdFormat("Hello } World!")).toThrow(); // Single '}'
 
-        expect(() => stdFormat("{:{^5}")).toThrow(); // Invalid fill character '{'
-        expect(() => stdFormat("{:}^5}")).toThrow(); // Invalid fill character '}'
+        expect(() => stdFormat("{:{^5}", 0)).toThrow(); // Invalid fill character '{'
+        expect(() => stdFormat("{:}^5}", 0)).toThrow(); // Invalid fill character '}'
     });
 
     it("invalid replacement field", () => {
@@ -40,6 +40,10 @@ describe("std format", () => {
         expect(stdFormat("{}, {}, {}", "a", "b", "c")).toEqual("a, b, c");
         expect(stdFormat("{2}, {1}, {0}", "a", "b", "c")).toEqual("c, b, a");
         expect(stdFormat("{0}{1}{0}", "abra", "cad")).toEqual("abracadabra");
+
+        expect(() => stdFormat("{3}", 0, 1)).toThrow();
+        expect(() => stdFormat("{-1}", 0, 1)).toThrow();
+        expect(() => stdFormat("{1.5}", 0, 1)).toThrow();
 
         // Nested fields
         expect(stdFormat("{:!^{}.{}f}", 123.45, 8, 1)).toEqual("!123.5!!");
