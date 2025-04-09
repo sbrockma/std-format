@@ -1,5 +1,12 @@
 # Change Log
 
+## 1.2.1
+### Fixes
+- Better error message if parsing replacement field failed.
+- More error throwing checks for specifiers.
+- Formatting with fill and align.
+- Format specification regex.
+
 ## 1.2.0
 ### New Features
 - Added specification hint "js".
