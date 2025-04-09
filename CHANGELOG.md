@@ -1,5 +1,10 @@
 # Change Log
 
+## 1.3.0
+### New Features
+- Functions stdFormat(), stdSpecificationHint(), stdLocaleHint() and class StdFormatError are now deprecated.
+- Use new functions format(), setLocale() and class FormatError instead.
+
 ## 1.2.1
 ### Fixes
 - Better error message if parsing replacement field failed.
