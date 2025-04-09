@@ -405,10 +405,13 @@ describe("std format", () => {
         expect(() => stdFormat("{:c}", "")).toThrow();
         expect(() => stdFormat("{:c}", "Hello")).toThrow();
 
-        // Char code must be in range 0..0xFFFF.
+        // Char code must be int in range 0..0xFFFF.
         expect(() => stdFormat("{:c}", -1)).toThrow();
         expect(() => stdFormat("{:c}", 65536)).toThrow();
         expect(() => stdFormat("{:c}", BigInt("888888888888888888888888"))).toThrow();
+        expect(() => stdFormat("{:c}", 111.1)).toThrow();
+        expect(() => stdFormat("{:c}", NaN)).toThrow();
+        expect(() => stdFormat("{:c}", Infinity)).toThrow();
 
         // Invalid specifier with type specifier 'c'
         expect(() => stdFormat("{:zc}", 'A')).toThrow();
