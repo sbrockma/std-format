@@ -39,78 +39,78 @@ function getNumber(n: number | bigint): number {
 }
 
 // Exceoption class, trown on format and value errors.
-export class StdFormatError extends Error {
+export class FormatError extends Error {
     // private constructor. Use static functions below to create error objects.
     private constructor(readonly message: string) {
         super(message);
-        this.name = "StdFormatError";
+        this.name = useDeprecatedStdFormat ? "StdFormatError" : "FormatError";
         // console.log(message);
     }
 
     // Create specifier is not implemented error.
     static SpecifierIsNotImplemented(specifier: string, fs: FormatSpecification) {
-        return new StdFormatError("Specifier '" + specifier + "' is not implemented, used in \"" + fs.replacementFieldString + "\".");
+        return new FormatError("Specifier '" + specifier + "' is not implemented, used in \"" + fs.replacementFieldString + "\".");
     }
 
     // Create invalid argument error.
     static InvalidArgument(arg: unknown, fs: FormatSpecification) {
-        return new StdFormatError(
+        return new FormatError(
             "Invalid " + typeof arg + " argument '" + String(arg) + "' with type specifier '" + fs.type +
             "' in \"" + fs.replacementFieldString + "\".");
     }
 
     // Create invalid float argument error.
     static InvalidFloatArgument(fs: FormatSpecification) {
-        return new StdFormatError("Invalid floating point argument with type specifier '" + fs.type + "', in \"" + fs.replacementFieldString + "\".");
+        return new FormatError("Invalid floating point argument with type specifier '" + fs.type + "', in \"" + fs.replacementFieldString + "\".");
     }
 
     // Create invalid nested argument error.
     static InvalidNestedArgument(arg: unknown, fs: FormatSpecification) {
-        return new StdFormatError("Invalid nested argument '" + String(arg) + "' in \"" + fs.replacementFieldString + "\".");
+        return new FormatError("Invalid nested argument '" + String(arg) + "' in \"" + fs.replacementFieldString + "\".");
     }
 
     // Create invalid field number error.
     static InvalidFieldNumber(fieldNumber: string, replacementFieldStr: string) {
-        return new StdFormatError("Invalid field number '" + fieldNumber + "', in \"" + replacementFieldStr + "\".");
+        return new FormatError("Invalid field number '" + fieldNumber + "', in \"" + replacementFieldStr + "\".");
     }
 
     // Create switch between auto/manual field numbering error.
     static SwitchBetweenAutoAndManualFieldNumbering() {
-        return new StdFormatError("Switch between automatic and manual field numbering.");
+        return new FormatError("Switch between automatic and manual field numbering.");
     }
 
     // Create encounteger single curly brace error.
     static EncounteredSingleCurlyBrace(char: "{" | "}") {
-        return new StdFormatError("Encountered single curly brace '" + char + "' in format string.");
+        return new FormatError("Encountered single curly brace '" + char + "' in format string.");
     }
 
     // Create invalid replacement field error.
     static InvalidReplacementField(str: string) {
-        return new StdFormatError("Invalid replacement field \"" + str + "\".");
+        return new FormatError("Invalid replacement field \"" + str + "\".");
     }
 
     // Create precision not allowed error.
     static PrecisionNotAllowed(fs: FormatSpecification) {
-        return new StdFormatError("Precision not allowed with type specifier '" + fs.type + "', in \"" + fs.replacementFieldString + "\".");
+        return new FormatError("Precision not allowed with type specifier '" + fs.type + "', in \"" + fs.replacementFieldString + "\".");
     }
 
     // Create invalid specification hint error.
     static InvalidSpecificationHint(specHint: string) {
-        return new StdFormatError("Invalid specification hint '" + specHint + "'. Valid values are 'cpp' and 'python'.");
+        return new FormatError("Invalid specification hint '" + specHint + "'. Valid values are 'cpp' and 'python'.");
     }
 
     // Create specifier not allowed error.
     static SpecifierNotAllowedWith(specifier1: string, specifier2: string, fs: FormatSpecification) {
         let specifier1Str = specifier1 === fs.type ? "Type specifier" : "Specifier";
         let specifier2Str = specifier2 === fs.type ? "type specifier" : "specifier";
-        return new StdFormatError(
+        return new FormatError(
             specifier1Str + " '" + specifier1 + "' not allowed with " + specifier2Str + " '" + specifier2 +
             "' in \"" + fs.replacementFieldString + "\".");
     }
 
     // Create assertion failed internal error.
     static AssertionFailed(msg?: string) {
-        return new StdFormatError("Assertion failed" + (msg === undefined ? "!" : (": " + msg)));
+        return new FormatError("Assertion failed" + (msg === undefined ? "!" : (": " + msg)));
     }
 
     // Is this internal error?
@@ -122,38 +122,7 @@ export class StdFormatError extends Error {
 // Assert function for internal validation.
 function assert(condition: boolean, msg?: string) {
     if (!condition) {
-        throw StdFormatError.AssertionFailed(msg)
-    }
-}
-
-// The octal number prefix is "0o" in Python and "0" in C++.
-let octalPrefix: "0" | "0o" = "0o";
-let trueString: "true" | "True" = "True";
-let falseString: "false" | "False" = "False";
-
-// Use specification hint. Specification hint can be "python" or "cpp".
-export function stdSpecificationHint(specHint: "cpp" | "python" | "js") {
-    if (specHint === "cpp") {
-        // Set variables belonging to "cpp" specification.
-        octalPrefix = "0";
-        trueString = "true";
-        falseString = "false";
-    }
-    else if (specHint === "python") {
-        // Set variables belonging to "python" specification.
-        octalPrefix = "0o";
-        trueString = "True";
-        falseString = "False";
-    }
-    else if (specHint === "js") {
-        // Set variables JavaScript way.
-        octalPrefix = "0o";
-        trueString = "true";
-        falseString = "false";
-    }
-    else {
-        // Invalid specification hint.
-        throw StdFormatError.InvalidSpecificationHint(specHint);
+        throw FormatError.AssertionFailed(msg)
     }
 }
 
@@ -175,7 +144,7 @@ let localeDecimalSeparator = ".";
 let localeGroupSeparator = ",";
 
 // Set locale that will be used in locale based formatting.
-export function stdLocaleHint(locale?: string | undefined) {
+export function setLocale(locale?: string | undefined) {
     let nf = Intl.NumberFormat(!locale ? defaultLocale : locale).formatToParts(33333.3);
 
     // Extract decimal and group separators.
@@ -184,7 +153,7 @@ export function stdLocaleHint(locale?: string | undefined) {
 }
 
 // Init with default locale
-stdLocaleHint();
+setLocale();
 
 /**
  * https://en.cppreference.com/w/cpp/utility/format/spec
@@ -330,14 +299,14 @@ class NumberFormatter {
                 assert(charCode >= 0 && charCode <= 65535 && Number.isInteger(charCode) && Number.isFinite(charCode), "Invalid char code.");
             }
             catch (e) {
-                throw StdFormatError.InvalidArgument(value, fs);
+                throw FormatError.InvalidArgument(value, fs);
             }
 
             // Get invalid specifier that is not allowed with type 'c'.
             let invalidSpecifier = fs.sign ?? fs.zeta ?? fs.sharp ?? fs.grouping;
 
             if (invalidSpecifier !== undefined) {
-                throw StdFormatError.SpecifierNotAllowedWith(invalidSpecifier, fs.type, fs);
+                throw FormatError.SpecifierNotAllowedWith(invalidSpecifier, fs.type, fs);
             }
         }
 
@@ -823,7 +792,7 @@ class NumberFormatter {
 
             // Precision not allowed for integer
             if (fs.precision !== undefined) {
-                throw StdFormatError.PrecisionNotAllowed(fs);
+                throw FormatError.PrecisionNotAllowed(fs);
             }
 
             // For integers -0 = +0 = 0
@@ -836,7 +805,7 @@ class NumberFormatter {
 
             // Number must be integer
             if (!this.isInteger()) {
-                throw StdFormatError.InvalidFloatArgument(fs);
+                throw FormatError.InvalidFloatArgument(fs);
             }
         }
         else if (fs.isType("aA")) {
@@ -908,7 +877,7 @@ class NumberFormatter {
             }
             else {
                 // Else 'z' not allowed with fs.type.
-                throw StdFormatError.SpecifierNotAllowedWith(fs.zeta, fs.type, fs);
+                throw FormatError.SpecifierNotAllowedWith(fs.zeta, fs.type, fs);
             }
         }
 
@@ -917,17 +886,11 @@ class NumberFormatter {
     }
 
     // Get number prefix.
-    // If sharp is "#" then the prefix is:
-    //      Hexadecimal:     "0x"
-    //      Binary:          "0b"
-    //      Octal (cpp):     "0"
-    //      Octal (python):  "0o"
-    // Else prefix is ""
     private getNumberPrefix() {
         let { fs } = this;
 
         return fs.sharp === "#" ? (
-            fs.isType("xX") ? "0x" : fs.isType("bB") ? "0b" : fs.isType("o") ? octalPrefix : ""
+            fs.isType("xX") ? "0x" : fs.isType("bB") ? "0b" : fs.isType("o") ? (useDeprecatedStdFormat ? deprecatedOctalPrefix : "0o") : ""
         ) : "";
     }
 
@@ -937,7 +900,7 @@ class NumberFormatter {
 
         if (fs.grouping !== undefined && fs.locale !== undefined) {
             // ',' and '_' not allowed with 'L'.
-            throw StdFormatError.SpecifierNotAllowedWith(fs.grouping, fs.locale, fs);
+            throw FormatError.SpecifierNotAllowedWith(fs.grouping, fs.locale, fs);
         }
 
         if (fs.grouping === ",") {
@@ -947,7 +910,7 @@ class NumberFormatter {
             }
             else {
                 // ',' not allowed with fs.type.
-                throw StdFormatError.SpecifierNotAllowedWith(fs.grouping, fs.type, fs);
+                throw FormatError.SpecifierNotAllowedWith(fs.grouping, fs.type, fs);
             }
         }
         else if (fs.grouping === "_") {
@@ -961,7 +924,7 @@ class NumberFormatter {
             }
             else {
                 // '_' not allowed with fs.type.
-                throw StdFormatError.SpecifierNotAllowedWith(fs.grouping, fs.type, fs);
+                throw FormatError.SpecifierNotAllowedWith(fs.grouping, fs.type, fs);
             }
         }
         else if (fs.locale) {
@@ -972,7 +935,7 @@ class NumberFormatter {
             }
             else {
                 // 'L' not allowed with fs.type.
-                throw StdFormatError.SpecifierNotAllowedWith(fs.locale, fs.type, fs);
+                throw FormatError.SpecifierNotAllowedWith(fs.locale, fs.type, fs);
             }
         }
         else if (fs.isType("n")) {
@@ -1153,23 +1116,23 @@ namespace StringFormatter {
         // Check if string formatting specifiers are valid.
         if (!fs.isType("", "s?")) {
             // Not valid string argument.
-            throw StdFormatError.InvalidArgument(str, fs);
+            throw FormatError.InvalidArgument(str, fs);
         }
         else if (fs.align === "=") {
             // '=' not allowed with fs.type.
-            throw StdFormatError.SpecifierNotAllowedWith(fs.align, fs.type, fs);
+            throw FormatError.SpecifierNotAllowedWith(fs.align, fs.type, fs);
         }
 
         let invalidSpecifier = fs.grouping ?? fs.locale ?? fs.sign ?? fs.sharp ?? fs.zero ?? fs.zeta;
 
         if (invalidSpecifier !== undefined) {
             // Specifier not allowed with string.
-            throw StdFormatError.SpecifierNotAllowedWith(invalidSpecifier, fs.type, fs);
+            throw FormatError.SpecifierNotAllowedWith(invalidSpecifier, fs.type, fs);
         }
 
         if (fs.isType("?")) {
             // Here should format escape sequence string.
-            throw StdFormatError.SpecifierIsNotImplemented(fs.type, fs);
+            throw FormatError.SpecifierIsNotImplemented(fs.type, fs);
         }
 
         // For string presentation types precision field indicates the maximum
@@ -1183,7 +1146,7 @@ namespace StringFormatter {
 }
 
 // Formats the replacement field.
-// @arg is the argument given to stdFormat("", arg0, arg1, ...)
+// @arg is the argument given to format("", arg0, arg1, ...)
 // @fs is the parsed format specification.
 function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
     let { align } = fs;
@@ -1214,7 +1177,11 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
         // Argument can be boolean.
         if (fs.isType("", "s")) {
             // Convert boolean to string, if type is default '' or string 's'.
-            argStr = formatString(arg ? trueString : falseString);
+            let b = arg
+                ? (useDeprecatedStdFormat ? deprecatedTrueString : "true")
+                : (useDeprecatedStdFormat ? deprecatedFalseString : "false");
+
+            argStr = formatString(b);
         }
         else if (isFsTypeNumberCompatible) {
             // Convert boolean to number 0 or 1.
@@ -1222,7 +1189,7 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
         }
         else {
             // Invalid argument conversion from boolean.
-            throw StdFormatError.InvalidArgument(arg, fs);
+            throw FormatError.InvalidArgument(arg, fs);
         }
     }
     else if (typeof arg === "number" || typeof arg === "bigint") {
@@ -1233,7 +1200,7 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
         }
         else {
             // Invalid argument conversion from number.
-            throw StdFormatError.InvalidArgument(arg, fs);
+            throw FormatError.InvalidArgument(arg, fs);
         }
     }
     else if (typeof arg === "string") {
@@ -1248,12 +1215,12 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
         }
         else {
             // Invalid argument conversion from string.
-            throw StdFormatError.InvalidArgument(arg, fs);
+            throw FormatError.InvalidArgument(arg, fs);
         }
     }
     else {
         // Invalid argument type.
-        throw StdFormatError.InvalidArgument(arg, fs);
+        throw FormatError.InvalidArgument(arg, fs);
     }
 
     // Next apply fill and alignment according to format specification.
@@ -1293,7 +1260,7 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
 }
 
 // Main function to format string using curly bracket notation.
-export function stdFormat(formatString: string, ...formatArgs: unknown[]): string {
+export function format(formatString: string, ...formatArgs: unknown[]): string {
     // Current string being parsed.
     let parseString = formatString;
 
@@ -1312,7 +1279,7 @@ export function stdFormat(formatString: string, ...formatArgs: unknown[]): strin
         // Throw exception if field number string is not valid.
         // It must be empty "", or contain digits only (= zero or positive integer).
         if (fieldNumberStr !== "" && !DigitsRegex.test(fieldNumberStr)) {
-            throw StdFormatError.InvalidFieldNumber(fieldNumberStr, replacementFieldStr);
+            throw FormatError.InvalidFieldNumber(fieldNumberStr, replacementFieldStr);
         }
 
         // Get field number
@@ -1336,12 +1303,12 @@ export function stdFormat(formatString: string, ...formatArgs: unknown[]): strin
 
         // Throw exception switching between automatic and manual field numbering.
         if (hasAutomaticFieldNumbering && hasManualFieldSpecification) {
-            throw StdFormatError.SwitchBetweenAutoAndManualFieldNumbering();
+            throw FormatError.SwitchBetweenAutoAndManualFieldNumbering();
         }
 
         // Throw exception if field number is out of bounds of arguments array.
         if (fieldNumber < 0 || fieldNumber >= formatArgs.length) {
-            throw StdFormatError.InvalidFieldNumber("" + fieldNumber, replacementFieldStr);
+            throw FormatError.InvalidFieldNumber("" + fieldNumber, replacementFieldStr);
         }
 
         // Return argument.
@@ -1357,7 +1324,7 @@ export function stdFormat(formatString: string, ...formatArgs: unknown[]): strin
         // Nested argument is used for width and precision in format specification, and
         // must be integer number >= 0.
         if (!arg || typeof arg !== "number" || !isInteger(arg) || arg < 0) {
-            throw StdFormatError.InvalidNestedArgument(arg, fs);
+            throw FormatError.InvalidNestedArgument(arg, fs);
         }
 
         // Return nested argument integer
@@ -1438,7 +1405,7 @@ export function stdFormat(formatString: string, ...formatArgs: unknown[]): strin
             }
             else if (parseString[0] === "}") {
                 // Throw exception if parsing string starts with "}".
-                throw StdFormatError.EncounteredSingleCurlyBrace("}");
+                throw FormatError.EncounteredSingleCurlyBrace("}");
             }
             else if (parseString[0] === "{") {
                 // If parsing string starts with "{" then parse replacement field, and
@@ -1448,11 +1415,11 @@ export function stdFormat(formatString: string, ...formatArgs: unknown[]): strin
                     let str = getLooseMatchReplacementFieldString();
                     if (str) {
                         // Got loose match of replacement field string that just failed to parse.
-                        throw StdFormatError.InvalidReplacementField(str);
+                        throw FormatError.InvalidReplacementField(str);
                     }
                     else {
                         // Got single '{' followed by random stuff.
-                        throw StdFormatError.EncounteredSingleCurlyBrace("{");
+                        throw FormatError.EncounteredSingleCurlyBrace("{");
                     }
                 }
 
@@ -1473,7 +1440,7 @@ export function stdFormat(formatString: string, ...formatArgs: unknown[]): strin
     }
     catch (e) {
         // Log internal error to console.
-        if (e instanceof StdFormatError && e.isInternalError()) {
+        if (e instanceof FormatError && e.isInternalError()) {
             console.error(e.toString());
         }
 
@@ -1483,4 +1450,57 @@ export function stdFormat(formatString: string, ...formatArgs: unknown[]): strin
 
     // Parsing is finished. Return result string.
     return resultString;
+}
+
+/******************** 
+ * Deprecated Stuff *
+ ********************/
+
+let useDeprecatedStdFormat = false;
+
+// Support old format error.
+export const StdFormatError = FormatError;
+
+// Old format function
+export function stdFormat(formatString: string, ...formatArgs: unknown[]): string {
+    try {
+        useDeprecatedStdFormat = true;
+        return format(formatString, ...formatArgs);
+    }
+    finally {
+        useDeprecatedStdFormat = false;
+    }
+}
+
+// Old set locale
+export function stdLocaleHint(locale?: string | undefined) {
+    setLocale(locale);
+}
+
+// The octal number prefix is "0o" in Python and "0" in C++.
+let deprecatedOctalPrefix: "0" | "0o" = "0o";
+let deprecatedTrueString: "true" | "True" = "True";
+let deprecatedFalseString: "false" | "False" = "False";
+
+// Use specification hint.
+export function stdSpecificationHint(specHint: "cpp" | "python" | "js") {
+    if (specHint === "cpp") {
+        deprecatedOctalPrefix = "0";
+        deprecatedTrueString = "true";
+        deprecatedFalseString = "false";
+    }
+    else if (specHint === "python") {
+        deprecatedOctalPrefix = "0o";
+        deprecatedTrueString = "True";
+        deprecatedFalseString = "False";
+    }
+    else if (specHint === "js") {
+        deprecatedOctalPrefix = "0o";
+        deprecatedTrueString = "true";
+        deprecatedFalseString = "false";
+    }
+    else {
+        // Invalid specification hint.
+        throw FormatError.InvalidSpecificationHint(specHint);
+    }
 }
