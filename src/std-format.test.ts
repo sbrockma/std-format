@@ -28,7 +28,7 @@ describe("std format", () => {
         expect(() => stdFormat("{***}", 1, 2)).toThrow();
         expect(() => stdFormat("{x:q}", 1, 2)).toThrow();
         expect(() => stdFormat("{:{}D}", 1, 2)).toThrow();
-        expect(() =>stdFormat("{:{}{}}", 0, 5, 2)).toThrow(); // Missing '.' between braces {:{}.{}}
+        expect(() => stdFormat("{:{}{}}", 0, 5, 2)).toThrow(); // Missing '.' between braces {:{}.{}}
     });
 
     it("field numbering", () => {
@@ -134,6 +134,11 @@ describe("std format", () => {
     it("locale specifier L", () => {
         expect(stdFormatLocale("en-UK", "{:Ld}", 4444444444)).toEqual("4,444,444,444");
         expect(stdFormatLocale("en-UK", "{:.2Lf}", 444444.4444)).toEqual("444,444.44");
+
+        // Cannot use specifier together
+        expect(() => stdFormat("{:,Ld}", 0)).toThrow();
+        expect(() => stdFormat("{:_Ld}", 0)).toThrow();
+        expect(() => stdFormat("{:Ln}", 0)).toThrow();
     });
 
     it("sign", () => {

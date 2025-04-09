@@ -104,9 +104,11 @@ export class StdFormatError extends Error {
     }
 
     // Create specifier not allowed error.
-    static SpecifierNotAllowed(specifier: string, fs: FormatSpecification) {
+    static SpecifierNotAllowedWith(specifier1: string, specifier2: string, fs: FormatSpecification) {
+        let specifier1Str = specifier1 === fs.type ? "Type specifier" : "Specifier";
+        let specifier2Str = specifier2 === fs.type ? "type specifier" : "specifier";
         return new StdFormatError(
-            "Specifier '" + specifier + "' not allowed with type specifier '" + fs.type +
+            specifier1Str + " '" + specifier1 + "' not allowed with " + specifier2Str + " '" + specifier2 +
             "' in \"" + fs.replacementFieldString + "\".");
     }
 
@@ -335,11 +337,11 @@ class NumberFormatter {
                 throw StdFormatError.InvalidArgument(value, fs);
             }
 
-            // Get invalid specifier that is not allowed with type 'c.
+            // Get invalid specifier that is not allowed with type 'c'.
             let invalidSpecifier = fs.sign ?? fs.zeta ?? fs.sharp ?? fs.grouping;
 
             if (invalidSpecifier !== undefined) {
-                throw StdFormatError.SpecifierNotAllowed(invalidSpecifier, fs);
+                throw StdFormatError.SpecifierNotAllowedWith(invalidSpecifier, fs.type, fs);
             }
         }
 
@@ -910,7 +912,7 @@ class NumberFormatter {
             }
             else {
                 // Else 'z' not allowed with fs.type.
-                throw StdFormatError.SpecifierNotAllowed(fs.zeta, fs);
+                throw StdFormatError.SpecifierNotAllowedWith(fs.zeta, fs.type, fs);
             }
         }
 
@@ -936,19 +938,23 @@ class NumberFormatter {
     // Get grouping properties
     private getGroupingProps(): { decimalSeparator: string, groupSeparator: string, groupSize: number } {
         let { fs } = this;
-        let { grouping } = fs;
 
-        if (grouping === ",") {
+        if (fs.grouping !== undefined && fs.locale !== undefined) {
+            // ',' and '_' not allowed with 'L'.
+            throw StdFormatError.SpecifierNotAllowedWith(fs.grouping, fs.locale, fs);
+        }
+
+        if (fs.grouping === ",") {
             // Get grouping properties with group specifier ',' for supported type specifiers.
             if (fs.isType("deEfFgG%")) {
                 return { decimalSeparator: ".", groupSeparator: ",", groupSize: 3 }
             }
             else {
                 // ',' not allowed with fs.type.
-                throw StdFormatError.SpecifierNotAllowed(grouping, fs);
+                throw StdFormatError.SpecifierNotAllowedWith(fs.grouping, fs.type, fs);
             }
         }
-        else if (grouping === "_") {
+        else if (fs.grouping === "_") {
             // Get grouping properties with group specifier '_' for supported type specifiers.
             if (fs.isType("deEfFgG%")) {
                 return { decimalSeparator: ".", groupSeparator: "_", groupSize: 3 }
@@ -959,7 +965,7 @@ class NumberFormatter {
             }
             else {
                 // '_' not allowed with fs.type.
-                throw StdFormatError.SpecifierNotAllowed(grouping, fs);
+                throw StdFormatError.SpecifierNotAllowedWith(fs.grouping, fs.type, fs);
             }
         }
         else if (fs.locale) {
@@ -970,7 +976,7 @@ class NumberFormatter {
             }
             else {
                 // 'L' not allowed with fs.type.
-                throw StdFormatError.SpecifierNotAllowed(fs.locale, fs);
+                throw StdFormatError.SpecifierNotAllowedWith(fs.locale, fs.type, fs);
             }
         }
         else if (fs.isType("n")) {
@@ -1153,14 +1159,14 @@ namespace StringFormatter {
         }
         else if (fs.align === "=") {
             // '=' not allowed with fs.type.
-            throw StdFormatError.SpecifierNotAllowed(fs.align, fs);
+            throw StdFormatError.SpecifierNotAllowedWith(fs.align, fs.type, fs);
         }
 
         let invalidSpecifier = fs.grouping ?? fs.locale ?? fs.sign ?? fs.sharp ?? fs.zero ?? fs.zeta;
 
         if (invalidSpecifier !== undefined) {
             // Specifier not allowed with string.
-            throw StdFormatError.SpecifierNotAllowed(invalidSpecifier, fs);
+            throw StdFormatError.SpecifierNotAllowedWith(invalidSpecifier, fs.type, fs);
         }
 
         if (fs.isType("?")) {
