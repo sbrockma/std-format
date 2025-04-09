@@ -38,30 +38,42 @@ See the C++ and Python links above for full format specification.
 
 ## Declarations
 
-### function format(formatString, ...args)
+### Function format(formatString, ...args)
 
     import Fmt from "@sbrockma/std-format";
 
     // Automatic field numbering
-    Fmt.format("{}, {}, {}", "a", "b", "c");
+    let str = Fmt.format("{}, {}, {}", "a", "b", "c");
 
     // Manual field specification
-    Fmt.format("{2}, {1}, {0}", "a", "b", "c");
+    let str = Fmt.format("{2}, {1}, {0}", "a", "b", "c");
 
     // Fill and align
-    Fmt.format("{:*<6}", "x");
-    Fmt.format("{:*>6}", "x");
-    Fmt.format("{:*^6}", "x");
+    let str = Fmt.format("{:*<6}", "x");
+    let str = Fmt.format("{:*>6}", "x");
+    let str = Fmt.format("{:*^6}", "x");
 
     // Scientific notation
-    Fmt.format("{:.2e}", 1);
+    let str = Fmt.format("{:.2e}", 1);
 
     // Supported arguments are boolean, string, char, number and bigint
-    Fmt.format("{:s} {:s} {:c} {:d} {:d}", true, "string", "c", 10, BigInt("999"));
+    let str = Fmt.format("{:s} {:s} {:c} {:d} {:d}", true, "string", "c", 10, BigInt("999"));
 
     // etc.
 
-### class FormatError
+### Function setLocale(locale)
+
+Decimal and grouping separators are decided by locale when formatting with type specifier "n" or locale specifier "L".
+
+    import Fmt from "@sbrockma/std-format";
+
+    // Use default locale
+    Fmt.setLocale();
+
+    // Use locale "en-UK"
+    Fmt.setLocale("en-UK");
+
+### Class FormatError
 
     import Fmt from "@sbrockma/std-format";
 
@@ -74,29 +86,17 @@ See the C++ and Python links above for full format specification.
         }
     }
 
-### function setLocale(locale)
+## Deprecated Declarations
 
-Decimal and grouping separators are decided by locale when formatting with type specifier "n" or locale specifier "L".
+### Function stdFormat(formatString, ...args)
 
-    import Fmt from "@sbrockma/std-format";
+Function stdFormat() is deprecated. Use function format() instead.
 
-    // Use default locale
-    Fmt.setLocale();
+### Function stdSpecificationHint("pyhon" | "cpp" | "js")
 
-    // Use locale "en-UK"
-    Fmt.setLocale("en-UK");
+Function stdSpecificationHint() is deprecated.
 
-## Old Declarations
-
-Decided to simplify to declaration names without std-prefix. However, these old declarations work too.
-
-### function stdFormat(formatString, ...args)
-
-Was replaced by format(formatString, ...args).
-
-### function stdSpecificationHint("pyhon" | "cpp" | "js")
-
-Specification hint was me trying to be smart and support both Python and C++ language ways:
+Specification hint was attempt to support both Python and C++ language ways:
  * "python": octal prefix is "0o", boolean strings are "True" and "False"
  * "cpp": octal prefix is "0", boolean strings are "true" and "false"
  * "js": octal prefix is "0o", boolean strings are "true" and "false"
@@ -104,10 +104,10 @@ Specification hint was me trying to be smart and support both Python and C++ lan
 Using format() function instead the result is not affected by specification hint:
  * octal prefix is "0o", boolean strings are "true" and "false".
 
-### function stdLocaleHint(locale)
+### Function stdLocaleHint(locale)
 
-Was replaced by setLocale(locale).
+Function stdLocaleHint() is deprecated. Use function setLocale() instead.
 
-### class StdFormatError
+### Class StdFormatError
 
-Was replaced by class FormatError.
+Class StdFormatError is deprecated. Use class FormatError instead.

@@ -43,7 +43,7 @@ export class FormatError extends Error {
     // private constructor. Use static functions below to create error objects.
     private constructor(readonly message: string) {
         super(message);
-        this.name = useDeprecatedStdFormat ? "StdFormatError" : "FormatError";
+        this.name = usingDeprecatedStdFormat ? "StdFormatError" : "FormatError";
         // console.log(message);
     }
 
@@ -890,7 +890,7 @@ class NumberFormatter {
         let { fs } = this;
 
         return fs.sharp === "#" ? (
-            fs.isType("xX") ? "0x" : fs.isType("bB") ? "0b" : fs.isType("o") ? (useDeprecatedStdFormat ? deprecatedOctalPrefix : "0o") : ""
+            fs.isType("xX") ? "0x" : fs.isType("bB") ? "0b" : fs.isType("o") ? (usingDeprecatedStdFormat ? deprecatedOctalPrefix : "0o") : ""
         ) : "";
     }
 
@@ -1178,8 +1178,8 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
         if (fs.isType("", "s")) {
             // Convert boolean to string, if type is default '' or string 's'.
             let b = arg
-                ? (useDeprecatedStdFormat ? deprecatedTrueString : "true")
-                : (useDeprecatedStdFormat ? deprecatedFalseString : "false");
+                ? (usingDeprecatedStdFormat ? deprecatedTrueString : "true")
+                : (usingDeprecatedStdFormat ? deprecatedFalseString : "false");
 
             argStr = formatString(b);
         }
@@ -1456,24 +1456,44 @@ export function format(formatString: string, ...formatArgs: unknown[]): string {
  * Deprecated Stuff *
  ********************/
 
-let useDeprecatedStdFormat = false;
-
-// Support old format error.
+/**
+ * @deprecated
+ */
 export const StdFormatError = FormatError;
 
-// Old format function
+let stdFormatWarned = false;
+let stdSpecificationHintWarned = false;
+let stdLocaleHintWarned = false;
+
+let usingDeprecatedStdFormat = false;
+
+/**
+ * @deprecated
+ */
 export function stdFormat(formatString: string, ...formatArgs: unknown[]): string {
+    if (!stdFormatWarned) {
+        console.warn("std-format: function stdFormat() is deprecated. Use function format() instead.");
+        stdFormatWarned = true;
+    }
+
     try {
-        useDeprecatedStdFormat = true;
+        usingDeprecatedStdFormat = true;
         return format(formatString, ...formatArgs);
     }
     finally {
-        useDeprecatedStdFormat = false;
+        usingDeprecatedStdFormat = false;
     }
 }
 
-// Old set locale
+/**
+ * @deprecated
+ */
 export function stdLocaleHint(locale?: string | undefined) {
+    if (!stdLocaleHintWarned) {
+        console.warn("std-format: function stdLocaleHint() is deprecated. Use function setLocale() instead.");
+        stdLocaleHintWarned = true;
+    }
+
     setLocale(locale);
 }
 
@@ -1482,8 +1502,15 @@ let deprecatedOctalPrefix: "0" | "0o" = "0o";
 let deprecatedTrueString: "true" | "True" = "True";
 let deprecatedFalseString: "false" | "False" = "False";
 
-// Use specification hint.
+/**
+ * @deprecated
+ */
 export function stdSpecificationHint(specHint: "cpp" | "python" | "js") {
+    if (!stdSpecificationHintWarned) {
+        console.warn("std-format: function stdSpecificationHint() is deprecated.");
+        stdSpecificationHintWarned = true;
+    }
+
     if (specHint === "cpp") {
         deprecatedOctalPrefix = "0";
         deprecatedTrueString = "true";

@@ -4,7 +4,7 @@ import DefaultExport from "./index";
 describe("Testing std-format", () => {
     function formatLocale(locale: string, fmt: string, ...args: unknown[]) {
         setLocale(locale);
-        return stdFormat(fmt, ...args);
+        return format(fmt, ...args);
     }
 
     it("test default export", () => {
