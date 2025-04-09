@@ -159,6 +159,7 @@ describe("std format", () => {
     });
 
     it("fill and align", () => {
+        // Default fill and default align
         expect(stdFormat("{:6}", 42)).toEqual("    42");
         expect(stdFormat("{:6}", "x")).toEqual("x     ");
         expect(stdFormat("{:*<6}", "x")).toEqual("x*****");
@@ -166,7 +167,25 @@ describe("std format", () => {
         expect(stdFormat("{:*^6}", "x")).toEqual("**x***");
         expect(stdFormat("{:6d}", 120)).toEqual("   120");
 
-        expect(stdFormat("{:<06}", -42)).toEqual("-42   ");  // 0 is ignored because of "<"
+        expect(stdFormat("{:?<8d}", 10)).toEqual("10??????");
+        expect(stdFormat("{:?^8d}", 10)).toEqual("???10???");
+        expect(stdFormat("{:?>8d}", 10)).toEqual("??????10");
+        expect(stdFormat("{:?=8d}", 10)).toEqual("??????10");
+
+        expect(stdFormat("{:<6}", -42)).toEqual("-42   "); // Default fill char ' '
+        expect(stdFormat("{:^6}", -42)).toEqual(" -42  ");
+        expect(stdFormat("{:>6}", -42)).toEqual("   -42");
+        expect(stdFormat("{:=6}", -42)).toEqual("-   42");
+
+        expect(stdFormat("{:<06}", -42)).toEqual("-42000"); // '0' is specified
+        expect(stdFormat("{:^06}", -42)).toEqual("0-4200");
+        expect(stdFormat("{:>06}", -42)).toEqual("000-42");
+        expect(stdFormat("{:=06}", -42)).toEqual("-00042");
+
+        expect(stdFormat("{:q<6}", -42)).toEqual("-42qqq"); // Fill char is given
+        expect(stdFormat("{:q^6}", -42)).toEqual("q-42qq");
+        expect(stdFormat("{:q>6}", -42)).toEqual("qqq-42");
+        expect(stdFormat("{:q=6}", -42)).toEqual("-qqq42");
 
         expect(stdFormat("{:7}|{:7}|{:7}|{:7}", 1, -.2, "str", "c")).toEqual("      1|   -0.2|str    |c      ");
         expect(stdFormat("{:*<7}|{:*<7}|{:*>7}|{:*>7}", 1, -.2, "str", "c")).toEqual("1******|-0.2***|****str|******c");
@@ -176,6 +195,27 @@ describe("std format", () => {
         expect(stdFormat("{:>30}", "right aligned")).toEqual("                 right aligned");
         expect(stdFormat("{:^30}", "centered")).toEqual("           centered           ");
         expect(stdFormat("{:*^30}", "centered")).toEqual("***********centered***********");
+    });
+
+    it("fill specifier =", () => {
+        expect(stdFormat("{:*=8d}", 10)).toEqual("******10");
+        expect(stdFormat("{:*=8d}", -10)).toEqual("-*****10");
+        expect(stdFormat("{:0=#10x}", 10)).toEqual("0x0000000a");
+        expect(stdFormat("{:0=#10x}", -10)).toEqual("-0x000000a");
+
+        // Both fill and 0 with signs '+' and ' '
+        expect(stdFormat("{:*=+#08d}", 10)).toEqual("+*****10");
+        expect(stdFormat("{:*=+#08d}", -10)).toEqual("-*****10");
+        expect(stdFormat("{:*= #08d}", 10)).toEqual(" *****10");
+        expect(stdFormat("{:*= #08d}", -10)).toEqual("-*****10");
+
+        // '=' alignment not allowed on strings
+        expect(() => stdFormat("{:*=9s}", "oho")).toThrow();
+        expect(() => stdFormat("{:*=9?}", "oho")).toThrow();
+        expect(() => stdFormat("{:*=9}", "oho")).toThrow();
+
+        // '=' allowed for char specifier 'c'
+        expect(stdFormat("{:*=9c}", 65)).toEqual("********A");
     });
 
     it("specifier '0'", () => {
@@ -219,26 +259,6 @@ describe("std format", () => {
         expect(stdFormat("{:*^5.5s}", "AAAAA")).toEqual("AAAAA");
         expect(stdFormat("{:*^5.5s}", "AAAAAA")).toEqual("AAAAA");
         expect(stdFormat("{:*^5.5s}", "AAAAAAA")).toEqual("AAAAA");
-    });
-
-    it("fill specifier =", () => {
-        // Default fill ' '
-        expect(stdFormat("{:10}", "test")).toEqual("test      ");
-        expect(stdFormat("{:<8d}", 10)).toEqual("10      ");
-
-        expect(stdFormat("{:*=8d}", 10)).toEqual("******10");
-        expect(stdFormat("{:*=8d}", -10)).toEqual("-*****10");
-        expect(stdFormat("{:0=#10x}", 10)).toEqual("0x0000000a");
-        expect(stdFormat("{:0=#10x}", -10)).toEqual("-0x000000a");
-
-        // Both fill and 0 with signs '+' and ' '
-        expect(stdFormat("{:*=+#08d}", 10)).toEqual("+*****10");
-        expect(stdFormat("{:*=+#08d}", -10)).toEqual("-*****10");
-        expect(stdFormat("{:*= #08d}", 10)).toEqual(" *****10");
-        expect(stdFormat("{:*= #08d}", -10)).toEqual("-*****10");
-
-        // '=' alignment not allowed on strings
-        expect(() => stdFormat("{:*=9s}", "oho")).toThrow();
     });
 
     it("negative and positive zero", () => {

@@ -231,7 +231,7 @@ const DigitsRegex = /^\d+$/;
 // The format specification class
 class FormatSpecification {
     readonly replacementFieldString: string;
-    readonly fill: string; // single character, default " "
+    readonly fill: string | undefined;
     readonly align: "<" | "^" | ">" | "=" | undefined;
     readonly sign: "+" | "-" | " " | undefined;
     readonly zeta: "z" | undefined;
@@ -259,7 +259,7 @@ class FormatSpecification {
         let type = replFieldMatch.groups?.type;
 
         this.replacementFieldString = replFieldMatch[0];
-        this.fill = !fill ? " " : fill; // default " "
+        this.fill = (fill && fill.length === 1) ? fill : undefined;
         this.align = (align === "<" || align === "^" || align === ">" || align === "=") ? align : undefined;
         this.sign = (sign === "-" || sign === "+" || sign === " ") ? sign : undefined;
         this.zeta = zeta === "z" ? zeta : undefined;
@@ -1124,13 +1124,19 @@ class NumberFormatter {
         // It is width minus sign, prefix, digits, exponent, and postfix.
         let fillCount = Math.max(0, width - sign.length - prefix.length - digits.length - exp.length - postfix.length);
 
-        // Get fill character.
-        // If align is '=' then use fs.fill.
-        // Else use fs.zero if given or '' (no fill) otherwise.
-        let fillChar = fs.align === "=" ? fs.fill : (fs.zero ?? "");
+        // Fill character. 
+        let fillChar: string;
 
-        // No filling if align is '<', or if fill char is empty.
-        if (fs.align === "<" || fillChar === "") {
+        // Here we only add filling that occurs between sign (or prefix) and digits.
+        // That means if align is '=' or if align is not defined and '0' is specified.
+        if (fs.align === "=") {
+            fillChar = fs.fill ?? fs.zero ?? " ";
+        }
+        else if (fs.align === undefined && fs.zero !== undefined) {
+            fillChar = fs.zero;
+        }
+        else {
+            fillChar = "";
             fillCount = 0;
         }
 
@@ -1184,7 +1190,7 @@ namespace StringFormatter {
 // @arg is the argument given to stdFormat("", arg0, arg1, ...)
 // @fs is the parsed format specification.
 function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
-    let { align, fill } = fs;
+    let { align } = fs;
 
     // Convert to valid argument: string or number.
     let argStr: string;
@@ -1262,23 +1268,26 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
     // Calculate fillCount
     let fillCount = Math.max(0, width - argStr.length);
 
+    // Get fill char.
+    let fillChar = fs.fill ?? fs.zero ?? " ";
+
     // Initialize replacement string.
     let replacementStr: string = argStr;
 
     // Modify replacement string if filling is required.
-    if (fillCount > 0 && fill.length > 0) {
+    if (fillCount > 0) {
         switch (align) {
             case "<":
                 // Field is left aligned. Add filling to right.
-                replacementStr = argStr + repeatString(fill, fillCount);
+                replacementStr = argStr + repeatString(fillChar, fillCount);
                 break;
             case "^":
                 // Field is center aligned. Add filling to left and right right.
-                replacementStr = repeatString(fill, Math.floor(fillCount / 2)) + argStr + repeatString(fill, Math.ceil(fillCount / 2));
+                replacementStr = repeatString(fillChar, Math.floor(fillCount / 2)) + argStr + repeatString(fillChar, Math.ceil(fillCount / 2));
                 break;
             case ">":
                 // Field is right aligned. Add filling to left.
-                replacementStr = repeatString(fill, fillCount) + argStr;
+                replacementStr = repeatString(fillChar, fillCount) + argStr;
                 break;
         }
     }
