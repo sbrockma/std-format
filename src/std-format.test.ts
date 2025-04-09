@@ -1,4 +1,5 @@
 import { stdFormat, stdLocaleHint, stdSpecificationHint } from "./index";
+import DefaultExport from "./index";
 
 function stdFormatSpec(spec: "cpp" | "python" | "js", fmt: string, ...args: unknown[]) {
     stdSpecificationHint(spec);
@@ -11,8 +12,11 @@ function stdFormatLocale(locale: string, fmt: string, ...args: unknown[]) {
 }
 
 describe("std format", () => {
-    it("using curly braces", () => {
+    it("test default export", () => {
+        expect(DefaultExport.stdFormat("The answer is {}.", 42)).toEqual("The answer is 42.");
+    });
 
+    it("using curly braces", () => {
         expect(stdFormat("Test {{ }} {{}}", 1, 2)).toEqual("Test { } {}");
         expect(stdFormat("frac{{{}}}{{{}}}", 1, 2)).toEqual("frac{1}{2}");
         expect(stdFormat("frac{{{0}}}{{{1}}}", 1, 2)).toEqual("frac{1}{2}");
