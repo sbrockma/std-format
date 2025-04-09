@@ -1,12 +1,12 @@
 
 // Create string that is string s repeated count times
-function repeatStr(s: string, count: number): string {
-    return new Array(Math.max(0, count) + 1).join(s);
+function repeatString(s: string, count: number): string {
+    return s.repeat(Math.max(0, count));
 }
 
 // Create number array that contains number n count times
-function repeatNum(n: number, count: number): number[] {
-    return new Array(Math.max(0, count)).fill(n);
+function fillArray<T>(fillValue: T, count: number): T[] {
+    return new Array<T>(Math.max(0, count)).fill(fillValue);
 }
 
 // Test if number is integer.
@@ -19,7 +19,7 @@ function mapDigitToChar(d: number) {
     return "0123456789abcdef"[d];
 }
 
-// Is value negative. For number  -0 is negative and +0 is positive.
+// Is value negative. For number -0 is negative and +0 is positive.
 function isNegative(n: number | bigint) {
     return typeof n === "bigint" ? (n < 0) : (n < 0 || 1.0 / n === -Infinity);
 }
@@ -558,13 +558,13 @@ class NumberFormatter {
         // If dot position was moved right past end of digits then
         // add zeroes from the end of digits to dot position.
         if (this.dotPos > this.digits.length) {
-            this.digits.splice(this.digits.length, 0, ...repeatNum(0, this.dotPos - this.digits.length));
+            this.digits.splice(this.digits.length, 0, ...fillArray(0, this.dotPos - this.digits.length));
         }
 
         // If dot position was moved left past first digit then
         // add zeroes to beginning so that dot position becomes 1.
         if (this.dotPos < 1) {
-            this.digits.splice(0, 0, ...repeatNum(0, 1 - this.dotPos));
+            this.digits.splice(0, 0, ...fillArray(0, 1 - this.dotPos));
             this.dotPos = 1;
         }
 
@@ -589,7 +589,7 @@ class NumberFormatter {
         }
         else if (digitCount > this.digits.length) {
             // If digitCount > digits.length then need to add trailing zeroes to set digit count.
-            this.digits.splice(this.digits.length, 0, ...repeatNum(0, digitCount - this.digits.length));
+            this.digits.splice(this.digits.length, 0, ...fillArray(0, digitCount - this.digits.length));
             return;
         }
 
@@ -601,7 +601,7 @@ class NumberFormatter {
 
         // Remove digits from pos to end.
         // And add zeroes from pos to dotPos
-        this.digits.splice(pos, this.digits.length - pos, ...repeatNum(0, this.dotPos - pos));
+        this.digits.splice(pos, this.digits.length - pos, ...fillArray(0, this.dotPos - pos));
 
         // Function to check digit if it will round up
         const roundUp = (digit: number) => digit >= Math.ceil(this.base / 2);
@@ -725,7 +725,7 @@ class NumberFormatter {
             // Each digit in hexadecimal has four digits in binary.
             // Add leading zeroes to return binary string length of 4.
             let b = Number(d).toString(2);
-            return repeatStr("0", 4 - b.length) + b;
+            return repeatString("0", 4 - b.length) + b;
         }).join("");
 
         // Multiply by two (shift digits to left) as long as 
@@ -1124,18 +1124,18 @@ class NumberFormatter {
         // It is width minus sign, prefix, digits, exponent, and postfix.
         let fillCount = Math.max(0, width - sign.length - prefix.length - digits.length - exp.length - postfix.length);
 
-        // No filling for numbers if align is '<'.
-        if (fs.align === "<") {
-            fillCount = 0;
-        }
-
         // Get fill character.
         // If align is '=' then use fs.fill.
         // Else use fs.zero if given or '' (no fill) otherwise.
         let fillChar = fs.align === "=" ? fs.fill : (fs.zero ?? "");
 
+        // No filling if align is '<', or if fill char is empty.
+        if (fs.align === "<" || fillChar === "") {
+            fillCount = 0;
+        }
+
         // Form final string representation by adding all components and fill.
-        let str = sign + prefix + repeatStr(fillChar, fillCount) + digits + exp + postfix;
+        let str = sign + prefix + repeatString(fillChar, fillCount) + digits + exp + postfix;
 
         // Convert to uppercase if specified by format specification type.
         return fs.isType("AGEFBX") ? str.toUpperCase() : str;
@@ -1270,15 +1270,15 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
         switch (align) {
             case "<":
                 // Field is left aligned. Add filling to right.
-                replacementStr = argStr + repeatStr(fill, fillCount);
+                replacementStr = argStr + repeatString(fill, fillCount);
                 break;
             case "^":
                 // Field is center aligned. Add filling to left and right right.
-                replacementStr = repeatStr(fill, Math.floor(fillCount / 2)) + argStr + repeatStr(fill, Math.ceil(fillCount / 2));
+                replacementStr = repeatString(fill, Math.floor(fillCount / 2)) + argStr + repeatString(fill, Math.ceil(fillCount / 2));
                 break;
             case ">":
                 // Field is right aligned. Add filling to left.
-                replacementStr = repeatStr(fill, fillCount) + argStr;
+                replacementStr = repeatString(fill, fillCount) + argStr;
                 break;
         }
     }
