@@ -157,9 +157,9 @@ describe("std format", () => {
 
         expect(stdFormat("{:+}, {: }", 314, 314)).toEqual("+314,  314");
 
-        expect(stdFormat('{:+f}; {:+f}', 3.14, -3.14)).toEqual('+3.140000; -3.140000');
-        expect(stdFormat('{: f}; {: f}', 3.14, -3.14)).toEqual(' 3.140000; -3.140000');
-        expect(stdFormat('{:-f}; {:-f}', 3.14, -3.14)).toEqual('3.140000; -3.140000');
+        expect(stdFormat("{:+f}; {:+f}", 3.14, -3.14)).toEqual("+3.140000; -3.140000");
+        expect(stdFormat("{: f}; {: f}", 3.14, -3.14)).toEqual(" 3.140000; -3.140000");
+        expect(stdFormat("{:-f}; {:-f}", 3.14, -3.14)).toEqual("3.140000; -3.140000");
     });
 
     it("fill and align", () => {
@@ -222,7 +222,7 @@ describe("std format", () => {
         expect(stdFormat("{:*=9c}", 65)).toEqual("********A");
     });
 
-    it("specifier '0'", () => {
+    it("specifier 0", () => {
         expect(stdFormat("{:015.2f}", 1234.5678)).toEqual("000000001234.57");
         expect(stdFormat("{:15.02f}", 1234.5678)).toEqual("        1234.57");
 
@@ -287,7 +287,7 @@ describe("std format", () => {
 
     });
 
-    it("specifier 'z'", () => {
+    it("specifier z", () => {
         expect(stdFormat("{:zg}", +0)).toEqual("0");
         expect(stdFormat("{:zg}", -0)).toEqual("0");
 
@@ -299,7 +299,7 @@ describe("std format", () => {
         expect(() => stdFormat("{:z}", -0)).toThrow();
     });
 
-    it("type specifier '?'", () => {
+    it("type specifier ?", () => {
         // Not yet implemented.
         expect(() => stdFormat("{:?}", 0)).toThrow();
     });
