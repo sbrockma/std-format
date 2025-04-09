@@ -987,13 +987,9 @@ class NumberFormatter {
 
     // Get char code
     private getCharCode() {
-        // Only call for type specifier 'c'. Number is in integer form.
-        assert(
-            this.fs.isType("c") &&
-            this.sign === 1 &&
-            this.dotPos === this.digits.length &&
-            this.exp === 0,
-            "Invalid call to getCharCode().");
+        // Only call for type specifier 'c'. Number is integer.
+        assert(this.fs.isType("c") && this.sign === 1 && this.dotPos === this.digits.length &&
+            this.exp === 0 && this.base === 10, "Invalid call to getCharCode().");
 
         // Calculate char code from digits.
         let charCode = 0;
