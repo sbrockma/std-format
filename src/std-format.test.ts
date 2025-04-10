@@ -390,10 +390,18 @@ describe("Testing std-format", () => {
         // Fill and align
         expect(format("{:15s}", "Banana")).toEqual("Banana         ");
         expect(format("{:!<15s}", "Banana")).toEqual("Banana!!!!!!!!!");
-        expect(format("{:!^15.3s}", "Banana")).toEqual("!!!!!!Ban!!!!!!");
+        expect(format("{:!^15s}", "Banana")).toEqual("!!!!Banana!!!!!");
         expect(format("{:!>15s}", "Banana")).toEqual("!!!!!!!!!Banana");
         expect(() => format("{:015s}", "Banana")).toThrow();
         expect(() => format("{:!=15s}", "Banana")).toThrow();
+
+        // Precision = how may chars.
+        expect(format("{:-^8.4s}", "doc")).toEqual("--doc---");
+        expect(format("{:-^8.3s}", "doc")).toEqual("--doc---");
+        expect(format("{:-^8.2s}", "doc")).toEqual("---do---");
+        expect(format("{:-^8.1s}", "doc")).toEqual("---d----");
+        expect(format("{:-^8.0s}", "doc")).toEqual("--------");
+
 
         // Specifiers not allowed with 's'
         expect(() => format("{:,s}", "Hello")).toThrow();
