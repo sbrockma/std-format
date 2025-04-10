@@ -26,7 +26,7 @@ See the C++ and Python links above for full format specification.
 
 ## Library Bundle
 
-This library bundle is a Universal Module Definition (UMD) -module.
+- Bundled to a Universal Module Definition (UMD) - module.
 - Transpiled using babel, targets "> 0.25%, not dead".
 - Does not do polyfills!
 
