@@ -7,7 +7,7 @@
     "description": "String formatting of curly braces notation for TS/JS.",
     "homepage": "https://github.com/sbrockma/std-format#readme",
     "repository": "github:sbrockma/std-format",
-    "main": "./dist/bundle.umd.js",
+    "main": "./dist/std-format.umd.js",
     "types": "./dist/types/index.d.ts",
     "dependencies": {},
     "devDependencies": {

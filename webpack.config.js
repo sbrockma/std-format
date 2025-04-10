@@ -9,10 +9,10 @@ module.exports = (env, argv) => {
         entry: path.resolve(__dirname, "src/index.ts"),
         output: {
             path: path.resolve(__dirname, "dist"),
-            filename: "bundle.umd.js",
-            library: {
-                type: "umd"
-            },
+            filename: "std-format.umd.js",
+            library: "StdFormat",
+            libraryTarget: "umd",
+            globalObject: "this",
             clean: true
         },
         resolve: {
