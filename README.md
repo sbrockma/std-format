@@ -7,8 +7,8 @@ This is early release. Hoping to fix bugs and add new features in future.
 ## Library Bundle
 
 This library bundle is a Universal Module Definition (UMD) -module.
-- Is transpiled using babel targets "> 0.25%, not dead".
-- **Does not do polyfills!**
+- Transpiled using babel, targets "> 0.25%, not dead".
+- Does not do polyfills!
 
 
 ## Format Specification
