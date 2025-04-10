@@ -1,40 +1,44 @@
-# Change Log
+# Changelog
 
-## 1.3.0
-### New Features
+## [1.3.1] - 2025-04-10
+### Changed
+- Format changelog based on Keep a Changelog.
+- Stop using newer JS functions to support older environments.
+- Renamed bundle to "std-format.umd.js" and add library: "StdFormat" in webpack.config.js.
+
+## [1.3.0] - 2025-04-09
+### Added
+- New functions format(), setLocale() and class FormatError.
+### Deprecated
 - Functions stdFormat(), stdSpecificationHint(), stdLocaleHint() and class StdFormatError are now deprecated.
-- Use new functions format(), setLocale() and class FormatError instead.
 
-## 1.2.1
-### Fixes
-- Better error message if parsing replacement field failed.
-- More error throwing checks for specifiers.
+## [1.2.1] - 2025-04-09
+### Chenged
+- Better error message when parsing replacement field failed.
+- More error throwing checks of format specifiers.
+### Fixed
 - Formatting with fill and align.
 - Format specification regex.
 
-## 1.2.0
-### New Features
+## [1.2.0] - 2025-04-08
+### Added
 - Added specification hint "js".
-### Fixes
-- Enable grouping with type specifier '%'
-- More checks with string type specifier 's'.
+### Fixed
+- Enable grouping with '%' type specifier.
+- More checks with type specifier 's'.
 - Char formatting with type specifier 'c'.
-### Docs
-- Added note that stdSpecificationHint will be deprecated in version 2.
 
-## 1.1.1
-### Fixes
+## [1.1.1] - 2025-04-08
+### Fixed
 - Forgot stdLocaleHint from exports.
 
-## 1.1.0
-### New Features
-- Apply precision field with string type specifier to set maximum field size.
-- Implemented specifier 'z'.
-- Implemented locale affected formatting specifiers 'n' and 'L'.
-- Implemented grouping specifiers ',' and '_'.
-- Added support to bigint arguments.
-### Fixes
-- Do not treat zero with default type specifier as float.
+## [1.1.0] - 2025-04-08
+### Added
+- Precision field with string sets maximum field size.
+- Implemented specifier 'z', 'n', 'L', ',' and '_'.
+- Support bigint arguments.
+### Fixed
+- Do not treat zero as float when type specifier is '' (default).
 
-## 1.0.0
+## [1.0.0] - 2025-04-07
 First release.
