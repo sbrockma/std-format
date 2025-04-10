@@ -152,8 +152,11 @@ export function setLocale(locale?: string | undefined) {
         localeGroupSeparator = nf.find(part => part.type === "group")?.value ?? "";
     }
     catch (e) {
+        if (locale) {
+            console.log("Failed to fetch information for locale " + locale + ".");
+        }
         localeDecimalSeparator = ".";
-        localeGroupSeparator = "";
+        localeGroupSeparator = ",";
     }
 }
 
