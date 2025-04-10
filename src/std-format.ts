@@ -1,17 +1,17 @@
 
 // Create string that is string s repeated count times
-function repeatString(s: string, count: number): string {
-    return s.repeat(Math.max(0, count));
+function repeatString(repeatStr: string, repeatCount: number): string {
+    return new Array(Math.max(0, repeatCount) + 1).join(repeatStr);
 }
 
 // Create number array that contains number n count times
-function fillArray<T>(fillValue: T, count: number): T[] {
-    return new Array<T>(Math.max(0, count)).fill(fillValue);
+function zeroArray(zeroCount: number): number[] {
+    return new Array<number>(Math.max(0, zeroCount)).fill(0);
 }
 
 // Test if number is integer.
-function isInteger(n: number): boolean {
-    return !isNaN(n) && isFinite(n) && n === Math.trunc(n);
+function isInteger(n: unknown): n is number {
+    return typeof n === "number" && !isNaN(n) && isFinite(n) && n === Math.trunc(n);
 }
 
 // Function to convert digit value to digit character.
@@ -28,7 +28,9 @@ function isNegative(n: number | bigint) {
 function getNumber(n: number | bigint): number {
     if (typeof n === "bigint") {
         // Make sure bigint is in safe number range.
-        assert(n <= Number.MAX_SAFE_INTEGER && n >= Number.MIN_SAFE_INTEGER, "Cannot get number from bigint, too big value.");
+        const MAX_SAFE_INTEGER = 9007199254740991;
+        const MIN_SAFE_INTEGER = -9007199254740991;
+        assert(n <= MAX_SAFE_INTEGER && n >= MIN_SAFE_INTEGER, "Cannot get number from bigint, too big value.");
         // Return bigint as number.
         return Number(n);
     }
@@ -127,17 +129,14 @@ function assert(condition: boolean, msg?: string) {
 }
 
 // Get user/system locale
-function getUserLocale(): string | undefined {
-    if (navigator) {
-        return navigator.languages ? navigator.languages[0] : navigator?.language ?? Intl.DateTimeFormat().resolvedOptions().locale;
+const defaultLocale = (function getUserLocale(): string | undefined {
+    try {
+        return (navigator?.languages ? navigator.languages[0] : navigator?.language) ?? Intl.DateTimeFormat().resolvedOptions().locale;
     }
-    else {
-        return Intl.DateTimeFormat().resolvedOptions().locale;
+    catch (e) {
+        return undefined;
     }
-}
-
-// Set default locale. Use "en-UK" as fallback.
-let defaultLocale: string = getUserLocale() ?? "en-UK";
+})() ?? "en-UK";
 
 // Locale's decimal and group separators.
 let localeDecimalSeparator = ".";
@@ -145,11 +144,17 @@ let localeGroupSeparator = ",";
 
 // Set locale that will be used in locale based formatting.
 export function setLocale(locale?: string | undefined) {
-    let nf = Intl.NumberFormat(!locale ? defaultLocale : locale).formatToParts(33333.3);
+    try {
+        let nf = Intl.NumberFormat(locale ?? defaultLocale).formatToParts(33333.3);
 
-    // Extract decimal and group separators.
-    localeDecimalSeparator = nf.find(part => part.type === "decimal")?.value ?? ".";
-    localeGroupSeparator = nf.find(part => part.type === "group")?.value ?? ",";
+        // Extract decimal and group separators.
+        localeDecimalSeparator = nf.find(part => part.type === "decimal")?.value ?? ".";
+        localeGroupSeparator = nf.find(part => part.type === "group")?.value ?? "";
+    }
+    catch (e) {
+        localeDecimalSeparator = ".";
+        localeGroupSeparator = "";
+    }
 }
 
 // Init with default locale
@@ -296,7 +301,7 @@ class NumberFormatter {
             try {
                 // Is char code valid integer and in range?
                 let charCode = getNumber(value);
-                assert(charCode >= 0 && charCode <= 65535 && Number.isInteger(charCode) && Number.isFinite(charCode), "Invalid char code.");
+                assert(isInteger(charCode) && charCode >= 0 && charCode <= 65535, "Invalid char code.");
             }
             catch (e) {
                 throw FormatError.InvalidArgument(value, fs);
@@ -490,6 +495,8 @@ class NumberFormatter {
             assert(this.exp === 0, "Is zero but exp != 0");
         }
 
+        assert(this.base === 2 || this.base === 8 || this.base === 10 || this.base === 16, "Invalid base " + this.base);
+
         assert(isFinite(this.exp), "exp is not finite");
         assert(isFinite(this.dotPos), "dotPos is not finite");
 
@@ -527,13 +534,13 @@ class NumberFormatter {
         // If dot position was moved right past end of digits then
         // add zeroes from the end of digits to dot position.
         if (this.dotPos > this.digits.length) {
-            this.digits.splice(this.digits.length, 0, ...fillArray(0, this.dotPos - this.digits.length));
+            this.digits.splice(this.digits.length, 0, ...zeroArray(this.dotPos - this.digits.length));
         }
 
         // If dot position was moved left past first digit then
         // add zeroes to beginning so that dot position becomes 1.
         if (this.dotPos < 1) {
-            this.digits.splice(0, 0, ...fillArray(0, 1 - this.dotPos));
+            this.digits.splice(0, 0, ...zeroArray(1 - this.dotPos));
             this.dotPos = 1;
         }
 
@@ -558,7 +565,7 @@ class NumberFormatter {
         }
         else if (digitCount > this.digits.length) {
             // If digitCount > digits.length then need to add trailing zeroes to set digit count.
-            this.digits.splice(this.digits.length, 0, ...fillArray(0, digitCount - this.digits.length));
+            this.digits.splice(this.digits.length, 0, ...zeroArray(digitCount - this.digits.length));
             return;
         }
 
@@ -570,7 +577,7 @@ class NumberFormatter {
 
         // Remove digits from pos to end.
         // And add zeroes from pos to dotPos
-        this.digits.splice(pos, this.digits.length - pos, ...fillArray(0, this.dotPos - pos));
+        this.digits.splice(pos, this.digits.length - pos, ...zeroArray(this.dotPos - pos));
 
         // Function to check digit if it will round up
         const roundUp = (digit: number) => digit >= Math.ceil(this.base / 2);
@@ -728,7 +735,7 @@ class NumberFormatter {
         // Repeat while there are binary digits left.
         while (binary.length > 0) {
             // Convert first 4 digits from binary and push to end of digits.
-            this.digits.push(Number.parseInt(binary.substring(0, 4), 2));
+            this.digits.push(parseInt(binary.substring(0, 4), 2));
 
             // Remove four binary digits that were just converted.
             binary = binary.substring(4);
