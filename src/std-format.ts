@@ -220,7 +220,7 @@ class FormatSpecification {
     readonly locale: "L" | undefined;
     readonly type: "" | "s" | "c" | "b" | "B" | "d" | "o" | "x" | "X" | "a" | "A" | "e" | "E" | "f" | "F" | "g" | "G" | "?" | "%" | "n";
 
-    constructor(replFieldMatch: RegExpExecArray, getNestedArgumentInt: (argId: string, fs: FormatSpecification) => number) {
+    constructor(ctx: ParsingContext, replFieldMatch: RegExpExecArray, getNestedArgumentInt: (ctx: ParsingContext, argId: string, fs: FormatSpecification) => number) {
         let fill = replFieldMatch.groups?.fill;
         let align = replFieldMatch.groups?.align;
         let sign = replFieldMatch.groups?.sign;
@@ -247,8 +247,8 @@ class FormatSpecification {
         this.type = (type === "" || type && "scbBodxXaAeEfF%gG?n".indexOf(type) >= 0) ? type as any : "";
 
         // Do these last because getNestedArgumentInt needs this object.
-        this.width = width_field_n !== undefined ? getNestedArgumentInt(width_field_n, this) : (!!width ? +width : undefined);
-        this.precision = precision_field_n !== undefined ? getNestedArgumentInt(precision_field_n, this) : (!!precision ? +precision : undefined);
+        this.width = width_field_n !== undefined ? getNestedArgumentInt(ctx, width_field_n, this) : (!!width ? +width : undefined);
+        this.precision = precision_field_n !== undefined ? getNestedArgumentInt(ctx, precision_field_n, this) : (!!precision ? +precision : undefined);
     }
 
     // Test if type is one of types given as argument.
@@ -265,7 +265,7 @@ class FormatSpecification {
     // If has given specifier, then require type specifier.
     withSpecifierRequireTypeSpecifier(s: string | undefined, types: string) {
         if (this.hasNonTypeSpecifier(s) && !this.hasType(types)) {
-            throw FormatError.SpecifierNotAllowedWith(s, types, this);
+            throw FormatError.SpecifierNotAllowedWith(s, this.type, this);
         }
     }
 
@@ -279,7 +279,7 @@ class FormatSpecification {
     // Forbid this to have both type specifier and specifier.
     withTypeSpecifierForbidSpecifier(types: string, s: string | undefined) {
         if (this.hasType(types) && this.hasNonTypeSpecifier(s)) {
-            throw FormatError.SpecifierNotAllowedWith(types, s, this);
+            throw FormatError.SpecifierNotAllowedWith(this.type, s, this);
         }
     }
 }
@@ -1157,9 +1157,24 @@ namespace StringFormatter {
     }
 }
 
-// Formats the replacement field.
-// @arg is the argument given to format("", arg0, arg1, ...)
-// @fs is the parsed format specification.
+// This parsing context contains all necessary variables required in parsing.
+type ParsingContext = {
+    formatString: string,
+    formatArgs: unknown[],
+    parseString: string,
+    parsePosition: number,
+    resultString: string,
+    errorString: string,
+    automaticFieldNumber: number,
+    hasAutomaticFieldNumbering: boolean,
+    hasManualFieldSpecification: boolean
+}
+
+/**
+ * Formats the replacement field.
+ * @arg is the argument given to format("", arg0, arg1, ...)
+ * @fs is the parsed format specification.
+ */
 function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
     let { align } = fs;
 
@@ -1271,189 +1286,193 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
     return replacementStr;
 }
 
-// Main function to format string using curly bracket notation.
-export function format(formatString: string, ...formatArgs: unknown[]): string {
-    // Current string being parsed.
-    let parseString = formatString;
+// Function to get argument from formatArgs[fieldNumber].
+function getArgument(ctx: ParsingContext, fieldNumberStr: string, replacementFieldStr: string): unknown {
+    // Throw exception if field number string is not valid.
+    // It must be empty "", or contain digits only (= zero or positive integer).
+    if (fieldNumberStr !== "" && !DigitsRegex.test(fieldNumberStr)) {
+        throw FormatError.InvalidFieldNumber(fieldNumberStr, replacementFieldStr);
+    }
 
-    // Result string.
-    let resultString: string = "";
+    // Get field number
+    let fieldNumber: number;
 
-    // Automatic field number that is used to obtain argument.
-    let automaticFieldNumber = 0;
+    // Is field number string empty?
+    if (fieldNumberStr.length > 0) {
+        // Use manual field specification.
+        ctx.hasManualFieldSpecification = true;
 
-    // Has automatic or manual field numbering? Cannot have both.
-    let hasAutomaticFieldNumbering = false;
-    let hasManualFieldSpecification = false;
+        // Convert field number string to number
+        fieldNumber = +fieldNumberStr;
+    }
+    else {
+        // Use automatic field numbering.
+        ctx.hasAutomaticFieldNumbering = true;
 
-    // Function to get argument from formatArgs[fieldNumber].
-    const getArgument = (fieldNumberStr: string, replacementFieldStr: string): unknown => {
-        // Throw exception if field number string is not valid.
-        // It must be empty "", or contain digits only (= zero or positive integer).
-        if (fieldNumberStr !== "" && !DigitsRegex.test(fieldNumberStr)) {
-            throw FormatError.InvalidFieldNumber(fieldNumberStr, replacementFieldStr);
+        // Get ascending field number
+        fieldNumber = ctx.automaticFieldNumber++;
+    }
+
+    // Throw exception switching between automatic and manual field numbering.
+    if (ctx.hasAutomaticFieldNumbering && ctx.hasManualFieldSpecification) {
+        throw FormatError.SwitchBetweenAutoAndManualFieldNumbering();
+    }
+
+    // Throw exception if field number is out of bounds of arguments array.
+    if (fieldNumber < 0 || fieldNumber >= ctx.formatArgs.length) {
+        throw FormatError.InvalidFieldNumber("" + fieldNumber, replacementFieldStr);
+    }
+
+    // Return argument.
+    return ctx.formatArgs[fieldNumber];
+}
+
+// Function to get nested argument integer. Width and precision in format specification can be
+// in form of nested curly braces {:{width field number}.{precision field number}}
+function getNestedArgumentInt(ctx: ParsingContext, fieldNumberStr: string, fs: FormatSpecification): number {
+    // Get the argument
+    let arg = getArgument(ctx, fieldNumberStr, fs.replacementFieldString);
+
+    // Nested argument is used for width and precision in format specification, and
+    // must be integer number >= 0.
+    if (!arg || typeof arg !== "number" || !isInteger(arg) || arg < 0) {
+        throw FormatError.InvalidNestedArgument(arg, fs);
+    }
+
+    // Return nested argument integer
+    return arg;
+}
+
+// Function to parse replacement field.
+function parseReplacementField(ctx: ParsingContext) {
+    // Replacement field starts with "{".
+    if (ctx.parseString[0] !== "{") {
+        // Failed to parse replacement field, return false.
+        return false;
+    }
+
+    // Execute replacement field regex.
+    let replFieldMatch = ReplacementFieldRegEx.exec(ctx.parseString);
+
+    if (!replFieldMatch || !replFieldMatch[0]) {
+        // Failed to parse replacement field, return false.
+        return false;
+    }
+
+    // Jump over matched replacement field in  parsing string.
+    ctx.parseString = ctx.parseString.substring(replFieldMatch[0].length);
+    ctx.parsePosition += replFieldMatch[0].length;
+
+    // Get field number fropm match.
+    let fieldNumber = replFieldMatch.groups?.field_n ?? "";
+
+    // Get argument.
+    let arg = getArgument(ctx, fieldNumber, replFieldMatch[0]);
+
+    // Create format specification.
+    let fs = new FormatSpecification(ctx, replFieldMatch, getNestedArgumentInt);
+
+    // Format replacement field and add it to result string.
+    ctx.resultString += formatReplacementField(arg, fs);
+
+    // Parsed replacement field ok, return true.
+    return true;
+}
+
+// Get replacement field string that looks like replacement field but could be invalid.
+function getLooseMatchReplacementFieldString(ctx: ParsingContext): string | undefined {
+    let m = LooseMatchReplacementFieldRegEx.exec(ctx.parseString);
+    return m && m[0] ? m[0] : undefined;
+}
+
+// Function to parse format string.
+function parseFormatString(ctx: ParsingContext) {
+    // Loop until terminated by break.
+    while (true) {
+        // Jump to next curly brace "{" or "}".
+        let i = CurlyBracketRegEx.exec(ctx.parseString)?.index;
+
+        // Set i to end of parsing string, if did not find curly braces.
+        if (i === undefined || i < 0) {
+            i = ctx.parseString.length;
         }
 
-        // Get field number
-        let fieldNumber: number;
+        // Add ordinary string to result string.
+        ctx.resultString += ctx.parseString.substring(0, i);
 
-        // Is field number string empty?
-        if (fieldNumberStr.length > 0) {
-            // Use manual field specification.
-            hasManualFieldSpecification = true;
+        // Jump over non-formatting part in parsing.
+        ctx.parseString = ctx.parseString.substring(i);
+        ctx.parsePosition += i;
 
-            // Convert field number string to number
-            fieldNumber = +fieldNumberStr;
+        // Now parsing string starts with "{", "}", or is empty.
+
+        if (ctx.parseString.startsWith("{{") || ctx.parseString.startsWith("}}")) {
+            // If parsing string starts with double curly braces
+            // Then add single curly brace to result string.
+            ctx.resultString += ctx.parseString[0];
+
+            // Jump over double curly braces on parsing string.
+            ctx.parseString = ctx.parseString.substring(2);
+            ctx.parsePosition += 2;
+
+            // Continue parsing on next loop.
+            continue;
+        }
+        else if (ctx.parseString[0] === "}") {
+            // Throw exception if parsing string starts with "}".
+            throw FormatError.EncounteredSingleCurlyBrace("}");
+        }
+        else if (ctx.parseString[0] === "{") {
+            // If parsing string starts with "{" then parse replacement field, and
+            // throw exception if it returns false (there was "{" but parsing failed).
+            if (!parseReplacementField(ctx)) {
+                // For more precise error message get loose match replacement field string.
+                let str = getLooseMatchReplacementFieldString(ctx);
+                if (str) {
+                    // Got loose match of replacement field string that just failed to parse.
+                    throw FormatError.InvalidReplacementField(str);
+                }
+                else {
+                    // Got single '{' followed by random stuff.
+                    throw FormatError.EncounteredSingleCurlyBrace("{");
+                }
+            }
+
+            // Continue parsing on next loop.
+            continue;
         }
         else {
-            // Use automatic field numbering.
-            hasAutomaticFieldNumbering = true;
-
-            // Get ascending field number
-            fieldNumber = automaticFieldNumber++;
+            // Did not find any curly braces. Parsing was executed to end of string.
+            // Break out of while loop.
+            break;
         }
-
-        // Throw exception switching between automatic and manual field numbering.
-        if (hasAutomaticFieldNumbering && hasManualFieldSpecification) {
-            throw FormatError.SwitchBetweenAutoAndManualFieldNumbering();
-        }
-
-        // Throw exception if field number is out of bounds of arguments array.
-        if (fieldNumber < 0 || fieldNumber >= formatArgs.length) {
-            throw FormatError.InvalidFieldNumber("" + fieldNumber, replacementFieldStr);
-        }
-
-        // Return argument.
-        return formatArgs[fieldNumber];
     }
+}
 
-    // Function to get nested argument integer. Width and precision in format specification can be
-    // in form of nested curly braces {:{width field number}.{precision field number}}
-    const getNestedArgumentInt = (fieldNumberStr: string, fs: FormatSpecification): number => {
-        // Get the argument
-        let arg = getArgument(fieldNumberStr, fs.replacementFieldString);
+// Main function to format string using curly bracket notation.
+export function format(formatString: string, ...formatArgs: unknown[]): string {
 
-        // Nested argument is used for width and precision in format specification, and
-        // must be integer number >= 0.
-        if (!arg || typeof arg !== "number" || !isInteger(arg) || arg < 0) {
-            throw FormatError.InvalidNestedArgument(arg, fs);
-        }
-
-        // Return nested argument integer
-        return arg;
-    }
-
-    // Function to parse replacement field.
-    const parseReplacementField = () => {
-        // Replacement field starts with "{".
-        if (parseString[0] !== "{") {
-            // Failed to parse replacement field, return false.
-            return false;
-        }
-
-        // Execute replacement field regex.
-        let replFieldMatch = ReplacementFieldRegEx.exec(parseString);
-
-        if (!replFieldMatch || !replFieldMatch[0]) {
-            // Failed to parse replacement field, return false.
-            return false;
-        }
-
-        // Remove matched replacement field from parsing string.
-        parseString = parseString.substring(replFieldMatch[0].length);
-
-        // Get field number fropm match.
-        let fieldNumber = replFieldMatch.groups?.field_n ?? "";
-
-        // Get argument.
-        let arg = getArgument(fieldNumber, replFieldMatch[0]);
-
-        // Create format specification.
-        let fs = new FormatSpecification(replFieldMatch, getNestedArgumentInt);
-
-        // Format replacement field and add it to result string.
-        resultString += formatReplacementField(arg, fs);
-
-        // Parsed replacement field ok, return true.
-        return true;
-    }
-
-    // Get replacement field string that looks like replacement field but could be invalid.
-    const getLooseMatchReplacementFieldString = (): string | undefined => {
-        let m = LooseMatchReplacementFieldRegEx.exec(parseString);
-        return (!m || m.length === 0) ? undefined : m[0];
-    }
-
-    // Function to parse format string.
-    const parseFormatString = () => {
-        // Loop until terminated by break.
-        while (true) {
-            // Jump to next curly brace "{" or "}".
-            let i = CurlyBracketRegEx.exec(parseString)?.index;
-
-            // Set i to end of parsing string, if did not find curly braces.
-            if (i === undefined || i < 0) {
-                i = parseString.length;
-            }
-
-            // Add ordinary string to result string.
-            resultString += parseString.substring(0, i);
-
-            // Jump over ordinary string on parsing string.
-            parseString = parseString.substring(i);
-
-            // Now parsing string starts with "{", "}", or is empty.
-
-            if (parseString.startsWith("{{") || parseString.startsWith("}}")) {
-                // If parsing string starts with double curly braces
-                // Then add single curly brace to result string.
-                resultString += parseString[0];
-
-                // Remove double curly braces from parsing string.
-                parseString = parseString.substring(2);
-
-                // Continue parsing on next loop.
-                continue;
-            }
-            else if (parseString[0] === "}") {
-                // Throw exception if parsing string starts with "}".
-                throw FormatError.EncounteredSingleCurlyBrace("}");
-            }
-            else if (parseString[0] === "{") {
-                // If parsing string starts with "{" then parse replacement field, and
-                // throw exception if it returns false (there was "{" but parsing failed).
-                if (!parseReplacementField()) {
-                    // For more precise error message get loose match replacement field string.
-                    let str = getLooseMatchReplacementFieldString();
-                    if (str) {
-                        // Got loose match of replacement field string that just failed to parse.
-                        throw FormatError.InvalidReplacementField(str);
-                    }
-                    else {
-                        // Got single '{' followed by random stuff.
-                        throw FormatError.EncounteredSingleCurlyBrace("{");
-                    }
-                }
-
-                // Continue parsing on next loop.
-                continue;
-            }
-            else {
-                // Did not find any curly braces. Parsing was executed to end of string.
-                // Break out of while loop.
-                break;
-            }
-        }
+    // Create parsing context.
+    const parsingContext = {
+        formatString,
+        formatArgs,
+        parseString: formatString,
+        parsePosition: 0,
+        resultString: "",
+        errorString: "",
+        automaticFieldNumber: 0,
+        hasAutomaticFieldNumbering: false,
+        hasManualFieldSpecification: false
     }
 
     try {
         // Now parse format string.
-        parseFormatString();
+        parseFormatString(parsingContext);
     }
     catch (e) {
         // Log internal error to console.
         if (e instanceof FormatError && e.isInternalError()) {
-            console.error(e.toString());
+            console.error(e);
         }
 
         // Throw exception forward.
@@ -1461,7 +1480,7 @@ export function format(formatString: string, ...formatArgs: unknown[]): string {
     }
 
     // Parsing is finished. Return result string.
-    return resultString;
+    return parsingContext.resultString;
 }
 
 /******************** 
