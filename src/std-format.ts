@@ -1,12 +1,14 @@
 
 // Create string that is string s repeated count times
 function repeatString(repeatStr: string, repeatCount: number): string {
-    return new Array(Math.max(0, repeatCount) + 1).join(repeatStr);
+    assert(repeatCount >= 0, "repeatCount < 0");
+    return new Array(repeatCount + 1).join(repeatStr);
 }
 
 // Create number array that contains number n count times
 function zeroArray(zeroCount: number): number[] {
-    return new Array<number>(Math.max(0, zeroCount)).fill(0);
+    assert(zeroCount >= 0, "zeroCount < 0");
+    return new Array<number>(zeroCount).fill(0);
 }
 
 // Test if number is integer.
@@ -621,8 +623,14 @@ class NumberFormatter {
         let firstRemovedDigit = this.digits[pos] ?? 0;
 
         // Remove digits from pos to end.
+        if (pos < this.digits.length) {
+            this.digits.splice(pos, this.digits.length - pos);
+        }
+
         // And add zeroes from pos to dotPos
-        this.digits.splice(pos, this.digits.length - pos, ...zeroArray(this.dotPos - pos));
+        if (pos < this.dotPos) {
+            this.digits.splice(pos, 0, ...zeroArray(this.dotPos - pos));
+        }
 
         // Function to check digit if it will round up
         const roundUp = (digit: number) => digit >= Math.ceil(this.base / 2);
