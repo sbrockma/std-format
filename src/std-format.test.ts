@@ -283,17 +283,29 @@ describe("Testing std-format", () => {
     });
 
     it("specifier z", () => {
-        expect(format("{:zg}", +0)).toEqual("0");
-        expect(format("{:zg}", -0)).toEqual("0");
-
-        expect(format("{:z.2f}", +0.0005)).toEqual("0.00");
+        // Coerse -0 to 0 for floating point types.
+        expect(format("{:z.2e}", -0.0)).toEqual("0.00e+00");
+        expect(format("{:z.2E}", -0.0)).toEqual("0.00E+00");
         expect(format("{:z.2f}", -0.0005)).toEqual("0.00");
-        expect(format("{:z.2%}", +0.00001)).toEqual("0.00%");
+        expect(format("{:z.2F}", -0.0005)).toEqual("0.00");
         expect(format("{:z.2%}", -0.00001)).toEqual("0.00%");
+        expect(format("{:z.2g}", -0.0)).toEqual("0");
+        expect(format("{:z.2G}", -0.0)).toEqual("0");
+        expect(format("{:z.2a}", -0.0)).toEqual("0.00p+0");
+        expect(format("{:z.2A}", -0.0)).toEqual("0.00P+0");
 
-        // Only valid for foating point types.
-        expect(() => format("{:zd}", -0)).toThrow();
+        // 'z' allowed only for foating point types.
         expect(() => format("{:z}", -0)).toThrow();
+        expect(() => format("{:zs}", -0)).toThrow();
+        expect(() => format("{:zc}", -0)).toThrow();
+        expect(() => format("{:zd}", -0)).toThrow();
+        expect(() => format("{:zb}", -0)).toThrow();
+        expect(() => format("{:zB}", -0)).toThrow();
+        expect(() => format("{:zo}", -0)).toThrow();
+        expect(() => format("{:zx}", -0)).toThrow();
+        expect(() => format("{:zX}", -0)).toThrow();
+        expect(() => format("{:z?}", -0)).toThrow();
+        expect(() => format("{:zn}", -0)).toThrow();
     });
 
     it("type specifier ?", () => {
