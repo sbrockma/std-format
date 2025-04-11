@@ -877,8 +877,8 @@ class NumberFormatter {
 
         if (fs.zeta === "z") {
             // The 'z' option coerces negative zero floating-point values to
-            // positive zero after rounding  to the format precision.
-            if (fs.isType("eEfFgGaA")) {
+            // positive zero after rounding to the format precision.
+            if (fs.isType("eEfFgGaA%")) {
                 // This option is only valid for floating-point presentation types.
                 // Change -0 to 0.
                 if (this.isZero() && this.sign === -1) {

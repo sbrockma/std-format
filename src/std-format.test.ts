@@ -288,6 +288,8 @@ describe("Testing std-format", () => {
 
         expect(format("{:z.2f}", +0.0005)).toEqual("0.00");
         expect(format("{:z.2f}", -0.0005)).toEqual("0.00");
+        expect(format("{:z.2%}", +0.00001)).toEqual("0.00%");
+        expect(format("{:z.2%}", -0.00001)).toEqual("0.00%");
 
         // Only valid for foating point types.
         expect(() => format("{:zd}", -0)).toThrow();
