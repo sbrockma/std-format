@@ -253,29 +253,33 @@ class FormatSpecification {
 
     // Test if type is one of types given as argument.
     // For example isType("", "d", "xX") tests if type is either "", "d", "x" or "X".
-    isType(...types: string[]) {
+    hasType(...types: string[]) {
         return types.some(type => this.type === type || this.type !== "" && type.indexOf(this.type) >= 0);
     }
 
-    withSpecifierRequireTypeSpecifier(s: string | undefined, type: string) {
-        if (s !== undefined && !this.isType(type) &&
-            (s === this.align || s === this.sign || s === this.zeta || s === this.sharp || s === this.zero || s === this.grouping || s === this.locale)) {
-            throw FormatError.SpecifierNotAllowedWith(s, type, this);
+    // Test if this has given specifier excluding type specifier.
+    hasNonTypeSpecifier(s: string | undefined): s is string {
+        return s !== undefined && (s === this.align || s === this.sign || s === this.zeta || s === this.sharp || s === this.zero || s === this.grouping || s === this.locale);
+    }
+
+    // If has given specifier, then require type specifier.
+    withSpecifierRequireTypeSpecifier(s: string | undefined, types: string) {
+        if (this.hasNonTypeSpecifier(s) && !this.hasType(types)) {
+            throw FormatError.SpecifierNotAllowedWith(s, types, this);
         }
     }
 
+    // Forbid this to have both specifiers. 
     withSpecifierForbidSpecifier(s1: string | undefined, s2: string | undefined) {
-        if (s1 !== undefined && s2 !== undefined &&
-            (s1 === this.align || s1 === this.sign || s1 === this.zeta || s1 === this.sharp || s1 === this.zero || s1 === this.grouping || s1 === this.locale) &&
-            (s2 === this.align || s2 === this.sign || s2 === this.zeta || s2 === this.sharp || s2 === this.zero || s2 === this.grouping || s2 === this.locale)) {
+        if (this.hasNonTypeSpecifier(s1) && this.hasNonTypeSpecifier(s2)) {
             throw FormatError.SpecifierNotAllowedWith(s1, s2, this);
         }
     }
 
-    withTypeSpecifierForbidSpecifier(type: string, s: string | undefined) {
-        if (this.isType(type) && s !== undefined &&
-            (s === this.align || s === this.sign || s === this.zeta || s === this.sharp || s === this.zero || s === this.grouping || s === this.locale)) {
-            throw FormatError.SpecifierNotAllowedWith(type, s, this);
+    // Forbid this to have both type specifier and specifier.
+    withTypeSpecifierForbidSpecifier(types: string, s: string | undefined) {
+        if (this.hasType(types) && this.hasNonTypeSpecifier(s)) {
+            throw FormatError.SpecifierNotAllowedWith(types, s, this);
         }
     }
 }
@@ -308,13 +312,13 @@ class NumberFormatter {
     // Passed arguments are number @value and format specification @fs.
     private constructor(value: number | bigint, readonly fs: FormatSpecification) {
         // Set base
-        if (fs.isType("bB")) {
+        if (fs.hasType("bB")) {
             this.base = 2;
         }
-        else if (fs.isType("o")) {
+        else if (fs.hasType("o")) {
             this.base = 8;
         }
-        else if (fs.isType("xXaA")) {
+        else if (fs.hasType("xXaA")) {
             this.base = 16;
         }
         else {
@@ -322,7 +326,7 @@ class NumberFormatter {
         }
 
         // Check for valid char code
-        if (fs.isType("c")) {
+        if (fs.hasType("c")) {
             // Check specifiers that are not allowed with 'c'.
             fs.withTypeSpecifierForbidSpecifier("c", fs.sign ?? fs.zeta ?? fs.sharp ?? fs.grouping);
 
@@ -471,7 +475,7 @@ class NumberFormatter {
             "Unexpected leading or trailing zero.");
 
         // If format specifier is "%" then convert value to percents.
-        if (!this.isZero() && fs.isType("%")) {
+        if (!this.isZero() && fs.hasType("%")) {
             // Multiply by 100 by moving exponent right two digits (base = 10).
             this.exp += 2;
         }
@@ -785,7 +789,7 @@ class NumberFormatter {
         let { fs } = this;
 
         // Now make conversion according to fs.type
-        if (fs.isType("") && (fs.precision !== undefined || !this.isInteger())) {
+        if (fs.hasType("") && (fs.precision !== undefined || !this.isInteger())) {
             // If type is default, and has precision or is not integer.
 
             // This is almost like the 'g'. Use p = as large as needed to represent
@@ -815,7 +819,7 @@ class NumberFormatter {
                 removeInsignificantTrailingZeroes();
             }
         }
-        else if (fs.isType("", "cdbBoxXn")) {
+        else if (fs.hasType("", "cdbBoxXn")) {
             // Else if type is default '' or integer
 
             // Precision not allowed for integer
@@ -836,7 +840,7 @@ class NumberFormatter {
                 throw FormatError.InvalidFloatArgument(fs);
             }
         }
-        else if (fs.isType("aA")) {
+        else if (fs.hasType("aA")) {
             // Convert to normalised hexadecimal exponential notation.
             this.toNormalisedHexadecimalExponential();
 
@@ -847,21 +851,21 @@ class NumberFormatter {
             // already is in scientific notation but this sets precision and does rounding. 
             this.toScientific(p);
         }
-        else if (fs.isType("eE")) {
+        else if (fs.hasType("eE")) {
             // Get precision. If not given, default is 6.
             let p = fs.precision ?? 6;
 
             // Convert to scientific notation
             this.toScientific(p);
         }
-        else if (fs.isType("fF%")) {
+        else if (fs.hasType("fF%")) {
             // Get precision. If not given, default is 6.
             let p = fs.precision ?? 6;
 
             // Convert to fixed notation.
             this.toFixed(p);
         }
-        else if (fs.isType("gG")) {
+        else if (fs.hasType("gG")) {
             // Convert to general notation.
 
             // Get precision. Treat p = 0 as p = 1. If not given, default is 6.
@@ -914,7 +918,7 @@ class NumberFormatter {
         let { fs } = this;
 
         return fs.sharp === "#" ? (
-            fs.isType("xX") ? "0x" : fs.isType("bB") ? "0b" : fs.isType("o") ? (usingDeprecatedStdFormat ? deprecatedOctalPrefix : "0o") : ""
+            fs.hasType("xX") ? "0x" : fs.hasType("bB") ? "0b" : fs.hasType("o") ? (usingDeprecatedStdFormat ? deprecatedOctalPrefix : "0o") : ""
         ) : "";
     }
 
@@ -935,10 +939,10 @@ class NumberFormatter {
             // Get grouping properties with group specifier '_' for supported type specifiers.
             fs.withSpecifierRequireTypeSpecifier("_", "deEfF%gGbBoxX");
 
-            if (fs.isType("deEfF%gG")) {
+            if (fs.hasType("deEfF%gG")) {
                 return { decimalSeparator: ".", groupSeparator: "_", groupSize: 3 }
             }
-            else if (fs.isType("bBoxX")) {
+            else if (fs.hasType("bBoxX")) {
                 // With binary, octal and hexadecimal type specifiers group size is 4.
                 return { decimalSeparator: ".", groupSeparator: "_", groupSize: 4 }
             }
@@ -951,7 +955,7 @@ class NumberFormatter {
             // Use locale's decimal and group separators.
             return { decimalSeparator: localeDecimalSeparator, groupSeparator: localeGroupSeparator, groupSize: 3 }
         }
-        else if (fs.isType("n")) {
+        else if (fs.hasType("n")) {
             // 'n' not allowed with ',', '_' and 'L'.
             fs.withTypeSpecifierForbidSpecifier("n", fs.grouping ?? fs.locale);
 
@@ -966,7 +970,7 @@ class NumberFormatter {
     // Get char code
     private getCharCode() {
         // Only call for type specifier 'c'. Number is integer.
-        assert(this.fs.isType("c") && this.sign === 1 && this.dotPos === this.digits.length &&
+        assert(this.fs.hasType("c") && this.sign === 1 && this.dotPos === this.digits.length &&
             this.exp === 0 && this.base === 10, "Invalid call to getCharCode().");
 
         // Calculate char code from digits.
@@ -995,7 +999,7 @@ class NumberFormatter {
         let prefix: string;
 
         // Postfix string. "%" for percentage types, or "".
-        let postfix: string = fs.isType("%") ? "%" : "";
+        let postfix: string = fs.hasType("%") ? "%" : "";
 
         // Set sign. "-", "+", " " or "".
         let sign: string = this.sign < 0 ? "-" : ((fs.sign === "+" || fs.sign === " ") ? fs.sign : "");
@@ -1012,7 +1016,7 @@ class NumberFormatter {
             digits = "inf";
             prefix = "";
         }
-        else if (fs.isType("c")) {
+        else if (fs.hasType("c")) {
             // Is char? Set digits string to contain single char obtained from char code.
             digits = String.fromCharCode(this.getCharCode());
             // Other props empty.
@@ -1020,10 +1024,10 @@ class NumberFormatter {
         }
         else {
             // Some type specifiers do not show zero exponent.
-            let noZeroExp = !fs.isType("eEaA");
+            let noZeroExp = !fs.hasType("eEaA");
 
             // Some type specifiers add zero prefix to single digit exponent.
-            let needExp00 = fs.isType("", "eEgG");
+            let needExp00 = fs.hasType("", "eEgG");
 
             if (this.exp === 0 && noZeroExp) {
                 // No zero exponent.
@@ -1078,7 +1082,7 @@ class NumberFormatter {
             }
 
             // Include dot after last digit if sharp specifier is '#' with some type specifiers.
-            if (this.dotPos === this.digits.length && fs.sharp === "#" && fs.isType("eEfF%gGaA")) {
+            if (this.dotPos === this.digits.length && fs.sharp === "#" && fs.hasType("eEfF%gGaA")) {
                 digits += ".";
             }
 
@@ -1118,7 +1122,7 @@ class NumberFormatter {
         let str = sign + prefix + repeatString(fillChar, fillCount) + digits + exp + postfix;
 
         // Convert to uppercase if specified by format specification type.
-        return fs.isType("AGEFBX") ? str.toUpperCase() : str;
+        return fs.hasType("AGEFBX") ? str.toUpperCase() : str;
     }
 
     static formatNumber(n: number | bigint, fs: FormatSpecification): string {
@@ -1129,7 +1133,7 @@ class NumberFormatter {
 namespace StringFormatter {
     export function formatString(str: string, fs: FormatSpecification) {
         // Check if string formatting specifiers are valid.
-        if (!fs.isType("", "s?")) {
+        if (!fs.hasType("", "s?")) {
             // Not valid string argument.
             throw FormatError.InvalidArgument(str, fs);
         }
@@ -1138,7 +1142,7 @@ namespace StringFormatter {
         fs.withTypeSpecifierForbidSpecifier(fs.type,
             (fs.align === "=" ? "=" : undefined) ?? fs.grouping ?? fs.locale ?? fs.sign ?? fs.sharp ?? fs.zero ?? fs.zeta);
 
-        if (fs.isType("?")) {
+        if (fs.hasType("?")) {
             // Here should format escape sequence string.
             throw FormatError.SpecifierIsNotImplemented(fs.type, fs);
         }
@@ -1163,7 +1167,7 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
     let argStr: string;
 
     // Is type specifier number compatible?
-    let isFsTypeNumberCompatible = fs.isType("", "cbBodxXaAeEfFgGn%");
+    let isFsTypeNumberCompatible = fs.hasType("", "cbBodxXaAeEfFgGn%");
 
     function formatNumber(arg: number | bigint): string {
         // Default align for number is right.
@@ -1183,7 +1187,7 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
 
     if (typeof arg === "boolean") {
         // Argument can be boolean.
-        if (fs.isType("", "s")) {
+        if (fs.hasType("", "s")) {
             // Convert boolean to string, if type is default '' or string 's'.
             let b = arg
                 ? (usingDeprecatedStdFormat ? deprecatedTrueString : "true")
@@ -1213,11 +1217,11 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
     }
     else if (typeof arg === "string") {
         // Argument can be string.
-        if (fs.isType("cdxXobB") && arg.length === 1) {
+        if (fs.hasType("cdxXobB") && arg.length === 1) {
             // If type is integer then use single char string as char and convert it to char code (integer).
             argStr = formatNumber(arg.charCodeAt(0));
         }
-        else if (fs.isType("", "s?")) {
+        else if (fs.hasType("", "s?")) {
             // Else use string argument as it is.
             argStr = formatString(arg);
         }
