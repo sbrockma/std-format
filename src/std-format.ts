@@ -601,47 +601,36 @@ class NumberFormatter {
             return;
         }
 
-        // Get digit count.
-        // In fixed type total digit count is number of digits after dot.
-        // Else digitCount is precision. 
-        let digitCount = precisionType === "fixed" ? (this.dotPos + precision) : precision;
+        // Get new digit count.
+        // * In fixed type new digit count is number of digits after dot.
+        // * Else new digit count is precision. 
+        let newDigitCount = precisionType === "fixed" ? (this.dotPos + precision) : precision;
 
-        if (digitCount === this.digits.length || digitCount < 1) {
-            // Nothing to do, digitCount equals digits.length or is less than 1.
+        if (newDigitCount === this.digits.length || newDigitCount < 1) {
+            // Nothing to do, newDigitCount equals digits.length or is less than 1.
             return;
         }
-        else if (digitCount > this.digits.length) {
-            // If digitCount > digits.length then need to add trailing zeroes to set digit count.
-            this.digits.splice(this.digits.length, 0, ...zeroArray(digitCount - this.digits.length));
+        else if (newDigitCount > this.digits.length) {
+            // If newDigitCount > digits.length then all that is needed is to add trailing zeroes.
+            this.digits.splice(this.digits.length, 0, ...zeroArray(newDigitCount - this.digits.length));
             return;
         }
-
-        // Set starting position to first digit to be removed.
-        let pos = digitCount;
 
         // Get first digit to be removed. It can be past number of digits so ?? 0.
-        let firstRemovedDigit = this.digits[pos] ?? 0;
+        let firstRemovedDigit = this.digits[newDigitCount] ?? 0;
 
-        // Remove digits from pos to end.
-        if (pos < this.digits.length) {
-            this.digits.splice(pos, this.digits.length - pos);
+        // Remove digits from end (newDigitCount < digits.length).
+        this.digits.splice(newDigitCount, this.digits.length - newDigitCount);
+
+        // And add zeroes from newDigitCount to dotPos
+        if (newDigitCount < this.dotPos) {
+            this.digits.splice(newDigitCount, 0, ...zeroArray(this.dotPos - newDigitCount));
         }
 
-        // And add zeroes from pos to dotPos
-        if (pos < this.dotPos) {
-            this.digits.splice(pos, 0, ...zeroArray(this.dotPos - pos));
-        }
-
-        // Function to check digit if it will round up
-        const roundUp = (digit: number) => digit >= Math.ceil(this.base / 2);
-
-        // Check if first removed digit rounds up.
-        if (roundUp(firstRemovedDigit)) {
-            // Rounding is necessary.
-            while (true) {
-                // Shitf current digit position left
-                pos--;
-
+        // Does first removed digit cause rounding up.
+        if (firstRemovedDigit >= Math.ceil(this.base / 2)) {
+            // Yes.
+            for (let pos = newDigitCount - 1; ; pos--) {
                 // Is pos greater or equal to zero (handling existing digits)
                 if (pos >= 0) {
                     // Digit in current position increased because there is rounding
