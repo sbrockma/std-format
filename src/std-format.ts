@@ -40,79 +40,97 @@ function getNumber(n: number | bigint): number {
     }
 }
 
+// This parsing context contains all necessary variables required in parsing.
+type ParsingContext = {
+    formatString: string,
+    formatArgs: unknown[],
+    parseString: string,
+    parsePosition: number,
+    resultString: string,
+    errorString: string,
+    automaticFieldNumber: number,
+    hasAutomaticFieldNumbering: boolean,
+    hasManualFieldSpecification: boolean
+}
+
+function getErrorMessage(ctx: ParsingContext | undefined, msg: string) {
+    if (ctx) {
+        if (ctx.errorString === ctx.formatString) {
+            return msg + ", in \"" + ctx.errorString + "\"";
+        }
+        else {
+            return msg + ", in \"" + ctx.formatString + "\" (pos " + ctx.parsePosition + " = \"" + ctx.errorString + "\")";
+        }
+    }
+    else {
+        return msg;
+    }
+}
+
 // Exceoption class, trown on format and value errors.
 export class FormatError extends Error {
     // private constructor. Use static functions below to create error objects.
-    private constructor(readonly message: string) {
-        super(message);
+    private constructor(readonly ctx: ParsingContext | undefined, msg: string) {
+        super(getErrorMessage(ctx, msg));
+
         this.name = usingDeprecatedStdFormat ? "StdFormatError" : "FormatError";
-        // console.log(message);
+
+        // console.log(this.message);
     }
 
     // Create specifier is not implemented error.
-    static SpecifierIsNotImplemented(specifier: string, fs: FormatSpecification) {
-        return new FormatError("Specifier '" + specifier + "' is not implemented, used in \"" + fs.replacementFieldString + "\".");
+    static SpecifierIsNotImplemented(ctx: ParsingContext, specifier: string) {
+        return new FormatError(ctx, "Specifier '" + specifier + "' is not implemented");
     }
 
     // Create invalid argument error.
-    static InvalidArgument(arg: unknown, fs: FormatSpecification) {
-        return new FormatError(
-            "Invalid " + typeof arg + " argument '" + String(arg) + "' with type specifier '" + fs.type +
-            "' in \"" + fs.replacementFieldString + "\".");
-    }
-
-    // Create invalid float argument error.
-    static InvalidFloatArgument(fs: FormatSpecification) {
-        return new FormatError("Invalid floating point argument with type specifier '" + fs.type + "', in \"" + fs.replacementFieldString + "\".");
+    static InvalidArgumentForType(ctx: ParsingContext, arg: unknown, type: string) {
+        return new FormatError(ctx, "Invalid " + typeof arg + " argument '" + String(arg) + "' for type specifier '" + type + "'");
     }
 
     // Create invalid nested argument error.
-    static InvalidNestedArgument(arg: unknown, fs: FormatSpecification) {
-        return new FormatError("Invalid nested argument '" + String(arg) + "' in \"" + fs.replacementFieldString + "\".");
+    static InvalidNestedArgument(ctx: ParsingContext, arg: unknown) {
+        return new FormatError(ctx, "Invalid nested argument '" + String(arg) + "'");
     }
 
     // Create invalid field number error.
-    static InvalidFieldNumber(fieldNumber: string, replacementFieldStr: string) {
-        return new FormatError("Invalid field number '" + fieldNumber + "', in \"" + replacementFieldStr + "\".");
+    static InvalidFieldNumber(ctx: ParsingContext, fieldNumber: string) {
+        return new FormatError(ctx, "Invalid field number '" + fieldNumber + "'");
     }
 
     // Create switch between auto/manual field numbering error.
-    static SwitchBetweenAutoAndManualFieldNumbering() {
-        return new FormatError("Switch between automatic and manual field numbering.");
+    static SwitchBetweenAutoAndManualFieldNumbering(ctx: ParsingContext) {
+        return new FormatError(ctx, "Switch between automatic and manual field numbering");
     }
 
     // Create encounteger single curly brace error.
-    static EncounteredSingleCurlyBrace(char: "{" | "}") {
-        return new FormatError("Encountered single curly brace '" + char + "' in format string.");
+    static EncounteredSingleCurlyBrace(ctx: ParsingContext) {
+        return new FormatError(ctx, "Encountered single curly brace");
     }
 
     // Create invalid replacement field error.
-    static InvalidReplacementField(str: string) {
-        return new FormatError("Invalid replacement field \"" + str + "\".");
+    static InvalidReplacementField(ctx: ParsingContext) {
+        return new FormatError(ctx, "Invalid replacement field");
     }
 
     // Create precision not allowed error.
-    static PrecisionNotAllowed(fs: FormatSpecification) {
-        return new FormatError("Precision not allowed with type specifier '" + fs.type + "', in \"" + fs.replacementFieldString + "\".");
+    static PrecisionNotAllowedWith(ctx: ParsingContext, type: string) {
+        return new FormatError(ctx, "Precision not allowed with type specifier '" + type + "'");
+    }
+
+    // Create specifier not allowed error.
+    static SpecifierNotAllowedWith(ctx: ParsingContext, specifier1: string, specifier2: string) {
+        return new FormatError(ctx, "Specifier '" + specifier1 + "' not allowed with specifier '" + specifier2 + "'");
     }
 
     // Create invalid specification hint error.
     static InvalidSpecificationHint(specHint: string) {
-        return new FormatError("Invalid specification hint '" + specHint + "'. Valid values are 'cpp' and 'python'.");
-    }
-
-    // Create specifier not allowed error.
-    static SpecifierNotAllowedWith(specifier1: string, specifier2: string, fs: FormatSpecification) {
-        let specifier1Str = specifier1 === fs.type ? "Type specifier" : "Specifier";
-        let specifier2Str = specifier2 === fs.type ? "type specifier" : "specifier";
-        return new FormatError(
-            specifier1Str + " '" + specifier1 + "' not allowed with " + specifier2Str + " '" + specifier2 +
-            "' in \"" + fs.replacementFieldString + "\".");
+        return new FormatError(undefined, "Invalid specification hint '" + specHint + "'. Valid values are 'cpp' and 'python'.");
     }
 
     // Create assertion failed internal error.
     static AssertionFailed(msg?: string) {
-        return new FormatError("Assertion failed" + (msg === undefined ? "!" : (": " + msg)));
+        return new FormatError(undefined, "Assertion failed" + (msg === undefined ? "!" : (": " + msg)));
     }
 
     // Is this internal error?
@@ -207,7 +225,6 @@ const DigitsRegex = /^\d+$/;
 
 // The format specification class
 class FormatSpecification {
-    readonly replacementFieldString: string;
     readonly fill: string | undefined;
     readonly align: "<" | "^" | ">" | "=" | undefined;
     readonly sign: "+" | "-" | " " | undefined;
@@ -220,7 +237,7 @@ class FormatSpecification {
     readonly locale: "L" | undefined;
     readonly type: "" | "s" | "c" | "b" | "B" | "d" | "o" | "x" | "X" | "a" | "A" | "e" | "E" | "f" | "F" | "g" | "G" | "?" | "%" | "n";
 
-    constructor(ctx: ParsingContext, replFieldMatch: RegExpExecArray, getNestedArgumentInt: (ctx: ParsingContext, argId: string, fs: FormatSpecification) => number) {
+    constructor(readonly ctx: ParsingContext, replFieldMatch: RegExpExecArray, getNestedArgumentInt: (ctx: ParsingContext, argId: string, fs: FormatSpecification) => number) {
         let fill = replFieldMatch.groups?.fill;
         let align = replFieldMatch.groups?.align;
         let sign = replFieldMatch.groups?.sign;
@@ -235,7 +252,6 @@ class FormatSpecification {
         let locale = replFieldMatch.groups?.locale;
         let type = replFieldMatch.groups?.type;
 
-        this.replacementFieldString = replFieldMatch[0];
         this.fill = (fill && fill.length === 1) ? fill : undefined;
         this.align = (align === "<" || align === "^" || align === ">" || align === "=") ? align : undefined;
         this.sign = (sign === "-" || sign === "+" || sign === " ") ? sign : undefined;
@@ -265,21 +281,21 @@ class FormatSpecification {
     // If has given specifier, then require type specifier.
     withSpecifierRequireTypeSpecifier(s: string | undefined, types: string) {
         if (this.hasNonTypeSpecifier(s) && !this.hasType(types)) {
-            throw FormatError.SpecifierNotAllowedWith(s, this.type, this);
+            throw FormatError.SpecifierNotAllowedWith(this.ctx, s, this.type);
         }
     }
 
     // Forbid this to have both specifiers. 
     withSpecifierForbidSpecifier(s1: string | undefined, s2: string | undefined) {
         if (this.hasNonTypeSpecifier(s1) && this.hasNonTypeSpecifier(s2)) {
-            throw FormatError.SpecifierNotAllowedWith(s1, s2, this);
+            throw FormatError.SpecifierNotAllowedWith(this.ctx, s1, s2);
         }
     }
 
     // Forbid this to have both type specifier and specifier.
     withTypeSpecifierForbidSpecifier(types: string, s: string | undefined) {
         if (this.hasType(types) && this.hasNonTypeSpecifier(s)) {
-            throw FormatError.SpecifierNotAllowedWith(this.type, s, this);
+            throw FormatError.SpecifierNotAllowedWith(this.ctx, this.type, s);
         }
     }
 }
@@ -336,7 +352,7 @@ class NumberFormatter {
                 assert(isInteger(charCode) && charCode >= 0 && charCode <= 65535, "Invalid char code.");
             }
             catch (e) {
-                throw FormatError.InvalidArgument(value, fs);
+                throw FormatError.InvalidArgumentForType(this.ctx, value, fs.type);
             }
         }
 
@@ -485,7 +501,12 @@ class NumberFormatter {
         this.dotPos = 1;
 
         // Convert this number to notation specified by format specification.
-        this.convertToNotation();
+        this.convertToNotation(value);
+    }
+
+    // Get parsing context
+    get ctx() {
+        return this.fs.ctx;
     }
 
     // Is this number "nan"?
@@ -518,9 +539,8 @@ class NumberFormatter {
 
         if (this.isZero()) {
             assert(this.exp === 0, "Is zero but exp != 0");
+            assert(this.dotPos === 1, "Is zero but dot pos != 1");
         }
-
-        assert(this.base === 2 || this.base === 8 || this.base === 10 || this.base === 16, "Invalid base " + this.base);
 
         assert(isFinite(this.exp), "exp is not finite");
         assert(isFinite(this.dotPos), "dotPos is not finite");
@@ -773,7 +793,7 @@ class NumberFormatter {
     }
 
     // Convert this number to notation specified by format specification.
-    private convertToNotation() {
+    private convertToNotation(value: number | bigint) {
         if (this.isNan() || this.isInf()) {
             return;
         }
@@ -824,7 +844,7 @@ class NumberFormatter {
 
             // Precision not allowed for integer
             if (fs.precision !== undefined) {
-                throw FormatError.PrecisionNotAllowed(fs);
+                throw FormatError.PrecisionNotAllowedWith(this.ctx, fs.type);
             }
 
             // For integers -0 = +0 = 0
@@ -837,7 +857,7 @@ class NumberFormatter {
 
             // Number must be integer
             if (!this.isInteger()) {
-                throw FormatError.InvalidFloatArgument(fs);
+                throw FormatError.InvalidArgumentForType(this.ctx, value, fs.type);
             }
         }
         else if (fs.hasType("aA")) {
@@ -1135,7 +1155,7 @@ namespace StringFormatter {
         // Check if string formatting specifiers are valid.
         if (!fs.hasType("", "s?")) {
             // Not valid string argument.
-            throw FormatError.InvalidArgument(str, fs);
+            throw FormatError.InvalidArgumentForType(fs.ctx, str, fs.type);
         }
 
         // Check specifiers not allowed with string.
@@ -1144,7 +1164,7 @@ namespace StringFormatter {
 
         if (fs.hasType("?")) {
             // Here should format escape sequence string.
-            throw FormatError.SpecifierIsNotImplemented(fs.type, fs);
+            throw FormatError.SpecifierIsNotImplemented(fs.ctx, fs.type);
         }
 
         // For string presentation types precision field indicates the maximum
@@ -1157,25 +1177,12 @@ namespace StringFormatter {
     }
 }
 
-// This parsing context contains all necessary variables required in parsing.
-type ParsingContext = {
-    formatString: string,
-    formatArgs: unknown[],
-    parseString: string,
-    parsePosition: number,
-    resultString: string,
-    errorString: string,
-    automaticFieldNumber: number,
-    hasAutomaticFieldNumbering: boolean,
-    hasManualFieldSpecification: boolean
-}
-
 /**
  * Formats the replacement field.
  * @arg is the argument given to format("", arg0, arg1, ...)
  * @fs is the parsed format specification.
  */
-function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
+function formatReplacementField(ctx: ParsingContext, arg: unknown, fs: FormatSpecification): string {
     let { align } = fs;
 
     // Convert to valid argument: string or number.
@@ -1216,7 +1223,7 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
         }
         else {
             // Invalid argument conversion from boolean.
-            throw FormatError.InvalidArgument(arg, fs);
+            throw FormatError.InvalidArgumentForType(ctx, arg, fs.type);
         }
     }
     else if (typeof arg === "number" || typeof arg === "bigint") {
@@ -1227,7 +1234,7 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
         }
         else {
             // Invalid argument conversion from number.
-            throw FormatError.InvalidArgument(arg, fs);
+            throw FormatError.InvalidArgumentForType(ctx, arg, fs.type);
         }
     }
     else if (typeof arg === "string") {
@@ -1242,12 +1249,12 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
         }
         else {
             // Invalid argument conversion from string.
-            throw FormatError.InvalidArgument(arg, fs);
+            throw FormatError.InvalidArgumentForType(ctx, arg, fs.type);
         }
     }
     else {
         // Invalid argument type.
-        throw FormatError.InvalidArgument(arg, fs);
+        throw FormatError.InvalidArgumentForType(ctx, arg, fs.type);
     }
 
     // Next apply fill and alignment according to format specification.
@@ -1287,11 +1294,11 @@ function formatReplacementField(arg: unknown, fs: FormatSpecification): string {
 }
 
 // Function to get argument from formatArgs[fieldNumber].
-function getArgument(ctx: ParsingContext, fieldNumberStr: string, replacementFieldStr: string): unknown {
+function getArgument(ctx: ParsingContext, fieldNumberStr: string): unknown {
     // Throw exception if field number string is not valid.
     // It must be empty "", or contain digits only (= zero or positive integer).
     if (fieldNumberStr !== "" && !DigitsRegex.test(fieldNumberStr)) {
-        throw FormatError.InvalidFieldNumber(fieldNumberStr, replacementFieldStr);
+        throw FormatError.InvalidFieldNumber(ctx, fieldNumberStr);
     }
 
     // Get field number
@@ -1315,12 +1322,12 @@ function getArgument(ctx: ParsingContext, fieldNumberStr: string, replacementFie
 
     // Throw exception switching between automatic and manual field numbering.
     if (ctx.hasAutomaticFieldNumbering && ctx.hasManualFieldSpecification) {
-        throw FormatError.SwitchBetweenAutoAndManualFieldNumbering();
+        throw FormatError.SwitchBetweenAutoAndManualFieldNumbering(ctx);
     }
 
     // Throw exception if field number is out of bounds of arguments array.
     if (fieldNumber < 0 || fieldNumber >= ctx.formatArgs.length) {
-        throw FormatError.InvalidFieldNumber("" + fieldNumber, replacementFieldStr);
+        throw FormatError.InvalidFieldNumber(ctx, "" + fieldNumber);
     }
 
     // Return argument.
@@ -1331,12 +1338,12 @@ function getArgument(ctx: ParsingContext, fieldNumberStr: string, replacementFie
 // in form of nested curly braces {:{width field number}.{precision field number}}
 function getNestedArgumentInt(ctx: ParsingContext, fieldNumberStr: string, fs: FormatSpecification): number {
     // Get the argument
-    let arg = getArgument(ctx, fieldNumberStr, fs.replacementFieldString);
+    let arg = getArgument(ctx, fieldNumberStr);
 
     // Nested argument is used for width and precision in format specification, and
     // must be integer number >= 0.
     if (!arg || typeof arg !== "number" || !isInteger(arg) || arg < 0) {
-        throw FormatError.InvalidNestedArgument(arg, fs);
+        throw FormatError.InvalidNestedArgument(ctx, arg);
     }
 
     // Return nested argument integer
@@ -1359,21 +1366,24 @@ function parseReplacementField(ctx: ParsingContext) {
         return false;
     }
 
-    // Jump over matched replacement field in  parsing string.
-    ctx.parseString = ctx.parseString.substring(replFieldMatch[0].length);
-    ctx.parsePosition += replFieldMatch[0].length;
+    // Set error string.
+    ctx.errorString = replFieldMatch[0];
 
     // Get field number fropm match.
     let fieldNumber = replFieldMatch.groups?.field_n ?? "";
 
     // Get argument.
-    let arg = getArgument(ctx, fieldNumber, replFieldMatch[0]);
+    let arg = getArgument(ctx, fieldNumber);
 
     // Create format specification.
     let fs = new FormatSpecification(ctx, replFieldMatch, getNestedArgumentInt);
 
     // Format replacement field and add it to result string.
-    ctx.resultString += formatReplacementField(arg, fs);
+    ctx.resultString += formatReplacementField(ctx, arg, fs);
+
+    // Jump over matched replacement field in  parsing string.
+    ctx.parseString = ctx.parseString.substring(replFieldMatch[0].length);
+    ctx.parsePosition += replFieldMatch[0].length;
 
     // Parsed replacement field ok, return true.
     return true;
@@ -1418,23 +1428,26 @@ function parseFormatString(ctx: ParsingContext) {
             // Continue parsing on next loop.
             continue;
         }
-        else if (ctx.parseString[0] === "}") {
-            // Throw exception if parsing string starts with "}".
-            throw FormatError.EncounteredSingleCurlyBrace("}");
+        else if (ctx.parseString.startsWith("}")) {
+            // Encountered single '}' ff parsing string starts with '}'.
+            ctx.errorString = "}";
+            throw FormatError.EncounteredSingleCurlyBrace(ctx);
         }
-        else if (ctx.parseString[0] === "{") {
-            // If parsing string starts with "{" then parse replacement field, and
-            // throw exception if it returns false (there was "{" but parsing failed).
+        else if (ctx.parseString.startsWith("{")) {
+            // If parsing string starts with '{' then parse replacement field.
+            // Throw exception if it returns false (parsing replacement field failed).
             if (!parseReplacementField(ctx)) {
                 // For more precise error message get loose match replacement field string.
                 let str = getLooseMatchReplacementFieldString(ctx);
                 if (str) {
+                    ctx.errorString = str;
                     // Got loose match of replacement field string that just failed to parse.
-                    throw FormatError.InvalidReplacementField(str);
+                    throw FormatError.InvalidReplacementField(ctx);
                 }
                 else {
-                    // Got single '{' followed by random stuff.
-                    throw FormatError.EncounteredSingleCurlyBrace("{");
+                    // Ecountered single '{' followed by random stuff.
+                    ctx.errorString = "{";
+                    throw FormatError.EncounteredSingleCurlyBrace(ctx);
                 }
             }
 
@@ -1453,7 +1466,7 @@ function parseFormatString(ctx: ParsingContext) {
 export function format(formatString: string, ...formatArgs: unknown[]): string {
 
     // Create parsing context.
-    const parsingContext = {
+    const parsingContext: ParsingContext = {
         formatString,
         formatArgs,
         parseString: formatString,
