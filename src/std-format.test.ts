@@ -406,8 +406,6 @@ describe("Testing std-format", () => {
         expect(format("{:!<15s}", "Banana")).toEqual("Banana!!!!!!!!!");
         expect(format("{:!^15s}", "Banana")).toEqual("!!!!Banana!!!!!");
         expect(format("{:!>15s}", "Banana")).toEqual("!!!!!!!!!Banana");
-        expect(() => format("{:015s}", "Banana")).toThrow();
-        expect(() => format("{:!=15s}", "Banana")).toThrow();
 
         // Precision = how may chars.
         expect(format("{:-^8.4s}", "doc")).toEqual("--doc---");
@@ -418,12 +416,13 @@ describe("Testing std-format", () => {
 
 
         // Specifiers not allowed with 's'
+        expect(() => format("{:0s}", "Hello")).toThrow();
+        expect(() => format("{:=8s}", "Hello")).toThrow();
         expect(() => format("{:,s}", "Hello")).toThrow();
         expect(() => format("{:_s}", "Hello")).toThrow();
         expect(() => format("{:Ls}", "Hello")).toThrow();
         expect(() => format("{:+s}", "Hello")).toThrow();
         expect(() => format("{:#s}", "Hello")).toThrow();
-        expect(() => format("{:0s}", "Hello")).toThrow();
         expect(() => format("{:zs}", "Hello")).toThrow();
     });
 
@@ -452,7 +451,8 @@ describe("Testing std-format", () => {
         expect(() => format("{:c}", NaN)).toThrow();
         expect(() => format("{:c}", Infinity)).toThrow();
 
-        // Invalid specifier with type specifier 'c'
+        // Specifiers that are not allowed with 'c'.
+        expect(() => format("{:+c}", 'A')).toThrow();
         expect(() => format("{:zc}", 'A')).toThrow();
         expect(() => format("{:#c}", 'A')).toThrow();
         expect(() => format("{:,c}", 'A')).toThrow();

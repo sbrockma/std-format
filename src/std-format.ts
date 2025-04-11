@@ -181,7 +181,7 @@ const FormatSpecificationRegExString =
     "(?<grouping>[,_])?" +  // , or _
     "(\.((?<precision>\\d+)|\{(?<precision_field_n>\\d*)\}))?" + // precision
     "(?<locale>[L])?" + // L
-    "(?<type>[scbBodxXaAeEfFgG?%n])?"; // type
+    "(?<type>[scbBodxXaAeEfF%gG?n])?"; // type
 
 // Replacement field regex.
 const ReplacementFieldRegEx = new RegExp(
@@ -244,7 +244,7 @@ class FormatSpecification {
         this.zero = zero === "0" ? zero : undefined;
         this.grouping = (grouping === "," || grouping === "_") ? grouping : undefined;
         this.locale = locale === "L" ? locale : undefined;
-        this.type = (type === "" || type && "scbBodxXaAeEfFgG?%n".indexOf(type) >= 0) ? type as any : "";
+        this.type = (type === "" || type && "scbBodxXaAeEfF%gG?n".indexOf(type) >= 0) ? type as any : "";
 
         // Do these last because getNestedArgumentInt needs this object.
         this.width = width_field_n !== undefined ? getNestedArgumentInt(width_field_n, this) : (!!width ? +width : undefined);
@@ -255,6 +255,28 @@ class FormatSpecification {
     // For example isType("", "d", "xX") tests if type is either "", "d", "x" or "X".
     isType(...types: string[]) {
         return types.some(type => this.type === type || this.type !== "" && type.indexOf(this.type) >= 0);
+    }
+
+    withSpecifierRequireTypeSpecifier(s: string | undefined, type: string) {
+        if (s !== undefined && !this.isType(type) &&
+            (s === this.align || s === this.sign || s === this.zeta || s === this.sharp || s === this.zero || s === this.grouping || s === this.locale)) {
+            throw FormatError.SpecifierNotAllowedWith(s, type, this);
+        }
+    }
+
+    withSpecifierForbidSpecifier(s1: string | undefined, s2: string | undefined) {
+        if (s1 !== undefined && s2 !== undefined &&
+            (s1 === this.align || s1 === this.sign || s1 === this.zeta || s1 === this.sharp || s1 === this.zero || s1 === this.grouping || s1 === this.locale) &&
+            (s2 === this.align || s2 === this.sign || s2 === this.zeta || s2 === this.sharp || s2 === this.zero || s2 === this.grouping || s2 === this.locale)) {
+            throw FormatError.SpecifierNotAllowedWith(s1, s2, this);
+        }
+    }
+
+    withTypeSpecifierForbidSpecifier(type: string, s: string | undefined) {
+        if (this.isType(type) && s !== undefined &&
+            (s === this.align || s === this.sign || s === this.zeta || s === this.sharp || s === this.zero || s === this.grouping || s === this.locale)) {
+            throw FormatError.SpecifierNotAllowedWith(type, s, this);
+        }
     }
 }
 
@@ -301,6 +323,9 @@ class NumberFormatter {
 
         // Check for valid char code
         if (fs.isType("c")) {
+            // Check specifiers that are not allowed with 'c'.
+            fs.withTypeSpecifierForbidSpecifier("c", fs.sign ?? fs.zeta ?? fs.sharp ?? fs.grouping);
+
             try {
                 // Is char code valid integer and in range?
                 let charCode = getNumber(value);
@@ -308,13 +333,6 @@ class NumberFormatter {
             }
             catch (e) {
                 throw FormatError.InvalidArgument(value, fs);
-            }
-
-            // Get invalid specifier that is not allowed with type 'c'.
-            let invalidSpecifier = fs.sign ?? fs.zeta ?? fs.sharp ?? fs.grouping;
-
-            if (invalidSpecifier !== undefined) {
-                throw FormatError.SpecifierNotAllowedWith(invalidSpecifier, fs.type, fs);
             }
         }
 
@@ -876,18 +894,14 @@ class NumberFormatter {
         }
 
         if (fs.zeta === "z") {
+            // 'z' is only allowed for floating point types.
+            fs.withSpecifierRequireTypeSpecifier("z", "eEfF%gGaA");
+
             // The 'z' option coerces negative zero floating-point values to
             // positive zero after rounding to the format precision.
-            if (fs.isType("eEfFgGaA%")) {
-                // This option is only valid for floating-point presentation types.
-                // Change -0 to 0.
-                if (this.isZero() && this.sign === -1) {
-                    this.sign = 1;
-                }
-            }
-            else {
-                // Else 'z' not allowed with fs.type.
-                throw FormatError.SpecifierNotAllowedWith(fs.zeta, fs.type, fs);
+            // Change -0 to 0.
+            if (this.isZero() && this.sign === -1) {
+                this.sign = 1;
             }
         }
 
@@ -908,54 +922,45 @@ class NumberFormatter {
     private getGroupingProps(): { decimalSeparator: string, groupSeparator: string, groupSize: number } {
         let { fs } = this;
 
-        if (fs.grouping !== undefined && fs.locale !== undefined) {
-            // ',' and '_' not allowed with 'L'.
-            throw FormatError.SpecifierNotAllowedWith(fs.grouping, fs.locale, fs);
-        }
+        // ',' and '_' not allowed with 'L'
+        fs.withSpecifierForbidSpecifier(fs.grouping, fs.locale);
 
         if (fs.grouping === ",") {
             // Get grouping properties with group specifier ',' for supported type specifiers.
-            if (fs.isType("deEfFgG%")) {
-                return { decimalSeparator: ".", groupSeparator: ",", groupSize: 3 }
-            }
-            else {
-                // ',' not allowed with fs.type.
-                throw FormatError.SpecifierNotAllowedWith(fs.grouping, fs.type, fs);
-            }
+            fs.withSpecifierRequireTypeSpecifier(",", "deEfF%gG");
+
+            return { decimalSeparator: ".", groupSeparator: ",", groupSize: 3 }
         }
         else if (fs.grouping === "_") {
             // Get grouping properties with group specifier '_' for supported type specifiers.
-            if (fs.isType("deEfFgG%")) {
+            fs.withSpecifierRequireTypeSpecifier("_", "deEfF%gGbBoxX");
+
+            if (fs.isType("deEfF%gG")) {
                 return { decimalSeparator: ".", groupSeparator: "_", groupSize: 3 }
             }
             else if (fs.isType("bBoxX")) {
                 // With binary, octal and hexadecimal type specifiers group size is 4.
                 return { decimalSeparator: ".", groupSeparator: "_", groupSize: 4 }
             }
-            else {
-                // '_' not allowed with fs.type.
-                throw FormatError.SpecifierNotAllowedWith(fs.grouping, fs.type, fs);
-            }
         }
         else if (fs.locale) {
-            // The L option causes the locale-specific form to be used. This option is only valid for arithmetic types.
-            if (fs.isType("deEfFgGaA")) {
-                // Use locale's decimal and group separators.
-                return { decimalSeparator: localeDecimalSeparator, groupSeparator: localeGroupSeparator, groupSize: 3 }
-            }
-            else {
-                // 'L' not allowed with fs.type.
-                throw FormatError.SpecifierNotAllowedWith(fs.locale, fs.type, fs);
-            }
-        }
-        else if (fs.isType("n")) {
+            // The L option causes the locale-specific form to be used.
+            // This option is only valid for arithmetic types.
+            fs.withSpecifierRequireTypeSpecifier("L", "deEfF%gGaA");
+
             // Use locale's decimal and group separators.
             return { decimalSeparator: localeDecimalSeparator, groupSeparator: localeGroupSeparator, groupSize: 3 }
         }
-        else {
-            // If no grouping then set grouping separator to empty string and group size to Infinity.
-            return { decimalSeparator: ".", groupSeparator: "", groupSize: Infinity }
+        else if (fs.isType("n")) {
+            // 'n' not allowed with ',', '_' and 'L'.
+            fs.withTypeSpecifierForbidSpecifier("n", fs.grouping ?? fs.locale);
+
+            // Use locale's decimal and group separators.
+            return { decimalSeparator: localeDecimalSeparator, groupSeparator: localeGroupSeparator, groupSize: 3 }
         }
+
+        // If no grouping then set grouping separator to empty string and group size to Infinity.
+        return { decimalSeparator: ".", groupSeparator: "", groupSize: Infinity }
     }
 
     // Get char code
@@ -1073,7 +1078,7 @@ class NumberFormatter {
             }
 
             // Include dot after last digit if sharp specifier is '#' with some type specifiers.
-            if (this.dotPos === this.digits.length && fs.sharp === "#" && fs.isType("fFeEgGaA%")) {
+            if (this.dotPos === this.digits.length && fs.sharp === "#" && fs.isType("eEfF%gGaA")) {
                 digits += ".";
             }
 
@@ -1128,17 +1133,10 @@ namespace StringFormatter {
             // Not valid string argument.
             throw FormatError.InvalidArgument(str, fs);
         }
-        else if (fs.align === "=") {
-            // '=' not allowed with fs.type.
-            throw FormatError.SpecifierNotAllowedWith(fs.align, fs.type, fs);
-        }
 
-        let invalidSpecifier = fs.grouping ?? fs.locale ?? fs.sign ?? fs.sharp ?? fs.zero ?? fs.zeta;
-
-        if (invalidSpecifier !== undefined) {
-            // Specifier not allowed with string.
-            throw FormatError.SpecifierNotAllowedWith(invalidSpecifier, fs.type, fs);
-        }
+        // Check specifiers not allowed with string.
+        fs.withTypeSpecifierForbidSpecifier(fs.type,
+            (fs.align === "=" ? "=" : undefined) ?? fs.grouping ?? fs.locale ?? fs.sign ?? fs.sharp ?? fs.zero ?? fs.zeta);
 
         if (fs.isType("?")) {
             // Here should format escape sequence string.
