@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.2] - 2025-04-12
+### Fixed
+- Allow 'z' specifier to be used with type specifier '%'.
+## Changed
+- Lot of refactoring for better code.
+
 ## [1.3.1] - 2025-04-10
 ### Changed
 - Format changelog based on Keep a Changelog.
