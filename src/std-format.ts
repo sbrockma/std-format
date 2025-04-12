@@ -302,16 +302,15 @@ class FormatSpecification {
     }
 }
 
-// NumberFormatter class is for formatting numbers.
-class NumberFormatter {
-    // Sign is 1 or -1 (or NaN if number is nan).
+// Class is for converting finite numbers.
+class FiniteNumberConverter {
+    // Base of number can be 2, 8, 10 or a6.
+    readonly base: number;
+
+    // Sign is 1 or -1.
     sign: number;
 
     // Digits contains digits of the number. Each digit is between 0 <= digit <= base - 1.
-    // Special cases are nan and +-inf
-    //     * For nan digits is [NaN]
-    //     * For +inf digits is [+Infinity].
-    //     * For -inf digits is [-Infinity].
     digits: number[];
 
     // DotPos tells the position of dot in digits array.
@@ -323,12 +322,14 @@ class NumberFormatter {
     // Exp is the exponent of number. It is relative to dot position.
     exp: number;
 
-    // Base of number can be 2, 8, 10 or a6.
-    readonly base: number;
+    // Constructor
+    constructor(value: number | bigint, readonly fs: FormatSpecification) {
+        // Value must be finite number
+        assert(typeof value === "bigint" || typeof value === "number" && isFinite(value), "Value is not finite.");
 
-    // Constructor of NumberFormatter class.
-    // Passed arguments are number @value and format specification @fs.
-    private constructor(value: number | bigint, readonly fs: FormatSpecification) {
+        // Supported type specifiers are.
+        assert(fs.hasType("", "dnbBoxXeEfF%gGaA"), "Unsupported number type specifier '" + fs.type + "'.");
+
         // Set base
         if (fs.hasType("bB")) {
             this.base = 2;
@@ -343,21 +344,6 @@ class NumberFormatter {
             this.base = 10;
         }
 
-        // Check for valid char code
-        if (fs.hasType("c")) {
-            // Check specifiers that are not allowed with 'c'.
-            fs.withTypeSpecifierForbidSpecifier("c", fs.sign ?? fs.zeta ?? fs.sharp ?? fs.grouping);
-
-            try {
-                // Is char code valid integer and in range?
-                let charCode = getNumber(value);
-                assert(isInteger(charCode) && charCode >= 0 && charCode <= 65535, "Invalid char code.");
-            }
-            catch (e) {
-                throw FormatError.InvalidArgumentForType(this.ctx, value, fs.type);
-            }
-        }
-
         // Initialize sign, digits, dot position and exponent to initial values.
         this.sign = isNegative(value) ? -1 : +1;
         this.digits = [];
@@ -365,25 +351,6 @@ class NumberFormatter {
         this.exp = 0;
 
         if (typeof value === "number") {
-            // Handle special numbers nan and +-inf
-            if (isNaN(value)) {
-                // Set sign = NaN and digits = [NaN].
-                this.sign = NaN;
-                this.digits = [NaN];
-                // Initialize dotPos and exp to something.
-                this.dotPos = NaN;
-                this.exp = NaN;
-                return;
-            }
-            else if (Math.abs(value) === Infinity) {
-                // this.sign is already valid.
-                this.digits = [Math.abs(value)];
-                // Initialize dotPos and exp to something.
-                this.dotPos = 1;
-                this.exp = 0;
-                return;
-            }
-
             // Split absolute value into integer and fractional parts.
             let absValue = Math.abs(value);
             let intPart = Math.floor(absValue);
@@ -511,16 +478,6 @@ class NumberFormatter {
         return this.fs.ctx;
     }
 
-    // Is this number "nan"?
-    private isNan() {
-        return this.digits.length === 1 && isNaN(this.digits[0]);
-    }
-
-    // Is this number "+-inf"?
-    private isInf() {
-        return this.digits.length === 1 && this.digits[0] === Infinity;
-    }
-
     // Is this number zero?
     private isZero() {
         // After conversion zero can have more than one zero digits, for exmaple "0.00".
@@ -535,19 +492,15 @@ class NumberFormatter {
 
     // Validate internal state.
     private validateInternalState() {
-        if (this.isNan() || this.isInf()) {
-            return;
-        }
-
         if (this.isZero()) {
             assert(this.exp === 0, "Is zero but exp != 0");
             assert(this.dotPos === 1, "Is zero but dot pos != 1");
         }
 
-        assert(isFinite(this.exp), "exp is not finite");
-        assert(isFinite(this.dotPos), "dotPos is not finite");
+        assert(isInteger(this.exp), "exp is not finite");
+        assert(isInteger(this.dotPos), "dotPos is not finite");
 
-        assert(this.dotPos >= 1, "dotPos = " + this.dotPos + " < 1");
+        assert(isInteger(this.dotPos) && this.dotPos >= 1, "dotPos = " + this.dotPos + " < 1");
         assert(this.dotPos <= this.digits.length, "dotPos = " + this.dotPos + " > digits.length = " + this.digits.length);
     }
 
@@ -570,10 +523,6 @@ class NumberFormatter {
 
     // Convert number format so that exponent is removed (exp = 0).
     private toZeroExponent() {
-        if (this.isNan() || this.isInf()) {
-            return;
-        }
-
         // Move dot position by exponent and set exponent to zero.
         this.dotPos += this.exp;
         this.exp = 0;
@@ -597,10 +546,6 @@ class NumberFormatter {
 
     // Convert to precision (number of digits). Performs rounding if necessary.
     private toPrecision(precision: number, precisionType: "fixed" | "precision") {
-        if (this.isNan() || this.isInf()) {
-            return;
-        }
-
         // Get new digit count.
         // * In fixed type new digit count is number of digits after dot.
         // * Else new digit count is precision. 
@@ -691,10 +636,6 @@ class NumberFormatter {
     // Convert number to fixed notation.
     // Precision is number of digits after decimal point.
     private toFixed(precision: number) {
-        if (this.isNan() || this.isInf()) {
-            return;
-        }
-
         // Make exponent to zero.
         this.toZeroExponent();
 
@@ -706,10 +647,6 @@ class NumberFormatter {
     // Precision is number of digits after decimal point.
     // So total digits is (p + 1).
     private toScientific(precision: number) {
-        if (this.isNan() || this.isInf()) {
-            return;
-        }
-
         // Move dot to position to right after first digit.
         this.exp += this.dotPos - 1;
         this.dotPos = 1;
@@ -720,7 +657,7 @@ class NumberFormatter {
 
     // Convert number to normalised hexadecimal exponential notation
     private toNormalisedHexadecimalExponential() {
-        if (this.isNan() || this.isInf() || this.isZero()) {
+        if (this.isZero()) {
             return;
         }
 
@@ -791,10 +728,6 @@ class NumberFormatter {
 
     // Convert this number to notation specified by format specification.
     private convertToNotation(value: number | bigint) {
-        if (this.isNan() || this.isInf()) {
-            return;
-        }
-
         // Remove insignificant trailing zeroes (optionally leaving that one digit past dotPos)
         const removeInsignificantTrailingZeroes = (leave: 0 | 1 = 0) => {
             while (this.digits.length > Math.max(1, this.dotPos + leave) && this.digits[this.digits.length - 1] === 0) {
@@ -836,7 +769,7 @@ class NumberFormatter {
                 removeInsignificantTrailingZeroes();
             }
         }
-        else if (fs.hasType("", "cdbBoxXn")) {
+        else if (fs.hasType("", "dbBoxXn")) {
             // Else if type is default '' or integer
 
             // Precision not allowed for integer
@@ -929,20 +862,18 @@ class NumberFormatter {
         // Validate internal state.
         this.validateInternalState();
     }
+}
 
+namespace NumberFormatter {
     // Get number prefix.
-    private getNumberPrefix() {
-        let { fs } = this;
-
+    function getNumberPrefix(fs: FormatSpecification) {
         return fs.sharp === "#" ? (
             fs.hasType("xX") ? "0x" : fs.hasType("bB") ? "0b" : fs.hasType("o") ? (usingDeprecatedStdFormat ? deprecatedOctalPrefix : "0o") : ""
         ) : "";
     }
 
     // Get grouping properties
-    private getGroupingProps(): { decimalSeparator: string, groupSeparator: string, groupSize: number } {
-        let { fs } = this;
-
+    function getGroupingProps(fs: FormatSpecification): { decimalSeparator: string, groupSeparator: string, groupSize: number } {
         // ',' and '_' not allowed with 'L'
         fs.withSpecifierForbidSpecifier(fs.grouping, fs.locale);
 
@@ -985,99 +916,108 @@ class NumberFormatter {
     }
 
     // Get char code
-    private getCharCode() {
-        // Only call for type specifier 'c'. Number is integer.
-        assert(this.fs.hasType("c") && this.sign === 1 && this.dotPos === this.digits.length &&
-            this.exp === 0 && this.base === 10, "Invalid call to getCharCode().");
+    function getCharCode(value: number | bigint, fs: FormatSpecification): number {
+        // Check specifiers that are not allowed with 'c'.
+        fs.withTypeSpecifierForbidSpecifier("c", fs.sign ?? fs.zeta ?? fs.sharp ?? fs.grouping);
 
-        // Calculate char code from digits.
-        let charCode = 0;
-
-        for (let i = 0, e = 1; i < this.digits.length; i++, e *= 10) {
-            // Add digits from right to left, each multiplied by 10^i.
-            charCode += this.digits[this.digits.length - 1 - i] * e;
+        // Precision not allowed for 'c''
+        if (fs.precision !== undefined) {
+            throw FormatError.PrecisionNotAllowedWith(fs.ctx, fs.type);
         }
 
-        return charCode;
+        try {
+            // Is char code valid integer and in range?
+            let charCode = getNumber(value);
+            assert(isInteger(charCode) && charCode >= 0 && charCode <= 65535, "Invalid char code.");
+            return charCode;
+        }
+        catch (e) {
+            throw FormatError.InvalidArgumentForType(fs.ctx, value, fs.type);
+        }
     }
 
     // Convert this number to string.
-    private toString() {
-        // Get format specification fs.
-        let { fs } = this;
-
-        // Exponent string.
-        let exp: string;
-
-        // Digits string.
-        let digits: string;
+    export function formatNumber(value: number | bigint, fs: FormatSpecification): string {
+        // Set sign. "-", "+", " " or "".
+        let sign: string;
 
         // Prefix string. "0x" for hexadecimal, etc.
         let prefix: string;
 
+        // Digits string.
+        let digits: string;
+
+        // Exponent string.
+        let exp: string;
+
         // Postfix string. "%" for percentage types, or "".
         let postfix: string = fs.hasType("%") ? "%" : "";
 
-        // Set sign. "-", "+", " " or "".
-        let sign: string = this.sign < 0 ? "-" : ((fs.sign === "+" || fs.sign === " ") ? fs.sign : "");
+        const getSign = (v: number) => v < 0 ? "-" : ((fs.sign === "+" || fs.sign === " ") ? fs.sign : "");
 
-        if (this.isNan()) {
-            // Is nan?
-            exp = "";
-            digits = "nan";
-            prefix = "";
-        }
-        else if (this.isInf()) {
-            // Is inf?
-            exp = "";
-            digits = "inf";
-            prefix = "";
-        }
-        else if (fs.hasType("c")) {
+        if (fs.hasType("c")) {
             // Is char? Set digits string to contain single char obtained from char code.
-            digits = String.fromCharCode(this.getCharCode());
+            digits = String.fromCharCode(getCharCode(value, fs));
             // Other props empty.
             sign = exp = prefix = "";
         }
+        else if (typeof value === "number" && isNaN(value)) {
+            // Is nan?
+            prefix = "";
+            sign = getSign(value);
+            digits = "nan";
+            exp = "";
+        }
+        else if (typeof value === "number" && Math.abs(value) === Infinity) {
+            // Is inf?
+            prefix = "";
+            sign = getSign(value);
+            digits = "inf";
+            exp = "";
+        }
         else {
+            let n = new FiniteNumberConverter(value, fs);
+
+            sign = getSign(n.sign);
+
             // Some type specifiers do not show zero exponent.
-            let noZeroExp = !fs.hasType("eEaA");
+            let omitZeroExp = !fs.hasType("eEaA");
 
             // Some type specifiers add zero prefix to single digit exponent.
-            let needExp00 = fs.hasType("", "eEgG");
+            let needTwoDigitExp = fs.hasType("", "eEgG");
 
-            if (this.exp === 0 && noZeroExp) {
+            if (n.exp === 0 && omitZeroExp) {
                 // No zero exponent.
                 exp = "";
             }
             else {
                 // Get exponent to string. Absolute value for now.
-                exp = "" + Math.abs(this.exp);
+                exp = "" + Math.abs(n.exp);
 
                 // Add leading zero if exponent needs at least two digits.
-                if (exp.length < 2 && needExp00) {
+                if (exp.length < 2 && needTwoDigitExp) {
                     exp = "0" + exp;
                 }
 
                 // Format exponent string. Add "p" (norm. hex. exp. ntt) or "e",
                 // sign, and absolute value of exponent.
-                exp = (this.base === 16 ? "p" : "e") + (this.exp < 0 ? "-" : "+") + exp;
+                exp = (n.base === 16 ? "p" : "e") + (n.exp < 0 ? "-" : "+") + exp;
             }
 
             // Get grouping props.
-            let groupingProps = this.getGroupingProps();
+            let groupingProps = getGroupingProps(fs);
 
             // Split digits to integer and fractional parts.
-            let intDigits = this.digits.slice(0, this.dotPos);
-            let fracDigits = this.digits.slice(this.dotPos);
+            let intDigits = n.digits.slice(0, n.dotPos);
+            let fracDigits = n.digits.slice(n.dotPos);
 
             if (groupingProps.groupSeparator === "" || intDigits.length <= groupingProps.groupSize) {
-                // There is no grouping (or need plain digits to extract char code).
+                // No grouping required.
                 // Add integer digits.
                 digits = intDigits.map(mapDigitToChar).join("");
             }
             else {
-                // There is grouping.
+                // Grouping required.
                 digits = "";
 
                 // Get group count.
@@ -1099,14 +1039,14 @@ class NumberFormatter {
             }
 
             // Include dot after last digit if sharp specifier is '#' with some type specifiers.
-            if (this.dotPos === this.digits.length && fs.sharp === "#" && fs.hasType("eEfF%gGaA")) {
+            if (n.dotPos === n.digits.length && fs.sharp === "#" && fs.hasType("eEfF%gGaA")) {
                 digits += ".";
             }
 
             // Get prefix.
-            prefix = this.getNumberPrefix();
+            prefix = getNumberPrefix(fs);
 
-            // Remove octal prefix "0" if digits is "0" to prevent "00".
+            // Omit octal prefix "0" if digits is "0".
             if (prefix === "0" && digits === "0") {
                 prefix = "";
             }
@@ -1119,7 +1059,7 @@ class NumberFormatter {
         // It is width minus sign, prefix, digits, exponent, and postfix.
         let fillCount = Math.max(0, width - sign.length - prefix.length - digits.length - exp.length - postfix.length);
 
-        // Fill character. 
+        // Fill character.
         let fillChar: string;
 
         // Here we only add filling that occurs between sign (or prefix) and digits.
@@ -1140,10 +1080,6 @@ class NumberFormatter {
 
         // Convert to uppercase if specified by format specification type.
         return fs.hasType("AGEFBX") ? str.toUpperCase() : str;
-    }
-
-    static formatNumber(n: number | bigint, fs: FormatSpecification): string {
-        return new NumberFormatter(n, fs).toString();
     }
 }
 
