@@ -643,6 +643,15 @@ describe("Testing std-format", () => {
         expect(format("{:.3a}", -1234567890)).toEqual("-1.266p+30");
         expect(format("{:.3a}", 1234567890e-20)).toEqual("1.b26p-37");
         expect(format("{:.3a}", -1234567890e-20)).toEqual("-1.b26p-37");
+
+        expect(format("{:a}", 0.0001)).toEqual("1.a36e2eb1c432dp-14");
+        expect(format("{:a}", 0.001)).toEqual("1.0624dd2f1a9fcp-10");
+        expect(format("{:a}", 0.01)).toEqual("1.47ae147ae147bp-7");
+        expect(format("{:a}", 0.1)).toEqual("1.999999999999ap-4");
+        expect(format("{:a}", 1)).toEqual("1p+0");
+        expect(format("{:a}", 10)).toEqual("1.4p+3");
+        expect(format("{:a}", 100)).toEqual("1.9p+6");
+        expect(format("{:a}", 1000)).toEqual("1.f4p+9");
     });
 
     it("type specifier %", () => {

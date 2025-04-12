@@ -6,9 +6,9 @@ function repeatString(repeatStr: string, repeatCount: number): string {
 }
 
 // Create number array that contains number n count times
-function zeroArray(zeroCount: number): number[] {
+function zeroArray(zeroCount: number): 0[] {
     assert(zeroCount >= 0, "zeroCount < 0");
-    return new Array<number>(zeroCount).fill(0);
+    return new Array<0>(zeroCount).fill(0);
 }
 
 // Test if number is integer.
@@ -658,6 +658,7 @@ class FiniteNumberConverter {
     // Convert number to normalised hexadecimal exponential notation
     private toNormalisedHexadecimalExponential() {
         if (this.isZero()) {
+            // nothing to do.
             return;
         }
 
@@ -670,54 +671,66 @@ class FiniteNumberConverter {
         assert(this.dotPos >= 1, "dotPos < 1");
 
         // Make scientific format setting dotPos to 1 and altering exponent.
-        // Exponent in hexadecimal exponential presentation is in binary.
-        // Shifting by one pos in hexadecimal shifts by four in binary. 
-        this.exp += 4 * (this.dotPos - 1);
+        // Exponent in hexadecimal exponential presentation is in binary (thus * 4).
+        this.exp += (this.dotPos - 1) * 4;
         this.dotPos = 1;
 
         // Convert digits to binary string of zeroes and ones.
-        let binary = this.digits.map(d => {
-            // Each digit in hexadecimal has four digits in binary.
-            // Add leading zeroes to return binary string length of 4.
-            let b = Number(d).toString(2);
-            return repeatString("0", 4 - b.length) + b;
-        }).join("");
-
-        // Multiply by two (shift digits to left) as long as 
-        // binary starts with "0000" (hex "0")
-        while (binary.startsWith("0000")) {
-            // Remove digit from left and add "0" to right.
-            binary = binary.substring(1) + "0";
-
-            // Decrease exponent to keep total value unaltered.
-            this.exp--;
+        let binaryDigits: (0 | 1)[] = [];
+        for (let i = 0; i < this.digits.length; i++) {
+            let d = this.digits[i];
+            binaryDigits.push(d & 0b1000 ? 1 : 0);
+            binaryDigits.push(d & 0b0100 ? 1 : 0);
+            binaryDigits.push(d & 0b0010 ? 1 : 0);
+            binaryDigits.push(d & 0b0001 ? 1 : 0);
         }
 
-        // Divide by two (shift digits to right) until 
-        // binary binary starts with "0001" (hex "1")
-        while (!binary.startsWith("0001")) {
-            // Add "0" to left and remove digit from right.
-            binary = "0" + binary.substring(0, binary.length - 1);
+        // Make first four digits [0, 0, 0, 1].
+        let firstOneId = binaryDigits.indexOf(1);
+        if (firstOneId >= 0) {
+            if (firstOneId > 3) {
+                // Multiply by shifting left.
+                let shiftLeft = firstOneId - 3;
 
-            // Increase exponent to keep total value unaltered.
-            this.exp++;
+                // Remove digits from left.
+                binaryDigits.splice(0, shiftLeft);
+
+                // Decrease exponent to keep value unchanged.
+                this.exp -= shiftLeft;
+            }
+            else if (firstOneId < 3) {
+                // Divide by shifting right.
+                let shiftRight = 3 - firstOneId;
+
+                // Add zeroes to left.
+                binaryDigits.splice(0, 0, ...zeroArray(shiftRight));
+
+                // Remove digits from right.
+                binaryDigits.splice(binaryDigits.length - shiftRight, firstOneId);
+
+                // Increase exponent to keep value unchanged.
+                this.exp += shiftRight;
+            }
         }
 
-        // Remove trailing zeroes, "0000" in binary is "0" in hex.
-        while (binary.endsWith("0000")) {
-            binary = binary.substring(0, binary.length - 4);
-        }
+        // First 4 digits should be 0001 (binary) = 1 (hex).
+        assert(binaryDigits[0] === 0 && binaryDigits[1] === 0 && binaryDigits[2] === 0 && binaryDigits[3] === 1);
 
         // Convert binary digits back to hexadecimal digits
         this.digits = [];
+        for (let i = 0; i < binaryDigits.length; i += 4) {
+            // Convert 4 digits from binary to hex and push to end of digits.
+            this.digits.push(
+                (binaryDigits[i + 0] ? 0b1000 : 0) |
+                (binaryDigits[i + 1] ? 0b0100 : 0) |
+                (binaryDigits[i + 2] ? 0b0010 : 0) |
+                (binaryDigits[i + 3] ? 0b0001 : 0)
+            );
+        }
 
-        // Repeat while there are binary digits left.
-        while (binary.length > 0) {
-            // Convert first 4 digits from binary and push to end of digits.
-            this.digits.push(parseInt(binary.substring(0, 4), 2));
-
-            // Remove four binary digits that were just converted.
-            binary = binary.substring(4);
+        // Remove any trailing zeroes (ok, is in scientific notation).
+        while (this.digits.length > 1 && this.digits[this.digits.length - 1] === 0) {
+            this.digits.pop();
         }
 
         // Number is now in normalised hexadecimal exponential.
