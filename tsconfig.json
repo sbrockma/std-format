@@ -31,7 +31,9 @@
         "src/**/*"
     ],
     "exclude": [
-        "node-modules/**/*"
+        "node-modules",
+        "src/**/*.test.ts",
+        "src/**/*.test.d.ts"
     ],
     "compileOnSave": false
 }
