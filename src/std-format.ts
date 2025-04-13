@@ -267,9 +267,9 @@ class FormatSpecification {
     readonly grouping: "," | "_" | undefined;
     readonly precision: number | undefined;
     readonly locale: "L" | undefined;
-    readonly type: "" | "s" | "c" | "b" | "B" | "d" | "o" | "x" | "X" | "a" | "A" | "e" | "E" | "f" | "F" | "g" | "G" | "?" | "%" | "n";
+    readonly type: "" | "s" | "?" | "c" | "d" | "n" | "b" | "B" | "o" | "x" | "X" | "e" | "E" | "f" | "F" | "%" | "g" | "G" | "a" | "A";
 
-    constructor(readonly ctx: ParsingContext, replFieldMatch: RegExpExecArray, getNestedArgumentInt: (ctx: ParsingContext, argId: string) => number) {
+    constructor(readonly ctx: ParsingContext, replFieldMatch: RegExpExecArray) {
         let fill = replFieldMatch.groups?.fill;
         let align = replFieldMatch.groups?.align;
         let sign = replFieldMatch.groups?.sign;
@@ -294,7 +294,7 @@ class FormatSpecification {
         this.locale = locale === "L" ? locale : undefined;
         this.type = (type === "" || type && "s?cdnbBoxXeEfF%gGaA".indexOf(type) >= 0) ? type as any : "";
 
-        // Do these last because getNestedArgumentInt needs this object.
+        // Get (possibly nested) fields width and precision.
         this.width = width_field_n !== undefined ? getNestedArgumentInt(ctx, width_field_n) : (!!width ? +width : undefined);
         this.precision = precision_field_n !== undefined ? getNestedArgumentInt(ctx, precision_field_n) : (!!precision ? +precision : undefined);
     }
@@ -306,7 +306,7 @@ class FormatSpecification {
     }
 
     // Throws error if this has given type and has specifier that is not on whitelist.
-    allowSpecifiersWithType(type: string, specifierWhiteList: string, withArg?: unknown) {
+    private allowSpecifiersWithType(type: string, specifierWhiteList: string, withArg?: unknown) {
         if (this.hasType(type)) {
             // Fuction to throw error depending whether specifier is default specifier ('') or regular pecifier. 
             const throwSpecifierNotAllowedWith = this.type === "" && withArg !== undefined
@@ -334,6 +334,46 @@ class FormatSpecification {
             else if (this.locale !== undefined && specifierWhiteList.indexOf(this.locale) < 0) {
                 throwSpecifierNotAllowedWith(this.locale);
             }
+        }
+    }
+
+    // Validate what specifiers can be used together.
+    validate(arg: unknown) {
+        // Specifiers that are allowed with default type '', 
+        // depends on argument type (string or number).
+        if (typeof arg === "string") {
+            this.allowSpecifiersWithType("", "<^>", arg);
+        }
+        else if (typeof arg === "number" || typeof arg === "bigint") {
+            this.allowSpecifiersWithType("", "<^>=-+ z0,_L", arg);
+        }
+
+        // Specifiers that are allowed with string types.
+        this.allowSpecifiersWithType("s?", "<^>");
+
+        // Specifiers that are allowed with char type.
+        this.allowSpecifiersWithType("c", "<^>=0");
+
+        // Specifiers that are allowed with integer type 'd'.
+        this.allowSpecifiersWithType("d", "<^>=-+ #0,_L");
+
+        // Specifiers that are allowed with locale aware integer type 'n'.
+        this.allowSpecifiersWithType("n", "<^>=-+ #0");
+
+        // Specifiers that are allowed with binary, octal and hexadecimal types.
+        this.allowSpecifiersWithType("bBoxX", "<^>=-+ #0_");
+
+        // Specifiers that are allowed with floating point types.
+        this.allowSpecifiersWithType("eEfF%gGaA", "<^>=-+ z#0,_L");
+
+        // Precision not allowed for integer format specifiers.
+        if (this.hasType("cdnbBoxX") && this.precision !== undefined) {
+            ThrowFormatError.throwPrecisionNotAllowedWith(this.ctx, this.type);
+        }
+
+        // Grouping not allowed with locale.
+        if (this.grouping !== undefined && this.locale !== undefined) {
+            ThrowFormatError.throwSpecifierNotAllowedWith(this.ctx, this.grouping, this.locale);
         }
     }
 }
@@ -772,16 +812,15 @@ class FiniteNumberConverter {
         this.validateInternalState();
     }
 
-    // Convert this number to notation specified by format specification.
-    private convertToNotation(value: number | bigint) {
-        // Remove insignificant trailing zeroes (optionally leaving that one digit past dotPos)
-        const removeInsignificantTrailingZeroes = (leave: 0 | 1 = 0) => {
-            while (this.digits.length > Math.max(1, this.dotPos + leave) && this.digits[this.digits.length - 1] === 0) {
-                this.digits.pop();
-            }
+    // Remove insignificant trailing zeroes (optionally leave one digit past dot position).
+    private removeInsignificantTrailingZeroes(leave: 0 | 1 = 0) {
+        while (this.digits.length > Math.max(1, this.dotPos + leave) && this.digits[this.digits.length - 1] === 0) {
+            this.digits.pop();
         }
+    }
 
-        // Format specification fs.
+    // Convert to notation according to format specification.
+    private convertToNotation(value: number | bigint) {
         let { fs } = this;
 
         // Now make conversion according to fs.type
@@ -808,11 +847,11 @@ class FiniteNumberConverter {
 
                 // Remove insignificant trailing zeroes.
                 // Include at least one digit past the decimal point.
-                removeInsignificantTrailingZeroes(1);
+                this.removeInsignificantTrailingZeroes(1);
             }
             else {
                 // Remove insignificant trailing zeroes.
-                removeInsignificantTrailingZeroes();
+                this.removeInsignificantTrailingZeroes();
             }
         }
         else if (fs.hasType("", "dnbBoxX")) {
@@ -869,7 +908,7 @@ class FiniteNumberConverter {
             // Was sharp specifier '#' was given for 'g' and 'G'?
             if (fs.sharp !== "#") {
                 // Remove insignificant trailing zeroes.
-                removeInsignificantTrailingZeroes();
+                this.removeInsignificantTrailingZeroes();
             }
         }
         else if (fs.hasType("aA")) {
@@ -1093,8 +1132,8 @@ namespace NumberFormatter {
         // Form final string representation by adding all components and fill.
         let str = sign + prefix + repeatString(fillChar, fillCount) + digits + exp + postfix;
 
-        // Convert to uppercase if specified by format specification type.
-        return fs.hasType("AGEFBX") ? str.toUpperCase() : str;
+        // Convert to uppercase if specified by format specification.
+        return fs.hasType("BXEFGA") ? str.toUpperCase() : str;
     }
 }
 
@@ -1115,55 +1154,12 @@ namespace StringFormatter {
     }
 }
 
-// Validate what specifiers can be used together.
-function validateSpecifiers(arg: unknown, fs: FormatSpecification) {
-    // Specifiers that are allowed with default type '', 
-    // depends on argument type (string or number).
-    if (typeof arg === "string") {
-        fs.allowSpecifiersWithType("", "<^>", arg);
-    }
-    else if (typeof arg === "number" || typeof arg === "bigint") {
-        // Allow 'z' (and precision) for numbers (int and float).
-        fs.allowSpecifiersWithType("", "<^>=-+ z0,_L", arg);
-    }
-
-    // Specifiers that are allowed with string types.
-    fs.allowSpecifiersWithType("s?", "<^>");
-
-    // Specifiers that are allowed with char type.
-    fs.allowSpecifiersWithType("c", "<^>=0");
-
-    // Specifiers that are allowed with integer type 'd'.
-    fs.allowSpecifiersWithType("d", "<^>=-+ #0,_L");
-
-    // Specifiers that are allowed with locale aware integer type 'n'.
-    fs.allowSpecifiersWithType("n", "<^>=-+ #0");
-
-    // Specifiers that are allowed with binary, octal and hexadecimal types.
-    fs.allowSpecifiersWithType("bBoxX", "<^>=-+ #0_");
-
-    // Specifiers that are allowed with floating point types.
-    fs.allowSpecifiersWithType("eEfF%gGaA", "<^>=-+ z#0,_L");
-
-    // Precision not allowed for integer format specifiers.
-    if (fs.hasType("cdnbBoxX") && fs.precision !== undefined) {
-        ThrowFormatError.throwPrecisionNotAllowedWith(fs.ctx, fs.type);
-    }
-
-    // Grouping not allowed with locale.
-    if (fs.grouping !== undefined && fs.locale !== undefined) {
-        ThrowFormatError.throwSpecifierNotAllowedWith(fs.ctx, fs.grouping, fs.locale);
-    }
-}
-
-/**
- * Formats the replacement field.
- * @arg is the argument given to format("", arg0, arg1, ...)
- * @fs is the parsed format specification.
- */
+// Formats replacement field.
 function formatReplacementField(ctx: ParsingContext, arg: unknown, fs: FormatSpecification): string {
-    validateSpecifiers(arg, fs);
+    // Validate format specification.
+    fs.validate(arg);
 
+    // Get align.
     let { align } = fs;
 
     // Convert to valid argument: string or number.
@@ -1349,14 +1345,14 @@ function parseReplacementField(ctx: ParsingContext): boolean {
     // Set error string.
     ctx.errorString = replFieldMatch[0];
 
-    // Get field number fropm match.
-    let fieldNumber = replFieldMatch.groups?.field_n ?? "";
+    // Get argument's field number.
+    let field_n = replFieldMatch.groups?.field_n ?? "";
 
     // Get argument.
-    let arg = getArgument(ctx, fieldNumber);
+    let arg = getArgument(ctx, field_n);
 
     // Create format specification.
-    let fs = new FormatSpecification(ctx, replFieldMatch, getNestedArgumentInt);
+    let fs = new FormatSpecification(ctx, replFieldMatch);
 
     // Format replacement field and add it to result string.
     ctx.resultString += formatReplacementField(ctx, arg, fs);
