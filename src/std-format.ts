@@ -120,18 +120,14 @@ export class FormatError extends Error {
         return new FormatError(ctx, "Precision not allowed with type specifier '" + type + "'");
     }
 
-    // Create specifier not allowed error.
+    // Create specifier not allowed with default error.
+    static SpecifierNotAllowedWithDefault(ctx: ParsingContext, specifier: string, withArg: unknown) {
+        return new FormatError(ctx, "Specifier '" + specifier + "' not allowed with specifier '' (default " + typeof withArg + ")");
+    }
+
+    // Create specifier not allowed with error.
     static SpecifierNotAllowedWith(ctx: ParsingContext, specifier1: string, specifier2: string) {
-        // Is specifier str "'' (default number)"?
-        if (specifier1[0] !== "'") {
-            // No, just specifier.
-            specifier1 = "'" + specifier1 + "'";
-        }
-        if (specifier2[0] !== "'") {
-            // No, just specifier.
-            specifier2 = "'" + specifier2 + "'";
-        }
-        return new FormatError(ctx, "Specifier " + specifier1 + " not allowed with specifier " + specifier2);
+        return new FormatError(ctx, "Specifier '" + specifier1 + "' not allowed with specifier '" + specifier2 + "'");
     }
 
     // Create invalid specification hint error.
@@ -284,32 +280,34 @@ class FormatSpecification {
         return types.some(type => this.type === type || this.type !== "" && type.indexOf(this.type) >= 0);
     }
 
-    allowSpecifiersWithType(type: string, specifierWhiteList: string, arg?: unknown) {
+    // Throws error if this has given type and has specifier that is not on whitelist.
+    allowSpecifiersWithType(type: string, specifierWhiteList: string, withArg?: unknown) {
         if (this.hasType(type)) {
-            let typeStr = this.type === "" && arg !== undefined
-                ? "'' (default " + typeof arg + ")"
-                : this.type;
+            // Fuction to throw error. 
+            const throwSpecifierNotAllowedWith = this.type === "" && withArg !== undefined
+                ? (specifier: string): never => { throw FormatError.SpecifierNotAllowedWithDefault(this.ctx, specifier, withArg); }
+                : (specifier: string): never => { throw FormatError.SpecifierNotAllowedWith(this.ctx, specifier, this.type); }
 
             if (this.align !== undefined && specifierWhiteList.indexOf(this.align) < 0) {
-                throw FormatError.SpecifierNotAllowedWith(this.ctx, typeStr, this.align);
+                throwSpecifierNotAllowedWith(this.align);
             }
             else if (this.sign !== undefined && specifierWhiteList.indexOf(this.sign) < 0) {
-                throw FormatError.SpecifierNotAllowedWith(this.ctx, typeStr, this.sign);
+                throwSpecifierNotAllowedWith(this.sign);
             }
             else if (this.zeta !== undefined && specifierWhiteList.indexOf(this.zeta) < 0) {
-                throw FormatError.SpecifierNotAllowedWith(this.ctx, typeStr, this.zeta);
+                throwSpecifierNotAllowedWith(this.zeta);
             }
             else if (this.sharp !== undefined && specifierWhiteList.indexOf(this.sharp) < 0) {
-                throw FormatError.SpecifierNotAllowedWith(this.ctx, typeStr, this.sharp);
+                throwSpecifierNotAllowedWith(this.sharp);
             }
             else if (this.zero !== undefined && specifierWhiteList.indexOf(this.zero) < 0) {
-                throw FormatError.SpecifierNotAllowedWith(this.ctx, typeStr, this.zero);
+                throwSpecifierNotAllowedWith(this.zero);
             }
             else if (this.grouping !== undefined && specifierWhiteList.indexOf(this.grouping) < 0) {
-                throw FormatError.SpecifierNotAllowedWith(this.ctx, typeStr, this.grouping);
+                throwSpecifierNotAllowedWith(this.grouping);
             }
             else if (this.locale !== undefined && specifierWhiteList.indexOf(this.locale) < 0) {
-                throw FormatError.SpecifierNotAllowedWith(this.ctx, typeStr, this.locale);
+                throwSpecifierNotAllowedWith(this.locale);
             }
         }
     }
