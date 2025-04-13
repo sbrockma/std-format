@@ -283,7 +283,7 @@ class FormatSpecification {
     // Throws error if this has given type and has specifier that is not on whitelist.
     allowSpecifiersWithType(type: string, specifierWhiteList: string, withArg?: unknown) {
         if (this.hasType(type)) {
-            // Fuction to throw error. 
+            // Fuction to throw error depending whether specifier is default specifier ('') or regular pecifier. 
             const throwSpecifierNotAllowedWith = this.type === "" && withArg !== undefined
                 ? (specifier: string): never => { throw FormatError.SpecifierNotAllowedWithDefault(this.ctx, specifier, withArg); }
                 : (specifier: string): never => { throw FormatError.SpecifierNotAllowedWith(this.ctx, specifier, this.type); }
@@ -1092,6 +1092,8 @@ namespace StringFormatter {
 
 // Validate what specifiers can be used together.
 function validateSpecifiers(arg: unknown, fs: FormatSpecification) {
+    // Specifiers that are allowed with default type '', 
+    // depends on argument type (string or number).
     if (typeof arg === "string") {
         fs.allowSpecifiersWithType("", "<^>", arg);
     }
@@ -1100,11 +1102,22 @@ function validateSpecifiers(arg: unknown, fs: FormatSpecification) {
         fs.allowSpecifiersWithType("", "<^>=-+ z0,_L", arg);
     }
 
+    // Specifiers that are allowed with string types.
     fs.allowSpecifiersWithType("s?", "<^>");
+
+    // Specifiers that are allowed with char type.
     fs.allowSpecifiersWithType("c", "<^>=0");
+
+    // Specifiers that are allowed with integer type 'd'.
     fs.allowSpecifiersWithType("d", "<^>=-+ #0,_L");
+
+    // Specifiers that are allowed with locale aware integer type 'n'.
     fs.allowSpecifiersWithType("n", "<^>=-+ #0");
+
+    // Specifiers that are allowed with binary, octal and hexadecimal types.
     fs.allowSpecifiersWithType("bBoxX", "<^>=-+ #0_");
+
+    // Specifiers that are allowed with floating point types.
     fs.allowSpecifiersWithType("eEfF%gGaA", "<^>=-+ z#0,_L");
 
     // Precision not allowed for integer format specifiers.
