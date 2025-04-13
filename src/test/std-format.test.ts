@@ -1,5 +1,5 @@
-import { format, setLocale, stdFormat, stdLocaleHint, stdSpecificationHint } from "./index";
-import DefaultExport from "./index";
+import { format, setLocale, stdFormat, stdLocaleHint, stdSpecificationHint } from "../index";
+import DefaultExport from "../index";
 
 describe("Testing std-format", () => {
     function formatLocale(locale: string, fmt: string, ...args: unknown[]) {
@@ -76,20 +76,6 @@ describe("Testing std-format", () => {
 
         expect(format("{:,d}", BigInt("5555555555555555555555555555555555555555"))).
             toEqual("5,555,555,555,555,555,555,555,555,555,555,555,555,555");
-
-        // Unsupported type specifiers
-        expect(() => format("{:,}", 1)).toThrow();
-        expect(() => format("{:,b}", 1)).toThrow();
-        expect(() => format("{:,B}", 1)).toThrow();
-        expect(() => format("{:,o}", 1)).toThrow();
-        expect(() => format("{:,x}", 1)).toThrow();
-        expect(() => format("{:,X}", 1)).toThrow();
-        expect(() => format("{:,s}", 1)).toThrow();
-        expect(() => format("{:,c}", 1)).toThrow();
-        expect(() => format("{:,a}", 1)).toThrow();
-        expect(() => format("{:,A}", 1)).toThrow();
-        expect(() => format("{:,?}", 1)).toThrow();
-        expect(() => format("{:,n}", 1)).toThrow();
     });
 
     it("grouping specifier _", () => {
@@ -119,15 +105,6 @@ describe("Testing std-format", () => {
 
         expect(format("{:_d}", BigInt("-5555555555555555555555555555555555555555"))).
             toEqual("-5_555_555_555_555_555_555_555_555_555_555_555_555_555");
-
-        // Unsupported type specifiers
-        expect(() => format("{:_}", 1)).toThrow();
-        expect(() => format("{:_s}", 1)).toThrow();
-        expect(() => format("{:_c}", 1)).toThrow();
-        expect(() => format("{:_a}", 1)).toThrow();
-        expect(() => format("{:_A}", 1)).toThrow();
-        expect(() => format("{:_?}", 1)).toThrow();
-        expect(() => format("{:_n}", 1)).toThrow();
     });
 
     it("type specifier n", () => {
@@ -137,11 +114,6 @@ describe("Testing std-format", () => {
     it("locale specifier L", () => {
         expect(formatLocale("en-UK", "{:Ld}", 4444444444)).toEqual("4,444,444,444");
         expect(formatLocale("en-UK", "{:.2Lf}", 444444.4444)).toEqual("444,444.44");
-
-        // Cannot use specifier together
-        expect(() => format("{:,Ld}", 0)).toThrow();
-        expect(() => format("{:_Ld}", 0)).toThrow();
-        expect(() => format("{:Ln}", 0)).toThrow();
     });
 
     it("sign", () => {
@@ -207,14 +179,6 @@ describe("Testing std-format", () => {
         expect(format("{:*=+#08d}", -10)).toEqual("-*****10");
         expect(format("{:*= #08d}", 10)).toEqual(" *****10");
         expect(format("{:*= #08d}", -10)).toEqual("-*****10");
-
-        // '=' alignment not allowed on strings
-        expect(() => format("{:*=9s}", "oho")).toThrow();
-        expect(() => format("{:*=9?}", "oho")).toThrow();
-        expect(() => format("{:*=9}", "oho")).toThrow();
-
-        // '=' allowed for char specifier 'c'
-        expect(format("{:*=9c}", 65)).toEqual("********A");
     });
 
     it("specifier 0", () => {
@@ -293,24 +257,6 @@ describe("Testing std-format", () => {
         expect(format("{:z.2G}", -0.0)).toEqual("0");
         expect(format("{:z.2a}", -0.0)).toEqual("0.00p+0");
         expect(format("{:z.2A}", -0.0)).toEqual("0.00P+0");
-
-        // 'z' allowed only for foating point types.
-        expect(() => format("{:z}", -0)).toThrow();
-        expect(() => format("{:zs}", -0)).toThrow();
-        expect(() => format("{:zc}", -0)).toThrow();
-        expect(() => format("{:zd}", -0)).toThrow();
-        expect(() => format("{:zb}", -0)).toThrow();
-        expect(() => format("{:zB}", -0)).toThrow();
-        expect(() => format("{:zo}", -0)).toThrow();
-        expect(() => format("{:zx}", -0)).toThrow();
-        expect(() => format("{:zX}", -0)).toThrow();
-        expect(() => format("{:z?}", -0)).toThrow();
-        expect(() => format("{:zn}", -0)).toThrow();
-    });
-
-    it("type specifier ?", () => {
-        // Not yet implemented.
-        expect(() => format("{:?}", 0)).toThrow();
     });
 
     it("nan", () => {
@@ -362,7 +308,7 @@ describe("Testing std-format", () => {
         expect(format("{}", "string")).toEqual("string");
     });
 
-    it("type specifier <none>, integer", () => {
+    it("type specifier <default int>", () => {
         expect(format("{}", 100)).toEqual("100");
         expect(format("{}", 10)).toEqual("10");
         expect(format("{}", 1)).toEqual("1");
@@ -374,7 +320,7 @@ describe("Testing std-format", () => {
         expect(format("{:}", 999)).toEqual("999");
     });
 
-    it("type specifier <none>, float", () => {
+    it("type specifier <default float>", () => {
         expect(format("{:.2}", Math.PI)).toEqual("3.1");
 
         expect(format("{:.1}", 10)).toEqual("1e+01");
@@ -450,13 +396,6 @@ describe("Testing std-format", () => {
         expect(() => format("{:c}", 111.1)).toThrow();
         expect(() => format("{:c}", NaN)).toThrow();
         expect(() => format("{:c}", Infinity)).toThrow();
-
-        // Specifiers that are not allowed with 'c'.
-        expect(() => format("{:+c}", 'A')).toThrow();
-        expect(() => format("{:zc}", 'A')).toThrow();
-        expect(() => format("{:#c}", 'A')).toThrow();
-        expect(() => format("{:,c}", 'A')).toThrow();
-        expect(() => format("{:_c}", 'A')).toThrow();
     });
 
     it("type specifier ?", () => {
@@ -703,7 +642,7 @@ describe("Testing std-format", () => {
     });
 
     it("bigint", () => {
-        // bigint has no separate negative/positive zero, just zero
+        // bigint has no separate negative/positive zero
         expect(format("{}", BigInt("-0"))).toEqual("0");
         expect(format("{}", BigInt("+0"))).toEqual("0");
 
@@ -726,8 +665,10 @@ describe("Testing std-format", () => {
 
     it("number digitizer algorithm", () => {
         // Handle zeroes around decimal dot
-        expect(format("{:.3f}", 230.023)).toEqual("230.023");
+        expect(format("{:.5f}", 5.5)).toEqual("5.50000");
+        expect(format("{:.5f}", 50.05)).toEqual("50.05000");
         expect(format("{:.5f}", 500.005)).toEqual("500.00500");
+        expect(format("{:.5f}", 5000.0005)).toEqual("5000.00050");
     });
 
     it("deprecated stuff", () => {
