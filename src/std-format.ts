@@ -71,8 +71,8 @@ function getErrorMessage(ctx: ParsingContext | undefined, msg: string) {
 
 // Exceoption class, trown on format and value errors.
 export class FormatError extends Error {
-    // private constructor. Use static functions below to create error objects.
-    private constructor(readonly ctx: ParsingContext | undefined, msg: string) {
+    // FormatError constructor.
+    constructor(readonly ctx: ParsingContext | undefined, msg: string, readonly internalError: boolean = false) {
         super(getErrorMessage(ctx, msg));
 
         this.name = usingDeprecatedStdFormat ? "StdFormatError" : "FormatError";
@@ -80,76 +80,79 @@ export class FormatError extends Error {
         // console.log(this.message);
     }
 
+    // Is this internal/assertion error?
+    isInternalError() {
+        return this.internalError;
+    }
+}
+
+namespace ThrowFormatError {
     // Create specifier is not implemented error.
-    static SpecifierIsNotImplemented(ctx: ParsingContext, specifier: string) {
-        return new FormatError(ctx, "Specifier '" + specifier + "' is not implemented");
+    export function throwSpecifierIsNotImplemented(ctx: ParsingContext, specifier: string): never {
+        throw new FormatError(ctx, "Specifier '" + specifier + "' is not implemented");
     }
 
     // Create invalid argument error.
-    static InvalidArgumentForType(ctx: ParsingContext, arg: unknown, type: string) {
-        return new FormatError(ctx, "Invalid " + typeof arg + " argument '" + String(arg) + "' for type specifier '" + type + "'");
+    export function throwInvalidArgumentForType(ctx: ParsingContext, arg: unknown, type: string): never {
+        throw new FormatError(ctx, "Invalid " + typeof arg + " argument '" + String(arg) + "' for type specifier '" + type + "'");
     }
 
     // Create invalid nested argument error.
-    static InvalidNestedArgument(ctx: ParsingContext, arg: unknown) {
-        return new FormatError(ctx, "Invalid nested argument '" + String(arg) + "'");
+    export function throwInvalidNestedArgument(ctx: ParsingContext, arg: unknown): never {
+        throw new FormatError(ctx, "Invalid nested argument '" + String(arg) + "'");
     }
 
     // Create invalid field number error.
-    static InvalidFieldNumber(ctx: ParsingContext, fieldNumber: string) {
-        return new FormatError(ctx, "Invalid field number '" + fieldNumber + "'");
+    export function throwInvalidFieldNumber(ctx: ParsingContext, fieldNumber: string): never {
+        throw new FormatError(ctx, "Invalid field number '" + fieldNumber + "'");
     }
 
     // Create switch between auto/manual field numbering error.
-    static SwitchBetweenAutoAndManualFieldNumbering(ctx: ParsingContext) {
-        return new FormatError(ctx, "Switch between automatic and manual field numbering");
+    export function throwSwitchBetweenAutoAndManualFieldNumbering(ctx: ParsingContext): never {
+        throw new FormatError(ctx, "Switch between automatic and manual field numbering");
     }
 
     // Create encounteger single curly brace error.
-    static EncounteredSingleCurlyBrace(ctx: ParsingContext) {
-        return new FormatError(ctx, "Encountered single curly brace");
+    export function throwEncounteredSingleCurlyBrace(ctx: ParsingContext): never {
+        throw new FormatError(ctx, "Encountered single curly brace");
     }
 
     // Create invalid replacement field error.
-    static InvalidReplacementField(ctx: ParsingContext) {
-        return new FormatError(ctx, "Invalid replacement field");
+    export function throwInvalidReplacementField(ctx: ParsingContext): never {
+        throw new FormatError(ctx, "Invalid replacement field");
     }
 
     // Create precision not allowed error.
-    static PrecisionNotAllowedWith(ctx: ParsingContext, type: string) {
-        return new FormatError(ctx, "Precision not allowed with type specifier '" + type + "'");
+    export function throwPrecisionNotAllowedWith(ctx: ParsingContext, type: string): never {
+        throw new FormatError(ctx, "Precision not allowed with type specifier '" + type + "'");
     }
 
     // Create specifier not allowed with default error.
-    static SpecifierNotAllowedWithDefault(ctx: ParsingContext, specifier: string, withArg: unknown) {
-        return new FormatError(ctx, "Specifier '" + specifier + "' not allowed with specifier '' (default " + typeof withArg + ")");
+    export function throwSpecifierNotAllowedWithDefault(ctx: ParsingContext, specifier: string, withArg: unknown): never {
+        throw new FormatError(ctx, "Specifier '" + specifier + "' not allowed with specifier '' (default " + typeof withArg + ")");
     }
 
     // Create specifier not allowed with error.
-    static SpecifierNotAllowedWith(ctx: ParsingContext, specifier1: string, specifier2: string) {
-        return new FormatError(ctx, "Specifier '" + specifier1 + "' not allowed with specifier '" + specifier2 + "'");
+    export function throwSpecifierNotAllowedWith(ctx: ParsingContext, specifier1: string, specifier2: string): never {
+        throw new FormatError(ctx, "Specifier '" + specifier1 + "' not allowed with specifier '" + specifier2 + "'");
     }
 
     // Create invalid specification hint error.
-    static InvalidSpecificationHint(specHint: string) {
-        return new FormatError(undefined, "Invalid specification hint '" + specHint + "'. Valid values are 'cpp' and 'python'.");
+    export function throwInvalidSpecificationHint(specHint: string): never {
+        throw new FormatError(undefined, "Invalid specification hint '" + specHint + "'. Valid values are 'cpp' and 'python'.");
     }
 
     // Create assertion failed internal error.
-    static AssertionFailed(msg?: string) {
-        return new FormatError(undefined, "Assertion failed" + (msg === undefined ? "!" : (": " + msg)));
+    export function throwAssertionFailed(msg?: string): never {
+        throw new FormatError(undefined, "Assertion failed" + (msg === undefined ? "!" : (": " + msg)), true);
     }
 
-    // Is this internal error?
-    isInternalError() {
-        return this.message.startsWith("Assertion failed");
-    }
 }
 
 // Assert function for internal validation.
 function assert(condition: boolean, msg?: string) {
     if (!condition) {
-        throw FormatError.AssertionFailed(msg)
+        ThrowFormatError.throwAssertionFailed(msg)
     }
 }
 
@@ -285,8 +288,8 @@ class FormatSpecification {
         if (this.hasType(type)) {
             // Fuction to throw error depending whether specifier is default specifier ('') or regular pecifier. 
             const throwSpecifierNotAllowedWith = this.type === "" && withArg !== undefined
-                ? (specifier: string): never => { throw FormatError.SpecifierNotAllowedWithDefault(this.ctx, specifier, withArg); }
-                : (specifier: string): never => { throw FormatError.SpecifierNotAllowedWith(this.ctx, specifier, this.type); }
+                ? (specifier: string): never => { ThrowFormatError.throwSpecifierNotAllowedWithDefault(this.ctx, specifier, withArg); }
+                : (specifier: string): never => { ThrowFormatError.throwSpecifierNotAllowedWith(this.ctx, specifier, this.type); }
 
             if (this.align !== undefined && specifierWhiteList.indexOf(this.align) < 0) {
                 throwSpecifierNotAllowedWith(this.align);
@@ -803,7 +806,7 @@ class FiniteNumberConverter {
 
             // Number must be integer
             if (!this.isInteger()) {
-                throw FormatError.InvalidArgumentForType(this.ctx, value, fs.type);
+                ThrowFormatError.throwInvalidArgumentForType(this.ctx, value, fs.type);
             }
         }
         else if (fs.hasType("eE")) {
@@ -859,7 +862,7 @@ class FiniteNumberConverter {
             this.toScientific(p);
         }
         else {
-            throw FormatError.InvalidArgumentForType(this.ctx, value, fs.type);
+            ThrowFormatError.throwInvalidArgumentForType(this.ctx, value, fs.type);
         }
 
         if (fs.zeta === "z") {
@@ -921,7 +924,7 @@ namespace NumberFormatter {
             return charCode;
         }
         catch (e) {
-            throw FormatError.InvalidArgumentForType(fs.ctx, value, fs.type);
+            ThrowFormatError.throwInvalidArgumentForType(fs.ctx, value, fs.type);
         }
     }
 
@@ -1077,7 +1080,7 @@ namespace StringFormatter {
     export function formatString(str: string, fs: FormatSpecification) {
         if (fs.hasType("?")) {
             // Here should format escape sequence string.
-            throw FormatError.SpecifierIsNotImplemented(fs.ctx, fs.type);
+            ThrowFormatError.throwSpecifierIsNotImplemented(fs.ctx, fs.type);
         }
 
         // For string presentation types precision field indicates the maximum
@@ -1122,12 +1125,12 @@ function validateSpecifiers(arg: unknown, fs: FormatSpecification) {
 
     // Precision not allowed for integer format specifiers.
     if (fs.hasType("cdnbBoxX") && fs.precision !== undefined) {
-        throw FormatError.PrecisionNotAllowedWith(fs.ctx, fs.type);
+        ThrowFormatError.throwPrecisionNotAllowedWith(fs.ctx, fs.type);
     }
 
     // Grouping not allowed with locale.
     if (fs.grouping !== undefined && fs.locale !== undefined) {
-        throw FormatError.SpecifierNotAllowedWith(fs.ctx, fs.grouping, fs.locale);
+        ThrowFormatError.throwSpecifierNotAllowedWith(fs.ctx, fs.grouping, fs.locale);
     }
 }
 
@@ -1179,7 +1182,7 @@ function formatReplacementField(ctx: ParsingContext, arg: unknown, fs: FormatSpe
         }
         else {
             // Invalid argument conversion from boolean.
-            throw FormatError.InvalidArgumentForType(ctx, arg, fs.type);
+            ThrowFormatError.throwInvalidArgumentForType(ctx, arg, fs.type);
         }
     }
     else if (typeof arg === "number" || typeof arg === "bigint") {
@@ -1190,7 +1193,7 @@ function formatReplacementField(ctx: ParsingContext, arg: unknown, fs: FormatSpe
         }
         else {
             // Invalid argument conversion from number.
-            throw FormatError.InvalidArgumentForType(ctx, arg, fs.type);
+            ThrowFormatError.throwInvalidArgumentForType(ctx, arg, fs.type);
         }
     }
     else if (typeof arg === "string") {
@@ -1205,12 +1208,12 @@ function formatReplacementField(ctx: ParsingContext, arg: unknown, fs: FormatSpe
         }
         else {
             // Invalid argument conversion from string.
-            throw FormatError.InvalidArgumentForType(ctx, arg, fs.type);
+            ThrowFormatError.throwInvalidArgumentForType(ctx, arg, fs.type);
         }
     }
     else {
         // Invalid argument type.
-        throw FormatError.InvalidArgumentForType(ctx, arg, fs.type);
+        ThrowFormatError.throwInvalidArgumentForType(ctx, arg, fs.type);
     }
 
     // Next apply fill and alignment according to format specification.
@@ -1254,7 +1257,7 @@ function getArgument(ctx: ParsingContext, fieldNumberStr: string): unknown {
     // Throw exception if field number string is not valid.
     // It must be empty "", or contain digits only (= zero or positive integer).
     if (fieldNumberStr !== "" && !DigitsRegex.test(fieldNumberStr)) {
-        throw FormatError.InvalidFieldNumber(ctx, fieldNumberStr);
+        ThrowFormatError.throwInvalidFieldNumber(ctx, fieldNumberStr);
     }
 
     // Get field number
@@ -1278,12 +1281,12 @@ function getArgument(ctx: ParsingContext, fieldNumberStr: string): unknown {
 
     // Throw exception switching between automatic and manual field numbering.
     if (ctx.hasAutomaticFieldNumbering && ctx.hasManualFieldSpecification) {
-        throw FormatError.SwitchBetweenAutoAndManualFieldNumbering(ctx);
+        ThrowFormatError.throwSwitchBetweenAutoAndManualFieldNumbering(ctx);
     }
 
     // Throw exception if field number is out of bounds of arguments array.
     if (fieldNumber < 0 || fieldNumber >= ctx.formatArgs.length) {
-        throw FormatError.InvalidFieldNumber(ctx, "" + fieldNumber);
+        ThrowFormatError.throwInvalidFieldNumber(ctx, "" + fieldNumber);
     }
 
     // Return argument.
@@ -1299,7 +1302,7 @@ function getNestedArgumentInt(ctx: ParsingContext, fieldNumberStr: string, fs: F
     // Nested argument is used for width and precision in format specification, and
     // must be integer number >= 0.
     if (!arg || typeof arg !== "number" || !isInteger(arg) || arg < 0) {
-        throw FormatError.InvalidNestedArgument(ctx, arg);
+        ThrowFormatError.throwInvalidNestedArgument(ctx, arg);
     }
 
     // Return nested argument integer
@@ -1387,7 +1390,7 @@ function parseFormatString(ctx: ParsingContext) {
         else if (ctx.parseString.startsWith("}")) {
             // Encountered single '}' ff parsing string starts with '}'.
             ctx.errorString = "}";
-            throw FormatError.EncounteredSingleCurlyBrace(ctx);
+            ThrowFormatError.throwEncounteredSingleCurlyBrace(ctx);
         }
         else if (ctx.parseString.startsWith("{")) {
             // If parsing string starts with '{' then parse replacement field.
@@ -1398,12 +1401,12 @@ function parseFormatString(ctx: ParsingContext) {
                 if (str) {
                     ctx.errorString = str;
                     // Got loose match of replacement field string that just failed to parse.
-                    throw FormatError.InvalidReplacementField(ctx);
+                    ThrowFormatError.throwInvalidReplacementField(ctx);
                 }
                 else {
                     // Ecountered single '{' followed by random stuff.
                     ctx.errorString = "{";
-                    throw FormatError.EncounteredSingleCurlyBrace(ctx);
+                    ThrowFormatError.throwEncounteredSingleCurlyBrace(ctx);
                 }
             }
 
@@ -1528,6 +1531,6 @@ export function stdSpecificationHint(specHint: "cpp" | "python" | "js") {
     }
     else {
         // Invalid specification hint.
-        throw FormatError.InvalidSpecificationHint(specHint);
+        ThrowFormatError.throwInvalidSpecificationHint(specHint);
     }
 }
