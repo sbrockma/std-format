@@ -1,8 +1,8 @@
 // Import
-import {
-    format, setLocale, FormatError,
-    stdFormat, stdSpecificationHint, stdLocaleHint, StdFormatError
-} from "./std-format";
+import { format } from "./format";
+import { setLocale } from "./set-locale";
+import { FormatError } from "./format-error";
+import { stdFormat, stdSpecificationHint, stdLocaleHint, StdFormatError } from "./deprecated";
 
 // Default export
 export default {

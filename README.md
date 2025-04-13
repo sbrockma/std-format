@@ -2,7 +2,9 @@
 
 std-format is a string formatting of curly braces notation for TS/JS following standard format specifications.
 
-This is early release. Hoping to fix bugs and add new features in future.
+This is a hobby project of mine. It is not optimised, has many bugs, and probably a bit heavy for simple formatting tasks.
+
+This is early release. Hoping to fix bugs and add new features in future later.
 
 ## Format Specification
 

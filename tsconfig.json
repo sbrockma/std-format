@@ -28,12 +28,12 @@
         "skipLibCheck": true
     },
     "include": [
-        "src/**/*"
+        "./src/index.ts"
     ],
     "exclude": [
         "node-modules",
-        "src/**/*.test.ts",
-        "src/**/*.test.d.ts"
+        "**/*.test.ts",
+        "**/*.d.ts"
     ],
     "compileOnSave": false
 }
