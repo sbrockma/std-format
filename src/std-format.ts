@@ -122,7 +122,16 @@ export class FormatError extends Error {
 
     // Create specifier not allowed error.
     static SpecifierNotAllowedWith(ctx: ParsingContext, specifier1: string, specifier2: string) {
-        return new FormatError(ctx, "Specifier '" + specifier1 + "' not allowed with specifier '" + specifier2 + "'");
+        // Is specifier str "'' (default number)"?
+        if (specifier1[0] !== "'") {
+            // No, just specifier.
+            specifier1 = "'" + specifier1 + "'";
+        }
+        if (specifier2[0] !== "'") {
+            // No, just specifier.
+            specifier2 = "'" + specifier2 + "'";
+        }
+        return new FormatError(ctx, "Specifier " + specifier1 + " not allowed with specifier " + specifier2);
     }
 
     // Create invalid specification hint error.
@@ -275,27 +284,33 @@ class FormatSpecification {
         return types.some(type => this.type === type || this.type !== "" && type.indexOf(this.type) >= 0);
     }
 
-    allowSpecifiers(specifierWhiteList: string) {
-        if (this.align !== undefined && specifierWhiteList.indexOf(this.align) < 0) {
-            throw FormatError.SpecifierNotAllowedWith(this.ctx, this.type, this.align);
-        }
-        else if (this.sign !== undefined && specifierWhiteList.indexOf(this.sign) < 0) {
-            throw FormatError.SpecifierNotAllowedWith(this.ctx, this.type, this.sign);
-        }
-        else if (this.zeta !== undefined && specifierWhiteList.indexOf(this.zeta) < 0) {
-            throw FormatError.SpecifierNotAllowedWith(this.ctx, this.type, this.zeta);
-        }
-        else if (this.sharp !== undefined && specifierWhiteList.indexOf(this.sharp) < 0) {
-            throw FormatError.SpecifierNotAllowedWith(this.ctx, this.type, this.sharp);
-        }
-        else if (this.zero !== undefined && specifierWhiteList.indexOf(this.zero) < 0) {
-            throw FormatError.SpecifierNotAllowedWith(this.ctx, this.type, this.zero);
-        }
-        else if (this.grouping !== undefined && specifierWhiteList.indexOf(this.grouping) < 0) {
-            throw FormatError.SpecifierNotAllowedWith(this.ctx, this.type, this.grouping);
-        }
-        else if (this.locale !== undefined && specifierWhiteList.indexOf(this.locale) < 0) {
-            throw FormatError.SpecifierNotAllowedWith(this.ctx, this.type, this.locale);
+    allowSpecifiersWithType(type: string, specifierWhiteList: string, arg?: unknown) {
+        if (this.hasType(type)) {
+            let typeStr = this.type === "" && arg !== undefined
+                ? "'' (default " + typeof arg + ")"
+                : this.type;
+
+            if (this.align !== undefined && specifierWhiteList.indexOf(this.align) < 0) {
+                throw FormatError.SpecifierNotAllowedWith(this.ctx, typeStr, this.align);
+            }
+            else if (this.sign !== undefined && specifierWhiteList.indexOf(this.sign) < 0) {
+                throw FormatError.SpecifierNotAllowedWith(this.ctx, typeStr, this.sign);
+            }
+            else if (this.zeta !== undefined && specifierWhiteList.indexOf(this.zeta) < 0) {
+                throw FormatError.SpecifierNotAllowedWith(this.ctx, typeStr, this.zeta);
+            }
+            else if (this.sharp !== undefined && specifierWhiteList.indexOf(this.sharp) < 0) {
+                throw FormatError.SpecifierNotAllowedWith(this.ctx, typeStr, this.sharp);
+            }
+            else if (this.zero !== undefined && specifierWhiteList.indexOf(this.zero) < 0) {
+                throw FormatError.SpecifierNotAllowedWith(this.ctx, typeStr, this.zero);
+            }
+            else if (this.grouping !== undefined && specifierWhiteList.indexOf(this.grouping) < 0) {
+                throw FormatError.SpecifierNotAllowedWith(this.ctx, typeStr, this.grouping);
+            }
+            else if (this.locale !== undefined && specifierWhiteList.indexOf(this.locale) < 0) {
+                throw FormatError.SpecifierNotAllowedWith(this.ctx, typeStr, this.locale);
+            }
         }
     }
 }
@@ -1077,37 +1092,22 @@ namespace StringFormatter {
     }
 }
 
-// Validate that specifiers are good for given type specifier and argument.
+// Validate what specifiers can be used together.
 function validateSpecifiers(arg: unknown, fs: FormatSpecification) {
-    switch (fs.type) {
-        default:
-            if (typeof arg === "string") {
-                fs.allowSpecifiers("<^>");
-            }
-            else if (typeof arg === "number" || typeof arg === "bigint") {
-                // Allow 'z' (and precision) for numbers (there is not separate int/float).
-                fs.allowSpecifiers("<^>=-+ z0,_L");
-            }
-            break;
-        case "s": case "?":
-            fs.allowSpecifiers("<^>");
-            break;
-        case "c":
-            fs.allowSpecifiers("<^>=0");
-            break;
-        case "d":
-            fs.allowSpecifiers("<^>=-+ #0,_L");
-            break;
-        case "n":
-            fs.allowSpecifiers("<^>=-+ #0");
-            break;
-        case "b": case "B": case "o": case "x": case "X":
-            fs.allowSpecifiers("<^>=-+ #0_");
-            break;
-        case "e": case "E": case "f": case "F": case "%": case "g": case "G": case "a": case "A":
-            fs.allowSpecifiers("<^>=-+ z#0,_L");
-            break;
+    if (typeof arg === "string") {
+        fs.allowSpecifiersWithType("", "<^>", arg);
     }
+    else if (typeof arg === "number" || typeof arg === "bigint") {
+        // Allow 'z' (and precision) for numbers (int and float).
+        fs.allowSpecifiersWithType("", "<^>=-+ z0,_L", arg);
+    }
+
+    fs.allowSpecifiersWithType("s?", "<^>");
+    fs.allowSpecifiersWithType("c", "<^>=0");
+    fs.allowSpecifiersWithType("d", "<^>=-+ #0,_L");
+    fs.allowSpecifiersWithType("n", "<^>=-+ #0");
+    fs.allowSpecifiersWithType("bBoxX", "<^>=-+ #0_");
+    fs.allowSpecifiersWithType("eEfF%gGaA", "<^>=-+ z#0,_L");
 
     // Precision not allowed for integer format specifiers.
     if (fs.hasType("cdnbBoxX") && fs.precision !== undefined) {

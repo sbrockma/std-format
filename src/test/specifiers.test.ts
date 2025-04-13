@@ -48,12 +48,11 @@ describe("Testing std-format allowed specifier for", () => {
     });
 
     it("?", () => {
-        /*
-        // Not implemented
-        expect(() => format("{:?}", "Hello")).not.toThrow();
-        expect(() => format("{:*<8?}", "Hello")).not.toThrow();
-        expect(() => format("{:*^8?}", "Hello")).not.toThrow();
-        expect(() => format("{:*>8?}", "Hello")).not.toThrow();
+        // Not implemented, throw all.
+        expect(() => format("{:?}", "Hello")).toThrow();
+        expect(() => format("{:*<8?}", "Hello")).toThrow();
+        expect(() => format("{:*^8?}", "Hello")).toThrow();
+        expect(() => format("{:*>8?}", "Hello")).toThrow();
         expect(() => format("{:*=8?}", "Hello")).toThrow();
         expect(() => format("{:-?}", "Hello")).toThrow();
         expect(() => format("{:+?}", "Hello")).toThrow();
@@ -64,10 +63,9 @@ describe("Testing std-format allowed specifier for", () => {
         expect(() => format("{:,?}", "Hello")).toThrow();
         expect(() => format("{:_?}", "Hello")).toThrow();
         expect(() => format("{:L?}", "Hello")).toThrow();
-        */
     });
 
-    it("<default int>", () => {
+    it("<default number>", () => {
         expect(() => format("{:}", 10)).not.toThrow();
         expect(() => format("{:*<8}", 10)).not.toThrow();
         expect(() => format("{:*^8}", 10)).not.toThrow();
@@ -76,7 +74,7 @@ describe("Testing std-format allowed specifier for", () => {
         expect(() => format("{:-}", 10)).not.toThrow();
         expect(() => format("{:+}", 10)).not.toThrow();
         expect(() => format("{: }", 10)).not.toThrow();
-        expect(() => format("{:z}", 10)).not.toThrow(); // Cannot know if number is int or float => allow 'z' for default int.
+        expect(() => format("{:z}", 10)).not.toThrow(); // Allow 'z' by default number (int and float).
         expect(() => format("{:#}", 10)).toThrow();
         expect(() => format("{:08}", 10)).not.toThrow();
         expect(() => format("{:,}", 10)).not.toThrow();
