@@ -2,9 +2,9 @@
 
 std-format is a string formatting of curly braces notation for TS/JS following standard format specifications.
 
-This is a hobby project of mine. It is not optimised, has many bugs, and probably a bit heavy for simple formatting tasks.
+This is a hobby project of mine.
 
-This is early release. Hoping to fix bugs and add new features in future later.
+This is early release. Probably has many bugs, hoping to fix them.
 
 ## Format Specification
 
@@ -25,8 +25,6 @@ This is mix of both [c++20](https://en.cppreference.com/w/cpp/utility/format/spe
 * [type] (optional) 's', 'c', 'd', 'b', 'B', 'o', 'x', 'X', 'a', 'A', 'e', 'E', 'f', 'F', 'g', 'G', '%', 'n', or '?'
 * ('L' and 'n' partially implemented)
 * ('?' not yet implemented)
-
-See the C++ and Python links above for full format specification.
 
 ## Library Bundle
 
