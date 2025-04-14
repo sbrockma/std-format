@@ -99,9 +99,8 @@ export class FormatSpecification {
             return;
         }
 
-        // Specifiers that are allowed with default type '', 
-        // depends on argument type (string or number).
-        if (typeof arg === "string") {
+        // Specifiers that are allowed with default type '' depend on argument type.
+        if (typeof arg === "string" || typeof arg === "boolean") {
             this.allowSpecifiersWithType("", "<^>", arg);
         }
         else if (typeof arg === "number" || typeof arg === "bigint") {
