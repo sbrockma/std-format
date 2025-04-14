@@ -317,7 +317,7 @@ export class FormatStringParser {
             matchString = replFieldMatch[0];
 
             // Set format specifiers.
-            formatSpecifiers = <any>replFieldMatch.groups;
+            formatSpecifiers = <FormatSpecifiers>replFieldMatch.groups;
 
             // Set field number.
             fieldNumber = replFieldMatch.groups.field_n ?? "";
