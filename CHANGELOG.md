@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.3] - 2025-04-14
+### Changed
+- More strict error throwing checks of which specifiers can be used together.
+- Performance optimization in cases were replacement field is simple "{}" or "{d}".
+- Split single big source file into multiple source files.
+
 ## [1.3.2] - 2025-04-12
 ### Fixed
 - Allow 'z' specifier to be used with type specifier '%'.
