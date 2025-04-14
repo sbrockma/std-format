@@ -22,7 +22,9 @@ This is mix of both [c++20](https://en.cppreference.com/w/cpp/utility/format/spe
 * [width] (optional) minimum total width
 * [precision] (optional) precision
 * ['L'] (optinlal) locale aware formatting
-* [type] (optional) 's', 'c', 'b', 'B', 'o', 'd', 'x', 'X', 'a', 'A', 'e', 'E', 'f', 'F', 'g', 'G', '%', 'n', or '?' ('?' not implemented)
+* [type] (optional) 's', 'c', 'd', 'b', 'B', 'o', 'x', 'X', 'a', 'A', 'e', 'E', 'f', 'F', 'g', 'G', '%', 'n', or '?'
+* ('L' and 'n' partially implemented)
+* ('?' not yet implemented)
 
 See the C++ and Python links above for full format specification.
 
