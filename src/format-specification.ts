@@ -3,6 +3,8 @@ import { FormatStringParser } from "./format-string-parser";
 
 // The format specification class
 export class FormatSpecification {
+    readonly hasNoSpecifiers: boolean;
+
     readonly fill: string | undefined;
     readonly align: "<" | "^" | ">" | "=" | undefined;
     readonly sign: "+" | "-" | " " | undefined;
@@ -15,40 +17,48 @@ export class FormatSpecification {
     readonly locale: "L" | undefined;
     readonly type: "" | "s" | "?" | "c" | "d" | "n" | "b" | "B" | "o" | "x" | "X" | "e" | "E" | "f" | "F" | "%" | "g" | "G" | "a" | "A";
 
-    constructor(readonly parser: FormatStringParser, replFieldMatch: RegExpExecArray) {
-        let fill = replFieldMatch.groups?.fill;
-        let align = replFieldMatch.groups?.align;
-        let sign = replFieldMatch.groups?.sign;
-        let zeta = replFieldMatch.groups?.zeta;
-        let sharp = replFieldMatch.groups?.sharp;
-        let zero = replFieldMatch.groups?.zero;
-        let width = replFieldMatch.groups?.width;
-        let width_field_n = replFieldMatch.groups?.width_field_n;
-        let grouping = replFieldMatch.groups?.grouping;
-        let precision = replFieldMatch.groups?.precision;
-        let precision_field_n = replFieldMatch.groups?.precision_field_n;
-        let locale = replFieldMatch.groups?.locale;
-        let type = replFieldMatch.groups?.type;
+    constructor(readonly parser: FormatStringParser, replFieldMatch: RegExpExecArray | undefined) {
+        if (replFieldMatch === undefined) {
+            this.hasNoSpecifiers = true;
+            this.type = "";
+        }
+        else {
+            this.hasNoSpecifiers = false;
 
-        this.fill = (fill && fill.length === 1) ? fill : undefined;
-        this.align = (align === "<" || align === "^" || align === ">" || align === "=") ? align : undefined;
-        this.sign = (sign === "-" || sign === "+" || sign === " ") ? sign : undefined;
-        this.zeta = zeta === "z" ? zeta : undefined;
-        this.sharp = sharp === "#" ? sharp : undefined;
-        this.zero = zero === "0" ? zero : undefined;
-        this.grouping = (grouping === "," || grouping === "_") ? grouping : undefined;
-        this.locale = locale === "L" ? locale : undefined;
-        this.type = (type === "" || type && "s?cdnbBoxXeEfF%gGaA".indexOf(type) >= 0) ? type as any : "";
+            let fill = replFieldMatch.groups?.fill;
+            let align = replFieldMatch.groups?.align;
+            let sign = replFieldMatch.groups?.sign;
+            let zeta = replFieldMatch.groups?.zeta;
+            let sharp = replFieldMatch.groups?.sharp;
+            let zero = replFieldMatch.groups?.zero;
+            let width = replFieldMatch.groups?.width;
+            let width_field_n = replFieldMatch.groups?.width_field_n;
+            let grouping = replFieldMatch.groups?.grouping;
+            let precision = replFieldMatch.groups?.precision;
+            let precision_field_n = replFieldMatch.groups?.precision_field_n;
+            let locale = replFieldMatch.groups?.locale;
+            let type = replFieldMatch.groups?.type;
 
-        // Get (possibly nested) fields width and precision.
-        this.width = width_field_n !== undefined ? parser.getNestedArgumentInt(width_field_n) : (!!width ? +width : undefined);
-        this.precision = precision_field_n !== undefined ? parser.getNestedArgumentInt(precision_field_n) : (!!precision ? +precision : undefined);
+            this.fill = (fill && fill.length === 1) ? fill : undefined;
+            this.align = (align === "<" || align === "^" || align === ">" || align === "=") ? align : undefined;
+            this.sign = (sign === "-" || sign === "+" || sign === " ") ? sign : undefined;
+            this.zeta = zeta === "z" ? zeta : undefined;
+            this.sharp = sharp === "#" ? sharp : undefined;
+            this.zero = zero === "0" ? zero : undefined;
+            this.width = width_field_n !== undefined ? parser.getNestedArgumentInt(width_field_n) : (!!width ? +width : undefined);
+            this.grouping = (grouping === "," || grouping === "_") ? grouping : undefined;
+            this.precision = precision_field_n !== undefined ? parser.getNestedArgumentInt(precision_field_n) : (!!precision ? +precision : undefined);
+            this.locale = locale === "L" ? locale : undefined;
+            this.type = (type === "" || type && "s?cdnbBoxXeEfF%gGaA".indexOf(type) >= 0) ? type as any : "";
+        }
     }
 
     // Test if type is one of types given as argument.
     // For example isType("", "d", "xX") tests if type is either "", "d", "x" or "X".
     hasType(...types: string[]) {
-        return types.some(type => this.type === type || this.type !== "" && type.indexOf(this.type) >= 0);
+        return this.hasNoSpecifiers
+            ? types.some(type => this.type === type) // If has no specifiers then this.type = "".
+            : types.some(type => this.type === type || this.type !== "" && type.indexOf(this.type) >= 0);
     }
 
     // Throws error if this has given type and has specifier that is not on whitelist.
@@ -85,6 +95,10 @@ export class FormatSpecification {
 
     // Validate what specifiers can be used together.
     validate(arg: unknown) {
+        if (this.hasNoSpecifiers) {
+            return;
+        }
+
         // Specifiers that are allowed with default type '', 
         // depends on argument type (string or number).
         if (typeof arg === "string") {

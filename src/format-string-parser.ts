@@ -29,7 +29,7 @@ const FormatSpecificationRegExString =
 const ReplacementFieldRegEx = new RegExp(
     "^\{" +
     "(?<field_n>\\d+)?" +
-    "(\:(" + FormatSpecificationRegExString + "))?" +
+    "(\:" + FormatSpecificationRegExString + ")?" +
     "\}"
 );
 
@@ -52,14 +52,8 @@ function getLooseMatchReplacementFieldString(p: FormatStringParser): string | un
     return m && m[0] ? m[0] : undefined;
 }
 
-// Regex to find next curly bracet.
-const CurlyBracketRegEx = new RegExp("[{}]");
-
-// Get next curly brace index, or end of parsing string if no curly braces found.
-function getNextCurlyBraceIndex(p: FormatStringParser): number {
-    let id = CurlyBracketRegEx.exec(p.parseString)?.index;
-    return (id === undefined || id < 0) ? p.parseString.length : id;
-}
+// Regex to get index of next curly bracet.
+const CurlyBracesRegEx = /[{}]/;
 
 // Regex for one or more digits.
 const DigitsRegex = /^\d+$/;
@@ -266,22 +260,61 @@ export class FormatStringParser {
             return false;
         }
 
-        // Execute replacement field regex.
-        let replFieldMatch = getReplacementFieldMatch(this);
+        // Replacement field match, or undefined for simple cases "{}" and "{d}".
+        let replFieldMatch: RegExpExecArray | undefined;
 
-        if (!replFieldMatch || !replFieldMatch[0]) {
-            // Failed to parse replacement field, return false.
-            return false;
+        // Match string.
+        let matchString: string;
+
+        // Field number n in "{n:}""
+        let fieldNumber: string;
+
+        if (this.parseString[1] === "}") {
+            // Special case where match string is simple "{}"
+
+            // Set match string
+            matchString = this.parseString.substring(0, 2);
+
+            // Set replacement field match to undefined.
+            replFieldMatch = undefined;
+
+            // Field number is empty
+            fieldNumber = "";
+        }
+        else if (this.parseString[2] === "}" && isDigits(this.parseString.charAt(1))) {
+            // Special case where match string is simple "{d}".
+
+            // Set match string.
+            matchString = this.parseString.substring(0, 3);
+
+            // Set replacement field match to undefined.
+            replFieldMatch = undefined;
+
+            // Field number is single digit.
+            fieldNumber = this.parseString.charAt(1);
+        }
+        else {
+            // Execute replacement field regex.
+            replFieldMatch = getReplacementFieldMatch(this) ?? undefined;
+
+            if (!replFieldMatch || !replFieldMatch[0]) {
+                // Failed to parse replacement field, return false.
+                return false;
+            }
+
+            // Set match string
+            matchString = replFieldMatch[0];
+
+            // Get argument's field number.
+            fieldNumber = replFieldMatch.groups?.field_n ?? "";
         }
 
-        // Set error string.
-        this.errorString = replFieldMatch[0];
 
-        // Get argument's field number.
-        let field_n = replFieldMatch.groups?.field_n ?? "";
+        // Set error string.
+        this.errorString = matchString;
 
         // Get argument.
-        let arg = this.getArgument(field_n);
+        let arg = this.getArgument(fieldNumber);
 
         // Create format specification.
         let fs = new FormatSpecification(this, replFieldMatch);
@@ -290,11 +323,17 @@ export class FormatStringParser {
         this.resultString += this.formatReplacementField(arg, fs);
 
         // Jump over matched replacement field in  parsing string.
-        this.parseString = this.parseString.substring(replFieldMatch[0].length);
-        this.parsePosition += replFieldMatch[0].length;
+        this.parseString = this.parseString.substring(matchString.length);
+        this.parsePosition += matchString.length;
 
         // Parsed replacement field ok, return true.
         return true;
+    }
+
+    // Get next curly brace index, or end of parsing string if no curly braces found.
+    private getNextCurlyBraceIndex(): number {
+        let id = CurlyBracesRegEx.exec(this.parseString)?.index;
+        return (id === undefined || id < 0) ? this.parseString.length : id;
     }
 
     // Function to parse format string.
@@ -302,7 +341,7 @@ export class FormatStringParser {
         // Loop until terminated by break.
         while (true) {
             // Jump to next curly brace "{" or "}" or end of parsing string.
-            let i = getNextCurlyBraceIndex(this);
+            let i = this.getNextCurlyBraceIndex();
 
             // Add ordinary string to result string.
             this.resultString += this.parseString.substring(0, i);
