@@ -1,10 +1,8 @@
 import { ThrowFormatError } from "./format-error";
-import { FormatStringParser } from "./format-string-parser";
+import { FormatSpecifiers, FormatStringParser } from "./format-string-parser";
 
 // The format specification class
 export class FormatSpecification {
-    readonly hasNoSpecifiers: boolean;
-
     readonly fill: string | undefined;
     readonly align: "<" | "^" | ">" | "=" | undefined;
     readonly sign: "+" | "-" | " " | undefined;
@@ -17,27 +15,12 @@ export class FormatSpecification {
     readonly locale: "L" | undefined;
     readonly type: "" | "s" | "?" | "c" | "d" | "n" | "b" | "B" | "o" | "x" | "X" | "e" | "E" | "f" | "F" | "%" | "g" | "G" | "a" | "A";
 
-    constructor(readonly parser: FormatStringParser, replFieldMatch: RegExpExecArray | undefined) {
-        if (replFieldMatch === undefined) {
-            this.hasNoSpecifiers = true;
+    constructor(readonly parser: FormatStringParser, readonly formatSpecifiers: FormatSpecifiers | undefined) {
+        if (!formatSpecifiers) {
             this.type = "";
         }
         else {
-            this.hasNoSpecifiers = false;
-
-            let fill = replFieldMatch.groups?.fill;
-            let align = replFieldMatch.groups?.align;
-            let sign = replFieldMatch.groups?.sign;
-            let zeta = replFieldMatch.groups?.zeta;
-            let sharp = replFieldMatch.groups?.sharp;
-            let zero = replFieldMatch.groups?.zero;
-            let width = replFieldMatch.groups?.width;
-            let width_field_n = replFieldMatch.groups?.width_field_n;
-            let grouping = replFieldMatch.groups?.grouping;
-            let precision = replFieldMatch.groups?.precision;
-            let precision_field_n = replFieldMatch.groups?.precision_field_n;
-            let locale = replFieldMatch.groups?.locale;
-            let type = replFieldMatch.groups?.type;
+            let { fill, align, sign, zeta, sharp, zero, width, width_field_n, grouping, precision, precision_field_n, locale, type } = formatSpecifiers;
 
             this.fill = (fill && fill.length === 1) ? fill : undefined;
             this.align = (align === "<" || align === "^" || align === ">" || align === "=") ? align : undefined;
@@ -56,7 +39,7 @@ export class FormatSpecification {
     // Test if type is one of types given as argument.
     // For example isType("", "d", "xX") tests if type is either "", "d", "x" or "X".
     hasType(...types: string[]) {
-        return this.hasNoSpecifiers
+        return !this.formatSpecifiers
             ? types.some(type => this.type === type) // If has no specifiers then this.type = "".
             : types.some(type => this.type === type || this.type !== "" && type.indexOf(this.type) >= 0);
     }
@@ -95,7 +78,7 @@ export class FormatSpecification {
 
     // Validate what specifiers can be used together.
     validate(arg: unknown) {
-        if (this.hasNoSpecifiers) {
+        if (!this.formatSpecifiers) {
             return;
         }
 

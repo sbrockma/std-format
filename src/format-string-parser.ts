@@ -12,6 +12,22 @@ import { ThrowFormatError } from "./format-error";
  * [[fill]align][sign]["z"]["#"]["0"][width][grouping_option]["." precision][L][type]
  */
 
+export type FormatSpecifiers = {
+    fill?: string,
+    align?: string,
+    sign?: string,
+    zeta?: string,
+    sharp?: string,
+    zero?: string,
+    width?: string,
+    width_field_n?: string,
+    grouping?: string,
+    precision?: string,
+    precision_field_n?: string,
+    locale?: string,
+    type?: string
+}
+
 // The format specification regex. THis is combination of c++ and python specifications.
 const FormatSpecificationRegExString =
     "((?<fill>[^{}]?)(?<align>[<^>=]))?" + // fill (any char except '{' or '}') and align
@@ -32,11 +48,6 @@ const ReplacementFieldRegEx = new RegExp(
     "(\:" + FormatSpecificationRegExString + ")?" +
     "\}"
 );
-
-// Get replacement field match regexp exec array, or undefined if no match.
-function getReplacementFieldMatch(p: FormatStringParser): RegExpExecArray | undefined {
-    return ReplacementFieldRegEx.exec(p.parseString) ?? undefined;
-}
 
 // Regex to test if string loosely matches of replacement field.
 const LooseMatchReplacementFieldRegEx = new RegExp(
@@ -260,13 +271,13 @@ export class FormatStringParser {
             return false;
         }
 
-        // Replacement field match, or undefined for simple cases "{}" and "{d}".
-        let replFieldMatch: RegExpExecArray | undefined;
-
         // Match string.
         let matchString: string;
 
-        // Field number n in "{n:}""
+        // Replacement field match, or undefined for simple cases "{}" and "{d}".
+        let formatSpecifiers: FormatSpecifiers | undefined;
+
+        // Field number n of "{n:}".
         let fieldNumber: string;
 
         if (this.parseString[1] === "}") {
@@ -275,29 +286,29 @@ export class FormatStringParser {
             // Set match string
             matchString = this.parseString.substring(0, 2);
 
-            // Set replacement field match to undefined.
-            replFieldMatch = undefined;
+            // Has no format specifiers.
+            formatSpecifiers = undefined;
 
-            // Field number is empty
+            // Has no field number.
             fieldNumber = "";
         }
-        else if (this.parseString[2] === "}" && isDigits(this.parseString.charAt(1))) {
+        else if (this.parseString[2] === "}" && isDigits(this.parseString[1])) {
             // Special case where match string is simple "{d}".
 
             // Set match string.
             matchString = this.parseString.substring(0, 3);
 
-            // Set replacement field match to undefined.
-            replFieldMatch = undefined;
+            // Has no format specifiers.
+            formatSpecifiers = undefined;
 
-            // Field number is single digit.
-            fieldNumber = this.parseString.charAt(1);
+            // Has single digit field number.
+            fieldNumber = this.parseString[1];
         }
         else {
             // Execute replacement field regex.
-            replFieldMatch = getReplacementFieldMatch(this) ?? undefined;
+            let replFieldMatch = ReplacementFieldRegEx.exec(this.parseString)
 
-            if (!replFieldMatch || !replFieldMatch[0]) {
+            if (!replFieldMatch || !replFieldMatch[0] || !replFieldMatch.groups) {
                 // Failed to parse replacement field, return false.
                 return false;
             }
@@ -305,8 +316,11 @@ export class FormatStringParser {
             // Set match string
             matchString = replFieldMatch[0];
 
-            // Get argument's field number.
-            fieldNumber = replFieldMatch.groups?.field_n ?? "";
+            // Set format specifiers.
+            formatSpecifiers = <any>replFieldMatch.groups;
+
+            // Set field number.
+            fieldNumber = replFieldMatch.groups.field_n ?? "";
         }
 
 
@@ -317,7 +331,7 @@ export class FormatStringParser {
         let arg = this.getArgument(fieldNumber);
 
         // Create format specification.
-        let fs = new FormatSpecification(this, replFieldMatch);
+        let fs = new FormatSpecification(this, formatSpecifiers);
 
         // Format replacement field and add it to result string.
         this.resultString += this.formatReplacementField(arg, fs);
