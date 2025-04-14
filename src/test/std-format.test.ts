@@ -166,6 +166,17 @@ describe("Testing std-format", () => {
         expect(format("{:>30}", "right aligned")).toEqual("                 right aligned");
         expect(format("{:^30}", "centered")).toEqual("           centered           ");
         expect(format("{:*^30}", "centered")).toEqual("***********centered***********");
+        
+        // Fill and align with fill character and/or '0'-padding.
+        expect(format("{:<08d}", 10)).toEqual("10000000");
+        expect(format("{:*<08d}", 10)).toEqual("10******");
+        expect(format("{:*<8d}", 10)).toEqual("10******");
+        expect(format("{:^08d}", 10)).toEqual("00010000");
+        expect(format("{:*^08d}", 10)).toEqual("***10***");
+        expect(format("{:*^8d}", 10)).toEqual("***10***");
+        expect(format("{:>08d}", 10)).toEqual("00000010");
+        expect(format("{:*>08d}", 10)).toEqual("******10");
+        expect(format("{:*>8d}", 10)).toEqual("******10");
     });
 
     it("fill specifier =", () => {
@@ -627,7 +638,7 @@ describe("Testing std-format", () => {
     });
 
     it("all together", () => {
-        expect(format("{:*<+10.4f}", Math.PI, 314)).toEqual("+3.1416***");
+        expect(format("{:*<+10.4f}", Math.PI)).toEqual("+3.1416***");
         expect(format("{:+#09x}", 314)).toEqual("+0x00013a");
     });
 
