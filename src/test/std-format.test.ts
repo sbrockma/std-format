@@ -7,6 +7,10 @@ describe("Testing std-format", () => {
         return format(fmt, ...args);
     }
 
+    function toNonBreakingSpaces(s: string) {
+        return s.replace(/ /g, "\u00a0");
+    }
+
     it("test default export", () => {
         expect(DefaultExport.stdFormat("The answer is {}.", 42)).toEqual("The answer is 42.");
     });
@@ -124,6 +128,8 @@ describe("Testing std-format", () => {
         expect(formatLocale("hi-IN", "{:.2Lf}", 5678.9012)).toEqual("5,678.90");
         expect(formatLocale("hi-IN", "{:.2Lf}", 876.5432)).toEqual("876.54");
         expect(formatLocale("hi-IN", "{:.2Lf}", 45.6789)).toEqual("45.68");
+
+        expect(formatLocale("ge-GE", "{:.2Lf}", 9876543.210)).toEqual(toNonBreakingSpaces("9 876 543,21"));
     });
 
     it("sign", () => {
