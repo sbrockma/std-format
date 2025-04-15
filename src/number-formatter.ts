@@ -2,7 +2,8 @@ import { assert, getNumber, isInteger, mapDigitToChar, repeatString } from "./in
 import { FormatSpecification } from "./format-specification";
 import { ThrowFormatError } from "./format-error";
 import { NumberConverter } from "./number-converter";
-import { localeDecimalSeparator, localeGroupSeparator } from "./set-locale";
+import { getLocaleGroupingInfo } from "./set-locale";
+import { GroupingInfo } from "./grouping-info";
 
 // Get number prefix.
 function getNumberPrefix(fs: FormatSpecification) {
@@ -11,32 +12,34 @@ function getNumberPrefix(fs: FormatSpecification) {
     ) : "";
 }
 
-// Get grouping properties
-function getGroupingProps(fs: FormatSpecification): { decimalSeparator: string, groupSeparator: string, groupSize: number } {
+// Get grouping info
+function getGroupingInfo(fs: FormatSpecification): GroupingInfo {
     if (fs.grouping === ",") {
-        return { decimalSeparator: ".", groupSeparator: ",", groupSize: 3 }
+        // Use comma with 3 digits gropuing.
+        return GroupingInfo.comma3;
     }
     else if (fs.grouping === "_") {
         if (fs.hasType("deEfF%gG")) {
-            return { decimalSeparator: ".", groupSeparator: "_", groupSize: 3 }
+            // Use underscore with 3 digits gropuing.
+            return GroupingInfo.underscore3;
         }
         else if (fs.hasType("bBoxX")) {
-            // With binary, octal and hexadecimal type specifiers group size is 4.
-            return { decimalSeparator: ".", groupSeparator: "_", groupSize: 4 }
+            // Use underscore with 4 digits gropuing.
+            return GroupingInfo.underscore4;
         }
     }
     else if (fs.locale) {
         // The L option causes the locale-specific form to be used.
-        // Use locale's decimal and group separators.
-        return { decimalSeparator: localeDecimalSeparator, groupSeparator: localeGroupSeparator, groupSize: 3 }
+        // Use locale's grouping.
+        return getLocaleGroupingInfo();
     }
     else if (fs.hasType("n")) {
-        // Use locale's decimal and group separators.
-        return { decimalSeparator: localeDecimalSeparator, groupSeparator: localeGroupSeparator, groupSize: 3 }
+        // Use locale's grouping.
+        return getLocaleGroupingInfo();
     }
 
-    // If no grouping then set grouping separator to empty string and group size to Infinity.
-    return { decimalSeparator: ".", groupSeparator: "", groupSize: Infinity }
+    // No grouping.
+    return GroupingInfo.noGrouping;
 }
 
 // Get char code
@@ -122,42 +125,45 @@ export function formatNumber(value: number | bigint, fs: FormatSpecification): s
         }
 
         // Get grouping props.
-        let groupingProps = getGroupingProps(fs);
+        let groupingInfo = getGroupingInfo(fs);
 
         // Split digits to integer and fractional parts.
         let intDigits = n.digits.slice(0, n.dotPos);
         let fracDigits = n.digits.slice(n.dotPos);
 
-        if (groupingProps.groupSeparator === "" || intDigits.length <= groupingProps.groupSize) {
-            // No grouping required.
-            // Add integer digits.
-            digits = intDigits.map(mapDigitToChar).join("");
+        if (groupingInfo.hasGrouping()) {
+            // Has grouping.
+            let intDigitGroups: string[] = [];
+
+            // Create digit groups according to grouping propertie's group sizes.
+            for (let digitsLeft = intDigits.length, groupId = 0; digitsLeft > 0; groupId++) {
+                // Get group size for groupId.
+                let groupSize = groupingInfo.getGroupSize(groupId);
+
+                // Add group of integer digits.
+                intDigitGroups.unshift(intDigits.slice(Math.max(0, digitsLeft - groupSize), digitsLeft).map(mapDigitToChar).join(""));
+
+                // Subtract digits left by group size.
+                digitsLeft -= groupSize;
+            }
+
+            // Join integer digit groups separated by grouping separator.
+            digits = intDigitGroups.join(groupingInfo.getGroupingSeparator());
         }
         else {
-            // Grouping required.
-            digits = "";
-
-            // Get group count.
-            let groupCount = Math.ceil(intDigits.length / groupingProps.groupSize);
-
-            // Add groups' digits separated by group separator.
-            for (let g = groupCount - 1; g >= 0; g--) {
-                let start = intDigits.length - (g + 1) * groupingProps.groupSize;
-                let end = intDigits.length - g * groupingProps.groupSize;
-                let groupDigits = intDigits.slice(Math.max(0, start), end).map(mapDigitToChar).join("");
-                digits += groupDigits + (g > 0 ? groupingProps.groupSeparator : "");
-            }
+            // Has no grouping.
+            // Add integer digits.
+            digits = intDigits.map(mapDigitToChar).join("");
         }
 
         // Is there fraction digits?
         if (fracDigits.length > 0) {
             // Add decimal separator and fraction digits.
-            digits += groupingProps.decimalSeparator + fracDigits.map(mapDigitToChar).join("");
+            digits += groupingInfo.getDecimalSeparator() + fracDigits.map(mapDigitToChar).join("");
         }
-
-        // Include dot after last digit if sharp specifier is '#' with some type specifiers.
-        if (n.dotPos === n.digits.length && fs.sharp === "#" && fs.hasType("eEfF%gGaA")) {
-            digits += ".";
+        else if (n.dotPos === n.digits.length && fs.sharp === "#" && fs.hasType("eEfF%gGaA")) {
+            // Add decimal separator after last digit if sharp specifier is '#' with some types.
+            digits += groupingInfo.getDecimalSeparator();
         }
 
         // Get prefix.

@@ -108,12 +108,22 @@ describe("Testing std-format", () => {
     });
 
     it("type specifier n", () => {
-        expect(formatLocale("en-UK", "{:n}", 5555555555)).toEqual("5,555,555,555");
+        expect(formatLocale("en-UK", "{:n}", 1234567890)).toEqual("1,234,567,890");
+
+        expect(formatLocale("hi-IN", "{:n}", 1234567891)).toEqual("1,23,45,67,891");
+        expect(formatLocale("hi-IN", "{:n}", 123456789)).toEqual("12,34,56,789");
+        expect(formatLocale("hi-IN", "{:n}", 5)).toEqual("5");
     });
 
     it("locale specifier L", () => {
-        expect(formatLocale("en-UK", "{:Ld}", 4444444444)).toEqual("4,444,444,444");
-        expect(formatLocale("en-UK", "{:.2Lf}", 444444.4444)).toEqual("444,444.44");
+        expect(formatLocale("en-UK", "{:Ld}", 9876543210)).toEqual("9,876,543,210");
+        expect(formatLocale("en-UK", "{:.2Lf}", 654321.0987)).toEqual("654,321.10");
+
+        expect(formatLocale("hi-IN", "{:.2Lf}", 345678.9012)).toEqual("3,45,678.90");
+        expect(formatLocale("hi-IN", "{:.2Lf}", 67890.1234)).toEqual("67,890.12");
+        expect(formatLocale("hi-IN", "{:.2Lf}", 5678.9012)).toEqual("5,678.90");
+        expect(formatLocale("hi-IN", "{:.2Lf}", 876.5432)).toEqual("876.54");
+        expect(formatLocale("hi-IN", "{:.2Lf}", 45.6789)).toEqual("45.68");
     });
 
     it("sign", () => {
