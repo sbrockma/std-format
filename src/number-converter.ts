@@ -23,33 +23,14 @@ export class NumberConverter {
     exp: number;
 
     // Constructor
-    constructor(value: number | bigint, readonly fs: FormatSpecification) {
-        // Value must be finite number
-        assert(typeof value === "bigint" || typeof value === "number" && isFinite(value), "Value is not finite.");
-
-        // Set base
-        if (fs.hasType("bB")) {
-            this.base = 2;
-        }
-        else if (fs.hasType("o")) {
-            this.base = 8;
-        }
-        else if (fs.hasType("xXaA")) {
-            this.base = 16;
-        }
-        else {
-            this.base = 10;
-        }
-
-        // Value must be integer for certain types.
-        if (fs.hasType("dnbBoxX") && !(typeof value === "bigint" || isInteger(value))) {
+    constructor(value: number, readonly fs: FormatSpecification) {
+        // Is valid?
+        if (!isFinite(value) || !fs.hasType("", "eEfF%gGaA")) {
             ThrowFormatError.throwInvalidArgumentForType(fs.parser, value, fs.type);
         }
 
-        // BigInt not allowed with floating point type specifiers.
-        if (fs.hasType("eEfF%gGaA") && typeof value === "bigint") {
-            ThrowFormatError.throwInvalidArgumentForType(this.parser, value, fs.type);
-        }
+        // Set base
+        this.base = fs.hasType("aA") ? 16 : 10;
 
         // Initialize sign, digits, dot position and exponent to initial values.
         this.sign = isNegative(value) ? -1 : +1;
@@ -177,32 +158,6 @@ export class NumberConverter {
                 }
             }
         }
-        else if (typeof value === "bigint") {
-            // Get absolute integer parts.
-            let intPart = value < 0 ? -value : value;
-
-            // Get integer part digits. Repeat while remaining integer part > 0
-            while (intPart > 0) {
-                // Calculate digit
-                let digit = Number(intPart % BigInt(this.base));
-
-                if (this.digits.length === 0 && digit === 0) {
-                    // Do not add trailing zeroes, just increase exponent.
-                    this.exp++;
-                }
-                else {
-                    // Add digit to left of digits array.
-                    this.digits.unshift(digit);
-
-                    // Increase dot position so it keeps pointing after last digit.
-                    this.dotPos++;
-                }
-
-                // Make next digit to become lowest digit of integer part.
-                // bigint division truncates.
-                intPart = intPart / BigInt(this.base);
-            }
-        }
 
         // Was zero?
         if (this.digits.length === 0) {
@@ -225,8 +180,107 @@ export class NumberConverter {
         this.exp += this.dotPos - 1;
         this.dotPos = 1;
 
+        //////////////////////////////////////////////////////////////////////////
         // Convert this number to notation specified by format specification.
-        this.convertToNotation(value);
+
+        if (fs.hasType("")) {
+            // If type is default '' and not bigint and (has precision or is float).
+            // Then handle as float.
+
+            // This is almost like the 'g'. Use p = as large as needed to represent
+            // the given value faithfully, if not given. Treat p = 0 as p = 1.
+            let p = Math.max(1, fs.precision ?? this.digits.length);
+
+            // Save number value. Possibly needs to be restored later.
+            let saved = this.save();
+
+            // Convert to scientific notation with precision (p - 1).
+            this.toScientific(p - 1);
+
+            // Switch to fixed if -4 < exp < p-1.
+            if (-4 <= this.exp && this.exp < p - 1) {
+                // Restore original format before switching to another notation.
+                this.restore(saved);
+
+                // Convert to fixed notation.
+                this.toFixed(Math.max(1, p - 1 - this.exp));
+
+                // Remove insignificant trailing zeroes.
+                // Include at least one digit past the decimal point.
+                this.removeInsignificantTrailingZeroes(1);
+            }
+            else {
+                // Remove insignificant trailing zeroes.
+                this.removeInsignificantTrailingZeroes();
+            }
+        }
+        else if (fs.hasType("eE")) {
+            // Get precision. If not given, default is 6.
+            let p = fs.precision ?? 6;
+
+            // Convert to scientific notation
+            this.toScientific(p);
+        }
+        else if (fs.hasType("fF%")) {
+            // Get precision. If not given, default is 6.
+            let p = fs.precision ?? 6;
+
+            // Convert to fixed notation.
+            this.toFixed(p);
+        }
+        else if (fs.hasType("gG")) {
+            // Convert to general notation.
+
+            // Get precision. Treat p = 0 as p = 1. If not given, default is 6.
+            let p = Math.max(1, fs.precision ?? 6);
+
+            // Save number value. Possibly needs to be restored later.
+            let saved = this.save();
+
+            // Convert to scientific notation.
+            this.toScientific(p - 1);
+
+            // Switch to fixed notation if -4 <= exp < p.
+            if (-4 <= this.exp && this.exp < p) {
+                // restore number value before converting to fixed.
+                this.restore(saved);
+
+                // Convert to fixed notation. Precision is (p - 1 - exp).
+                this.toFixed(p - 1 - this.exp);
+            }
+
+            // Was sharp specifier '#' was given for 'g' and 'G'?
+            if (fs.sharp !== "#") {
+                // Remove insignificant trailing zeroes.
+                this.removeInsignificantTrailingZeroes();
+            }
+        }
+        else if (fs.hasType("aA")) {
+            // Convert to normalised hexadecimal exponential notation.
+            this.toNormalisedHexadecimalExponential();
+
+            // If precision not given use as big precision as possible.
+            let p = fs.precision ?? (this.digits.length - 1);
+
+            // Convert to scientific notation. Normalised hexadecimal exponential notation
+            // already is in scientific notation but this sets precision and does rounding. 
+            this.toScientific(p);
+        }
+        else {
+            ThrowFormatError.throwInvalidArgumentForType(this.parser, value, fs.type);
+        }
+
+        if (fs.zeta === "z") {
+            // The 'z' option coerces negative zero floating-point values to
+            // positive zero after rounding to the format precision.
+            // Change -0 to 0.
+            if (this.isZero() && this.sign === -1) {
+                this.sign = 1;
+            }
+        }
+
+        // Validate internal state.
+        this.validateInternalState();
     }
 
     // Get parsing context
@@ -238,12 +292,6 @@ export class NumberConverter {
     private isZero() {
         // After conversion zero can have more than one zero digits, for exmaple "0.00".
         return this.digits.length >= 1 && this.digits.every(d => d === 0);
-    }
-
-    // Is this number integer?
-    private isInteger() {
-        // It is integer if dot position + exponent is at the end of digits or further.
-        return (this.dotPos + this.exp) >= this.digits.length;
     }
 
     // Validate internal state.
@@ -500,120 +548,5 @@ export class NumberConverter {
         while (this.digits.length > Math.max(1, this.dotPos + leave) && this.digits[this.digits.length - 1] === 0) {
             this.digits.pop();
         }
-    }
-
-    // Convert to notation according to format specification.
-    private convertToNotation(value: number | bigint) {
-        let { fs } = this;
-
-        if (fs.hasType("") && typeof value !== "bigint" && (fs.precision !== undefined || !this.isInteger())) {
-            // If type is default '' and not bigint and (has precision or is float).
-            // Then handle as float.
-
-            // This is almost like the 'g'. Use p = as large as needed to represent
-            // the given value faithfully, if not given. Treat p = 0 as p = 1.
-            let p = Math.max(1, fs.precision ?? this.digits.length);
-
-            // Save number value. Possibly needs to be restored later.
-            let saved = this.save();
-
-            // Convert to scientific notation with precision (p - 1).
-            this.toScientific(p - 1);
-
-            // Switch to fixed if -4 < exp < p-1.
-            if (-4 <= this.exp && this.exp < p - 1) {
-                // Restore original format before switching to another notation.
-                this.restore(saved);
-
-                // Convert to fixed notation.
-                this.toFixed(Math.max(1, p - 1 - this.exp));
-
-                // Remove insignificant trailing zeroes.
-                // Include at least one digit past the decimal point.
-                this.removeInsignificantTrailingZeroes(1);
-            }
-            else {
-                // Remove insignificant trailing zeroes.
-                this.removeInsignificantTrailingZeroes();
-            }
-        }
-        else if (fs.hasType("", "dnbBoxX")) {
-            // Else if type is default '' or integer
-
-            // For integers -0 = +0 = 0
-            if (this.isZero() && this.sign === -1) {
-                this.sign = 1;
-            }
-
-            // Make exponent to zero.
-            this.toZeroExponent();
-        }
-        else if (fs.hasType("eE")) {
-            // Get precision. If not given, default is 6.
-            let p = fs.precision ?? 6;
-
-            // Convert to scientific notation
-            this.toScientific(p);
-        }
-        else if (fs.hasType("fF%")) {
-            // Get precision. If not given, default is 6.
-            let p = fs.precision ?? 6;
-
-            // Convert to fixed notation.
-            this.toFixed(p);
-        }
-        else if (fs.hasType("gG")) {
-            // Convert to general notation.
-
-            // Get precision. Treat p = 0 as p = 1. If not given, default is 6.
-            let p = Math.max(1, fs.precision ?? 6);
-
-            // Save number value. Possibly needs to be restored later.
-            let saved = this.save();
-
-            // Convert to scientific notation.
-            this.toScientific(p - 1);
-
-            // Switch to fixed notation if -4 <= exp < p.
-            if (-4 <= this.exp && this.exp < p) {
-                // restore number value before converting to fixed.
-                this.restore(saved);
-
-                // Convert to fixed notation. Precision is (p - 1 - exp).
-                this.toFixed(p - 1 - this.exp);
-            }
-
-            // Was sharp specifier '#' was given for 'g' and 'G'?
-            if (fs.sharp !== "#") {
-                // Remove insignificant trailing zeroes.
-                this.removeInsignificantTrailingZeroes();
-            }
-        }
-        else if (fs.hasType("aA")) {
-            // Convert to normalised hexadecimal exponential notation.
-            this.toNormalisedHexadecimalExponential();
-
-            // If precision not given use as big precision as possible.
-            let p = fs.precision ?? (this.digits.length - 1);
-
-            // Convert to scientific notation. Normalised hexadecimal exponential notation
-            // already is in scientific notation but this sets precision and does rounding. 
-            this.toScientific(p);
-        }
-        else {
-            ThrowFormatError.throwInvalidArgumentForType(this.parser, value, fs.type);
-        }
-
-        if (fs.zeta === "z") {
-            // The 'z' option coerces negative zero floating-point values to
-            // positive zero after rounding to the format precision.
-            // Change -0 to 0.
-            if (this.isZero() && this.sign === -1) {
-                this.sign = 1;
-            }
-        }
-
-        // Validate internal state.
-        this.validateInternalState();
     }
 }

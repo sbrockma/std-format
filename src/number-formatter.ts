@@ -55,6 +55,35 @@ function getCharCode(value: number | bigint, fs: FormatSpecification): number {
     }
 }
 
+function applyGrouping(fs: FormatSpecification, intDigits: string) {
+    // Get grouping props.
+    let groupingInfo = getGroupingInfo(fs);
+
+    if (groupingInfo.hasGrouping()) {
+        // Has grouping.
+        let intDigitGroups: string[] = [];
+
+        // Create digit groups according to grouping propertie's group sizes.
+        for (let digitsLeft = intDigits.length, groupId = 0; digitsLeft > 0; groupId++) {
+            // Get group size for groupId.
+            let groupSize = groupingInfo.getGroupSize(groupId);
+
+            // Add group of integer digits.
+            intDigitGroups.unshift(intDigits.slice(Math.max(0, digitsLeft - groupSize), digitsLeft));
+
+            // Subtract digits left by group size.
+            digitsLeft -= groupSize;
+        }
+
+        // Join integer digit groups separated by grouping separator.
+        return intDigitGroups.join(groupingInfo.getGroupingSeparator());
+    }
+    else {
+        // Has no grouping.
+        return intDigits;
+    }
+}
+
 // Convert this number to string.
 export function formatNumber(value: number | bigint, fs: FormatSpecification): string {
     // Set sign. "-", "+", " " or "".
@@ -72,7 +101,7 @@ export function formatNumber(value: number | bigint, fs: FormatSpecification): s
     // Postfix string. "%" for percentage types, or "".
     let postfix: string = fs.hasType("%") ? "%" : "";
 
-    const getSign = (v: number) => v < 0 ? "-" : ((fs.sign === "+" || fs.sign === " ") ? fs.sign : "");
+    const getSign = (v: number | bigint) => v < 0 ? "-" : ((fs.sign === "+" || fs.sign === " ") ? fs.sign : "");
 
     if (fs.hasType("c")) {
         // Is char? Set digits string to contain single char obtained from char code.
@@ -95,7 +124,31 @@ export function formatNumber(value: number | bigint, fs: FormatSpecification): s
         digits = "inf";
         exp = "";
     }
-    else {
+    else if (fs.hasType("dnbBoxX") || fs.hasType("") && (typeof value === "bigint" || isInteger(value) && fs.precision === undefined)) {
+        // Get target base
+        let base = fs.hasType("bB") ? 2 : fs.hasType("o") ? 8 : fs.hasType("xX") ? 16 : 10;
+
+        // Convert value to string.
+        let valueStr = BigInt(value).toString(base);
+
+        // Remove sign.
+        if (valueStr.startsWith("-")) {
+            valueStr = valueStr.substring(1);
+        }
+
+        // Get sign.
+        sign = getSign(value);
+
+        // Apply grouping.
+        digits = applyGrouping(fs, valueStr);
+
+        // No exponent.
+        exp = "";
+
+        // Get prefix.
+        prefix = getNumberPrefix(fs);
+    }
+    else if (fs.hasType("", "eEfF%gGaA") && typeof value === "number") {
         let n = new NumberConverter(value, fs);
 
         sign = getSign(n.sign);
@@ -124,55 +177,37 @@ export function formatNumber(value: number | bigint, fs: FormatSpecification): s
             exp = (n.base === 16 ? "p" : "e") + (n.exp < 0 ? "-" : "+") + exp;
         }
 
-        // Get grouping props.
-        let groupingInfo = getGroupingInfo(fs);
-
         // Split digits to integer and fractional parts.
-        let intDigits = n.digits.slice(0, n.dotPos);
-        let fracDigits = n.digits.slice(n.dotPos);
+        let intDigits = n.digits.slice(0, n.dotPos).map(mapDigitToChar).join("");
+        let fracDigits = n.digits.slice(n.dotPos).map(mapDigitToChar).join("");
 
-        if (groupingInfo.hasGrouping()) {
-            // Has grouping.
-            let intDigitGroups: string[] = [];
+        // Apply grouping to int part.
+        digits = applyGrouping(fs, intDigits);
 
-            // Create digit groups according to grouping propertie's group sizes.
-            for (let digitsLeft = intDigits.length, groupId = 0; digitsLeft > 0; groupId++) {
-                // Get group size for groupId.
-                let groupSize = groupingInfo.getGroupSize(groupId);
-
-                // Add group of integer digits.
-                intDigitGroups.unshift(intDigits.slice(Math.max(0, digitsLeft - groupSize), digitsLeft).map(mapDigitToChar).join(""));
-
-                // Subtract digits left by group size.
-                digitsLeft -= groupSize;
-            }
-
-            // Join integer digit groups separated by grouping separator.
-            digits = intDigitGroups.join(groupingInfo.getGroupingSeparator());
-        }
-        else {
-            // Has no grouping.
-            // Add integer digits.
-            digits = intDigits.map(mapDigitToChar).join("");
-        }
+        // Get grouping info.
+        let groupingInfo = getGroupingInfo(fs);
 
         // Is there fraction digits?
         if (fracDigits.length > 0) {
             // Add decimal separator and fraction digits.
-            digits += groupingInfo.getDecimalSeparator() + fracDigits.map(mapDigitToChar).join("");
+            digits += groupingInfo.getDecimalSeparator() + fracDigits;
         }
-        else if (n.dotPos === n.digits.length && fs.sharp === "#" && fs.hasType("eEfF%gGaA")) {
-            // Add decimal separator after last digit if sharp specifier is '#' with some types.
+        else if (n.dotPos === n.digits.length && fs.sharp === "#") {
+            // Add decimal separator after last digit if sharp specifier is '#'.
             digits += groupingInfo.getDecimalSeparator();
         }
 
         // Get prefix.
         prefix = getNumberPrefix(fs);
+    }
+    else {
+        // Invalid argument for type
+        ThrowFormatError.throwInvalidArgumentForType(fs.parser, value, fs.type);
+    }
 
-        // Omit octal prefix "0" if digits is "0".
-        if (prefix === "0" && digits === "0") {
-            prefix = "";
-        }
+    // Omit octal prefix "0" if digits is "0".
+    if (prefix === "0" && digits === "0") {
+        prefix = "";
     }
 
     // Get formatting width for number related filling.
