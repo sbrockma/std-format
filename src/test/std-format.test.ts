@@ -182,7 +182,7 @@ describe("Testing std-format", () => {
         expect(format("{:>30}", "right aligned")).toEqual("                 right aligned");
         expect(format("{:^30}", "centered")).toEqual("           centered           ");
         expect(format("{:*^30}", "centered")).toEqual("***********centered***********");
-        
+
         // Fill and align with fill character and/or '0'-padding.
         expect(format("{:<08d}", 10)).toEqual("10000000");
         expect(format("{:*<08d}", 10)).toEqual("10******");
@@ -691,15 +691,15 @@ describe("Testing std-format", () => {
         expect(format("{}", BigInt("0b0011"))).toEqual("3");
 
         // BigInt not allowed for float types.
-        expect(() =>format("{:.2e}", BigInt(1234))).toThrow();
-        expect(() =>format("{:.2E}", BigInt(1234))).toThrow();
-        expect(() =>format("{:.2f}", BigInt(1234))).toThrow();
-        expect(() =>format("{:.2F}", BigInt(1234))).toThrow();
-        expect(() =>format("{:.2%}", BigInt(1234))).toThrow();
-        expect(() =>format("{:.2g}", BigInt(1234))).toThrow();
-        expect(() =>format("{:.2G}", BigInt(1234))).toThrow();
-        expect(() =>format("{:.2a}", BigInt(1234))).toThrow();
-        expect(() =>format("{:.2A}", BigInt(1234))).toThrow();
+        expect(() => format("{:.2e}", BigInt(1234))).toThrow();
+        expect(() => format("{:.2E}", BigInt(1234))).toThrow();
+        expect(() => format("{:.2f}", BigInt(1234))).toThrow();
+        expect(() => format("{:.2F}", BigInt(1234))).toThrow();
+        expect(() => format("{:.2%}", BigInt(1234))).toThrow();
+        expect(() => format("{:.2g}", BigInt(1234))).toThrow();
+        expect(() => format("{:.2G}", BigInt(1234))).toThrow();
+        expect(() => format("{:.2a}", BigInt(1234))).toThrow();
+        expect(() => format("{:.2A}", BigInt(1234))).toThrow();
     });
 
     it("number digitizer algorithm", () => {
