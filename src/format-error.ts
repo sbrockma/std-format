@@ -31,7 +31,7 @@ export namespace ThrowFormatError {
 
     // Create invalid argument error.
     export function throwInvalidArgumentForType(p: FormatStringParser, arg: unknown, type: string): never {
-        throw new FormatError(p, "Invalid " + typeof arg + " argument '" + String(arg) + "' for type specifier '" + type + "'");
+        throw new FormatError(p, "Invalid " + typeof arg + " '" + String(arg) + "' argument for type specifier '" + type + "'");
     }
 
     // Create invalid nested argument error.

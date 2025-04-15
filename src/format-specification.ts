@@ -125,5 +125,9 @@ export class FormatSpecification {
         if (this.grouping !== undefined && this.locale !== undefined) {
             ThrowFormatError.throwSpecifierNotAllowedWith(this.parser, this.grouping, this.locale);
         }
+
+        if (typeof arg === "bigint" && this.hasType("eEfF%gGaA")) {
+            ThrowFormatError.throwInvalidArgumentForType(this.parser, arg, this.type);
+        }
     }
 }

@@ -686,15 +686,20 @@ describe("Testing std-format", () => {
         expect(format("{}", BigInt("90000000000000000000000"))).toEqual("90000000000000000000000");
         expect(format("{}", BigInt("0000000009"))).toEqual("9");
 
-        expect(format("{:.02f}", BigInt(1234))).toEqual("1234.00");
-        expect(format("{:.02f}", BigInt(9876))).toEqual("9876.00");
-
-        expect(format("{:.02e}", BigInt(1234))).toEqual("1.23e+03");
-        expect(format("{:.02e}", BigInt(9876))).toEqual("9.88e+03");
-
         expect(format("{:d}", BigInt("0x0A"))).toEqual("10");
         expect(format("{:x}", BigInt("0x0A"))).toEqual("a");
         expect(format("{}", BigInt("0b0011"))).toEqual("3");
+
+        // BigInt not allowed for float types.
+        expect(() =>format("{:.2e}", BigInt(1234))).toThrow();
+        expect(() =>format("{:.2E}", BigInt(1234))).toThrow();
+        expect(() =>format("{:.2f}", BigInt(1234))).toThrow();
+        expect(() =>format("{:.2F}", BigInt(1234))).toThrow();
+        expect(() =>format("{:.2%}", BigInt(1234))).toThrow();
+        expect(() =>format("{:.2g}", BigInt(1234))).toThrow();
+        expect(() =>format("{:.2G}", BigInt(1234))).toThrow();
+        expect(() =>format("{:.2a}", BigInt(1234))).toThrow();
+        expect(() =>format("{:.2A}", BigInt(1234))).toThrow();
     });
 
     it("number digitizer algorithm", () => {
