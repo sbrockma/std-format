@@ -447,9 +447,9 @@ export class NumberConverter {
     private convertToNotation(value: number | bigint) {
         let { fs } = this;
 
-        // Now make conversion according to fs.type
-        if (fs.hasType("") && (fs.precision !== undefined || !this.isInteger())) {
-            // If type is default, and has precision or is not integer.
+        if (fs.hasType("") && typeof value !== "bigint" && (fs.precision !== undefined || !this.isInteger())) {
+            // If type is default '' and not bigint and (has precision or is float).
+            // Then handle as float.
 
             // This is almost like the 'g'. Use p = as large as needed to represent
             // the given value faithfully, if not given. Treat p = 0 as p = 1.

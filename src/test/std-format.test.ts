@@ -249,6 +249,13 @@ describe("Testing std-format", () => {
         expect(format("{:*^5.5s}", "AAAAA")).toEqual("AAAAA");
         expect(format("{:*^5.5s}", "AAAAAA")).toEqual("AAAAA");
         expect(format("{:*^5.5s}", "AAAAAAA")).toEqual("AAAAA");
+
+        // Width alone
+        expect(format("{:9}", "Apple")).toEqual("Apple    ");
+        expect(format("{:9.3}", "Apple")).toEqual("App      ");
+        expect(format("{:9}", 42)).toEqual("       42");
+        expect(format("{:9}", BigInt(42))).toEqual("       42");
+        expect(format("{:9}", true)).toEqual("true     ");
     });
 
     it("negative and positive zero", () => {

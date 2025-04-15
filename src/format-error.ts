@@ -17,7 +17,7 @@ function getErrorMessage(parser: FormatStringParser | undefined, msg: string) {
 // Exceoption class, trown on format and value errors.
 export class FormatError extends Error {
     // FormatError constructor.
-    constructor(readonly parser: FormatStringParser | undefined, msg: string) {
+    constructor(parser: FormatStringParser | undefined, msg: string) {
         super(getErrorMessage(parser, msg));
         this.name = "FormatError";
     }
@@ -60,8 +60,8 @@ export namespace ThrowFormatError {
     }
 
     // Create precision not allowed error.
-    export function throwPrecisionNotAllowedWith(p: FormatStringParser, type: string): never {
-        throw new FormatError(p, "Precision not allowed with type specifier '" + type + "'");
+    export function throwPrecisionNotAllowedWith(p: FormatStringParser, type: string, arg?: unknown): never {
+        throw new FormatError(p, "Precision not allowed with type specifier '" + type + "'" + (arg ? " (" + typeof arg + ")" : ""));
     }
 
     // Create specifier not allowed with default error.

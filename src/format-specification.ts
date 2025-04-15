@@ -86,8 +86,11 @@ export class FormatSpecification {
         if (typeof arg === "string" || typeof arg === "boolean") {
             this.allowSpecifiersWithType("", "<^>", arg);
         }
-        else if (typeof arg === "number" || typeof arg === "bigint") {
+        else if (typeof arg === "number") {
             this.allowSpecifiersWithType("", "<^>=-+ z0,_L", arg);
+        }
+        else if (typeof arg === "bigint") {
+            this.allowSpecifiersWithType("", "<^>=-+ 0,_L", arg);
         }
 
         // Specifiers that are allowed with string types.
@@ -111,6 +114,11 @@ export class FormatSpecification {
         // Precision not allowed for integer format specifiers.
         if (this.hasType("cdnbBoxX") && this.precision !== undefined) {
             ThrowFormatError.throwPrecisionNotAllowedWith(this.parser, this.type);
+        }
+
+        // Precision not allowed for '' with bigint.
+        if (this.hasType("") && typeof arg === "bigint" && this.precision !== undefined) {
+            ThrowFormatError.throwPrecisionNotAllowedWith(this.parser, this.type, arg);
         }
 
         // Grouping not allowed with locale.
