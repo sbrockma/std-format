@@ -421,11 +421,15 @@ export class FormatStringParser {
     }
 
     static exec(formatString: string, formatArgs: unknown[], usingDeprecatedStdFormat: boolean): string {
-        let parser = new FormatStringParser(formatString, formatArgs, usingDeprecatedStdFormat);
-
         try {
-            // Now parse format string.
+            // Init parser.
+            let parser = new FormatStringParser(formatString, formatArgs, usingDeprecatedStdFormat);
+
+            // Parse format string.
             parser.parseFormatString();
+
+            // Return result string.
+            return parser.resultString;
         }
         catch (e) {
             // Log internal error to console.
@@ -436,8 +440,5 @@ export class FormatStringParser {
             // Throw exception forward.
             throw e;
         }
-
-        // Parsing is finished. Return result string.
-        return parser.resultString;
     }
 }
