@@ -4,7 +4,7 @@
     "author": "Stefan Brockmann <stefanprogram@hotmail.com>",
     "private": false,
     "license": "zlib",
-    "description": "String formatting of curly braces notation for TS/JS.",
+    "description": "String formatting function for TS/JS.",
     "homepage": "https://github.com/sbrockma/std-format#readme",
     "repository": "github:sbrockma/std-format",
     "main": "./dist/std-format.umd.js",

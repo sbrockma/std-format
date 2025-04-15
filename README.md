@@ -1,10 +1,8 @@
 # std-format
 
-std-format is a string formatting of curly braces notation for TS/JS following standard format specifications.
+std-format is a string formatting function for TS/JS.
 
-This is a hobby project of mine.
-
-This is early release. Probably has many bugs, hoping to fix them.
+This is a hobby project of mine. This is early release, and has many bugs. Hoping to fix them.
 
 ## Format Specification
 
