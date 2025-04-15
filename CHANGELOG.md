@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.4] - 2025-04-15
+### Changed
+- Improved number formatting with locale-specific grouping (e.g. "hi-IN").
+- BigInt values are no longer allowed with float specifier.
+- Improved format specifiers validation.
+### Fixed
+-Numbers with fractions were displayed with long decimals because floating-point numbers can’t represent some fractions exactly.
+
 ## [1.3.3] - 2025-04-14
 ### Changed
 - More strict error throwing checks of which specifiers can be used together.
