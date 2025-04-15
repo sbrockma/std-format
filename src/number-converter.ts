@@ -42,8 +42,13 @@ export class NumberConverter {
         }
 
         // Value must be integer for certain types.
-        if(fs.hasType("dnbBoxX") && !(typeof value === "bigint" || isInteger(value))) {
+        if (fs.hasType("dnbBoxX") && !(typeof value === "bigint" || isInteger(value))) {
             ThrowFormatError.throwInvalidArgumentForType(fs.parser, value, fs.type);
+        }
+
+        // BigInt not allowed with floating point type specifiers.
+        if (fs.hasType("eEfF%gGaA") && typeof value === "bigint") {
+            ThrowFormatError.throwInvalidArgumentForType(this.parser, value, fs.type);
         }
 
         // Initialize sign, digits, dot position and exponent to initial values.
@@ -500,11 +505,6 @@ export class NumberConverter {
     // Convert to notation according to format specification.
     private convertToNotation(value: number | bigint) {
         let { fs } = this;
-
-        // BigInt not allowed with floating point type specifiers.
-        if (typeof value === "bigint" && fs.hasType("eEfF%gGaA")) {
-            ThrowFormatError.throwInvalidArgumentForType(this.parser, value, fs.type);
-        }
 
         if (fs.hasType("") && typeof value !== "bigint" && (fs.precision !== undefined || !this.isInteger())) {
             // If type is default '' and not bigint and (has precision or is float).
