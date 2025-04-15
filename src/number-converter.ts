@@ -41,6 +41,11 @@ export class NumberConverter {
             this.base = 10;
         }
 
+        // Value must be integer for certain types.
+        if(fs.hasType("dnbBoxX") && !(typeof value === "bigint" || isInteger(value))) {
+            ThrowFormatError.throwInvalidArgumentForType(fs.parser, value, fs.type);
+        }
+
         // Initialize sign, digits, dot position and exponent to initial values.
         this.sign = isNegative(value) ? -1 : +1;
         this.digits = [];
@@ -542,11 +547,6 @@ export class NumberConverter {
 
             // Make exponent to zero.
             this.toZeroExponent();
-
-            // Number must be integer
-            if (!this.isInteger()) {
-                ThrowFormatError.throwInvalidArgumentForType(this.parser, value, fs.type);
-            }
         }
         else if (fs.hasType("eE")) {
             // Get precision. If not given, default is 6.
