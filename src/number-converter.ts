@@ -47,7 +47,56 @@ export class NumberConverter {
         this.dotPos = 0;
         this.exp = 0;
 
-        if (typeof value === "number") {
+        if (typeof value === "number" && this.base === 10) {
+            // Convert base 10 value using toString() and parsing the string.
+            // Until I solve how to correctly get shortest decimal that's exact in binary form.
+            let valueStr = value.toString(10);
+
+            // Remove sign.
+            if (valueStr.startsWith("-")) {
+                valueStr = valueStr.substring(1);
+            }
+
+            // Get exponent.
+            let i = valueStr.indexOf("e");
+            if (i >= 0) {
+                this.exp = +valueStr.substring(i + 1);
+                valueStr = valueStr.substring(0, i);
+            }
+            else {
+                this.exp = 0;
+            }
+
+            // Get dot position.
+            i = valueStr.indexOf(".");
+            if (i >= 0) {
+                this.dotPos = i;
+                valueStr = valueStr.substring(0, i) + valueStr.substring(i + 1);
+            }
+            else {
+                this.dotPos = valueStr.length;
+            }
+
+            // Get digits, map each digit "0"-"9" to number 0-9.
+            this.digits = valueStr.split("").map(c => +c);
+
+            // Remove leading zeroes.
+            while (this.digits.length > 1 && this.digits[0] === 0) {
+                assert(this.dotPos === 1, "Has leading zero but dotPos != 1.")
+                this.digits.shift();
+                this.exp--;
+            }
+
+            // Remove trailing zeroes.
+            while (this.digits.length > 1 && this.digits[this.digits.length - 1] === 0) {
+                this.digits.pop();
+                if (this.dotPos > this.digits.length) {
+                    this.dotPos--;
+                    this.exp++;
+                }
+            }
+        }
+        else if (typeof value === "number") {
             // Split absolute value into integer and fractional parts.
             let absValue = Math.abs(value);
             let intPart = Math.floor(absValue);
@@ -194,8 +243,8 @@ export class NumberConverter {
             assert(this.dotPos === 1, "Is zero but dot pos != 1");
         }
 
-        assert(isInteger(this.exp), "exp is not finite");
-        assert(isInteger(this.dotPos), "dotPos is not finite");
+        assert(isInteger(this.exp), "exp is not integer");
+        assert(isInteger(this.dotPos), "dotPos is not integer");
 
         assert(isInteger(this.dotPos) && this.dotPos >= 1, "dotPos = " + this.dotPos + " < 1");
         assert(this.dotPos <= this.digits.length, "dotPos = " + this.dotPos + " > digits.length = " + this.digits.length);

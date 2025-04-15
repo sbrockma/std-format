@@ -355,6 +355,9 @@ describe("Testing std-format", () => {
     });
 
     it("type specifier <default float>", () => {
+        expect(format("{:}", 482.1)).toEqual("482.1"); // TODO
+        expect(format("{:}", 482.2)).toEqual("482.2"); // TODO
+
         expect(format("{:.2}", Math.PI)).toEqual("3.1");
 
         expect(format("{:.1}", 10)).toEqual("1e+01");
