@@ -8,7 +8,7 @@ const defaultLocale = (function getUserLocale(): string | undefined {
     catch (e) {
         return undefined;
     }
-})() ?? "en-UK";
+})() || "en-UK";
 
 // Locale's grouping info.
 let localeGroupingInfo: GroupingInfo | undefined = undefined;
@@ -24,5 +24,7 @@ export function getLocaleGroupingInfo(): GroupingInfo {
 
 // Set locale.
 export function setLocale(locale?: string) {
-    localeGroupingInfo = GroupingInfo.getFromLocale(locale ?? defaultLocale);
+    // Get locale group info.
+    // Use default locale if locale is empty string or undefined/null.
+    localeGroupingInfo = GroupingInfo.getFromLocale(locale || defaultLocale);
 }
