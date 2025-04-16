@@ -34,7 +34,7 @@ export function isInteger(n: unknown): n is number {
 
 // Function to convert digit value to digit character.
 export function mapDigitToChar(d: number) {
-    return "0123456789abcdef"[d];
+    return "0123456789abcdef".charAt(d);
 }
 
 // Is value negative. For number -0 is negative and +0 is positive.
