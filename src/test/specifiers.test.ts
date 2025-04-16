@@ -1,4 +1,4 @@
-import { format } from "../index";
+import { format, int } from "../index";
 
 /**
  * Test allowed specifiers for each type.
@@ -70,7 +70,24 @@ describe("Testing std-format allowed specifier for", () => {
         expect(() => format("{:L}", 10)).not.toThrow();
     });
 
-    it("'' (bigint)", () => {
+    it("'' (int)", () => {
+        expect(() => format("{:}", int(999))).not.toThrow();
+        expect(() => format("{:*<8}", int(999))).not.toThrow();
+        expect(() => format("{:*^8}", int(999))).not.toThrow();
+        expect(() => format("{:*>8}", int(999))).not.toThrow();
+        expect(() => format("{:*=8}", int(999))).not.toThrow();
+        expect(() => format("{:-}", int(999))).not.toThrow();
+        expect(() => format("{:+}", int(999))).not.toThrow();
+        expect(() => format("{: }", int(999))).not.toThrow();
+        expect(() => format("{:z}", int(999))).toThrow();
+        expect(() => format("{:#}", int(999))).toThrow();
+        expect(() => format("{:08}", int(999))).not.toThrow();
+        expect(() => format("{:5}", int(999))).not.toThrow();
+        expect(() => format("{:,}", int(999))).not.toThrow();
+        expect(() => format("{:_}", int(999))).not.toThrow();
+        expect(() => format("{:.3}", int(999))).toThrow();
+        expect(() => format("{:L}", int(999))).not.toThrow();
+
         expect(() => format("{:}", BigInt(999))).not.toThrow();
         expect(() => format("{:*<8}", BigInt(999))).not.toThrow();
         expect(() => format("{:*^8}", BigInt(999))).not.toThrow();

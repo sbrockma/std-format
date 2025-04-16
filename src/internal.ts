@@ -1,3 +1,6 @@
+import { IntWrapper } from "./int";
+
+// Assertion error class.
 export class AssertionError extends Error {
     constructor(msg?: string) {
         super("Assertion failed" + (msg === undefined ? "!" : (": " + msg)));
@@ -26,7 +29,7 @@ export function zeroArray(zeroCount: number): 0[] {
 
 // Test if number is integer.
 export function isInteger(n: unknown): n is number {
-    return typeof n === "number" && !isNaN(n) && isFinite(n) && n === Math.trunc(n);
+    return typeof n === "number" && isFinite(n) && n === Math.trunc(n);
 }
 
 // Function to convert digit value to digit character.
@@ -35,23 +38,16 @@ export function mapDigitToChar(d: number) {
 }
 
 // Is value negative. For number -0 is negative and +0 is positive.
-export function isNegative(n: number | bigint) {
-    return typeof n === "bigint" ? (n < 0) : (n < 0 || 1.0 / n === -Infinity);
-}
-
-// Get number from number or bigint.
-export function getNumber(n: number | bigint): number {
-    if (typeof n === "bigint") {
-        // Make sure bigint is in safe number range.
-        const MAX_SAFE_INTEGER = 9007199254740991;
-        const MIN_SAFE_INTEGER = -9007199254740991;
-        assert(n <= MAX_SAFE_INTEGER && n >= MIN_SAFE_INTEGER, "Cannot get number from bigint, too big value.");
-        // Return bigint as number.
-        return Number(n);
+export function isNegative(n: number | IntWrapper): boolean {
+    if (n instanceof IntWrapper) {
+        return n.isNegative();
     }
     else {
-        // Return number.
-        return n;
+        return n < 0 || 1.0 / n === -Infinity;
     }
 }
 
+// Get number from number or Int.
+export function getNumber(n: number | IntWrapper): number {
+    return n instanceof IntWrapper ? n.toSafeNumber() : n;
+}

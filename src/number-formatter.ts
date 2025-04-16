@@ -4,6 +4,7 @@ import { ThrowFormatError } from "./format-error";
 import { NumberConverter } from "./number-converter";
 import { getLocaleGroupingInfo } from "./set-locale";
 import { GroupingInfo } from "./grouping-info";
+import { IntWrapper } from "./int";
 
 // Get number prefix.
 function getNumberPrefix(fs: FormatSpecification) {
@@ -43,7 +44,7 @@ function getGroupingInfo(fs: FormatSpecification): GroupingInfo {
 }
 
 // Get char code
-function getCharCode(value: number | bigint, fs: FormatSpecification): number {
+function getCharCode(value: number | IntWrapper, fs: FormatSpecification): number {
     try {
         // Is char code valid integer and in range?
         let charCode = getNumber(value);
@@ -85,7 +86,7 @@ function applyGrouping(fs: FormatSpecification, intDigits: string) {
 }
 
 // Convert this number to string.
-export function formatNumber(value: number | bigint, fs: FormatSpecification): string {
+export function formatNumber(value: number | IntWrapper, fs: FormatSpecification): string {
     // Set sign. "-", "+", " " or "".
     let sign: string;
 
@@ -101,7 +102,12 @@ export function formatNumber(value: number | bigint, fs: FormatSpecification): s
     // Postfix string. "%" for percentage types, or "".
     let postfix: string = fs.hasType("%") ? "%" : "";
 
-    const getSign = (v: number | bigint) => v < 0 ? "-" : ((fs.sign === "+" || fs.sign === " ") ? fs.sign : "");
+    function getSign(v: number | IntWrapper) {
+        if (v instanceof IntWrapper) {
+            v = v.isNegative() ? -1 : +1;
+        }
+        return v < 0 ? "-" : ((fs.sign === "+" || fs.sign === " ") ? fs.sign : "");
+    }
 
     if (fs.hasType("c")) {
         // Is char? Set digits string to contain single char obtained from char code.
@@ -124,12 +130,12 @@ export function formatNumber(value: number | bigint, fs: FormatSpecification): s
         digits = "inf";
         exp = "";
     }
-    else if (fs.hasType("dnbBoxX") || fs.hasType("") && (typeof value === "bigint" || isInteger(value) && fs.precision === undefined)) {
+    else if (fs.hasType("") && value instanceof IntWrapper || fs.hasType("dnbBoxX") && (value instanceof IntWrapper || isInteger(value))) {
         // Get target base
         let base = fs.hasType("bB") ? 2 : fs.hasType("o") ? 8 : fs.hasType("xX") ? 16 : 10;
 
         // Convert value to string.
-        let valueStr = BigInt(value).toString(base);
+        let valueStr = value.toString(base);
 
         // Remove sign.
         if (valueStr.startsWith("-")) {

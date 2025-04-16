@@ -29,6 +29,16 @@ export namespace ThrowFormatError {
         throw new FormatError(p, "Specifier '" + specifier + "' is not implemented");
     }
 
+    // Create value not integer error
+    export function throwValueNotInteger(value: unknown): never {
+        throw new FormatError(undefined, "Value '" + value + "' is not integer");
+    }
+
+    // Create value not integer error
+    export function throwRangeError(value: unknown): never {
+        throw new FormatError(undefined, "Range errror, '" + value + "' out of range");
+    }
+
     // Create invalid argument error.
     export function throwInvalidArgumentForType(p: FormatStringParser, arg: unknown, type: string): never {
         throw new FormatError(p, "Invalid " + typeof arg + " '" + String(arg) + "' argument for type specifier '" + type + "'");

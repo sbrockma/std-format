@@ -184,12 +184,12 @@ export class NumberConverter {
         // Convert this number to notation specified by format specification.
 
         if (fs.hasType("")) {
-            // If type is default '' and not bigint and (has precision or is float).
+            // If type is default ''.
             // Then handle as float.
 
             // This is almost like the 'g'. Use p = as large as needed to represent
             // the given value faithfully, if not given. Treat p = 0 as p = 1.
-            let p = Math.max(1, fs.precision ?? this.digits.length);
+            let p = Math.max(1, fs.precision ?? 17); // FIXME!
 
             // Save number value. Possibly needs to be restored later.
             let saved = this.save();

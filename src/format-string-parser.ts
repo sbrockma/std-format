@@ -4,6 +4,7 @@ import { FormatSpecification } from "./format-specification";
 import { formatNumber } from "./number-formatter";
 import { formatString } from "./string-formatter";
 import { ThrowFormatError } from "./format-error";
+import { IntWrapper, int } from "./int";
 
 /**
  * https://en.cppreference.com/w/cpp/utility/format/spec
@@ -92,6 +93,13 @@ export class FormatStringParser {
         this.automaticFieldNumber = 0;
         this.hasAutomaticFieldNumbering = false;
         this.hasManualFieldSpecification = false;
+
+        // Convert BigInts to ints.
+        for (let i = 0; i < this.formatArgs.length; i++) {
+            if (typeof this.formatArgs[i] === "bigint") {
+                this.formatArgs[i] = int(this.formatArgs[i]);
+            }
+        }
     }
 
     // Formats replacement field.
@@ -108,7 +116,7 @@ export class FormatStringParser {
         // Is type specifier number compatible?
         let isFsTypeNumberCompatible = fs.hasType("", "cdnbBoxXeEfF%gGaA");
 
-        function formatNum(arg: number | bigint): string {
+        function formatNum(arg: number | IntWrapper): string {
             // Default align for number is right.
             align ??= ">";
 
@@ -140,8 +148,8 @@ export class FormatStringParser {
                 ThrowFormatError.throwInvalidArgumentForType(this, arg, fs.type);
             }
         }
-        else if (typeof arg === "number" || typeof arg === "bigint") {
-            // Argument can be number or bigint.
+        else if (typeof arg === "number" || arg instanceof IntWrapper) {
+            // Argument can be number or int.
             if (isFsTypeNumberCompatible) {
                 // Use number argument as it is.
                 argStr = formatNum(arg);

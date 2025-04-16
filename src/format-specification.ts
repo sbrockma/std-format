@@ -1,3 +1,4 @@
+import { IntWrapper } from "./int";
 import { ThrowFormatError } from "./format-error";
 import { FormatSpecifiers, FormatStringParser } from "./format-string-parser";
 
@@ -89,7 +90,7 @@ export class FormatSpecification {
         else if (typeof arg === "number") {
             this.allowSpecifiersWithType("", "<^>=-+ z0,_L", arg);
         }
-        else if (typeof arg === "bigint") {
+        else if (arg instanceof IntWrapper) {
             this.allowSpecifiersWithType("", "<^>=-+ 0,_L", arg);
         }
 
@@ -116,8 +117,8 @@ export class FormatSpecification {
             ThrowFormatError.throwPrecisionNotAllowedWith(this.parser, this.type);
         }
 
-        // Precision not allowed for '' with bigint.
-        if (this.hasType("") && typeof arg === "bigint" && this.precision !== undefined) {
+        // Precision not allowed for '' with int.
+        if (this.hasType("") && arg instanceof IntWrapper && this.precision !== undefined) {
             ThrowFormatError.throwPrecisionNotAllowedWith(this.parser, this.type, arg);
         }
 

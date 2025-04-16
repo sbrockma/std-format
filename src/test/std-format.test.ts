@@ -1,4 +1,4 @@
-import { format, setLocale, stdFormat, stdLocaleHint, stdSpecificationHint } from "../index";
+import { format, setLocale, int, stdFormat, stdLocaleHint, stdSpecificationHint } from "../index";
 import DefaultExport from "../index";
 
 describe("Testing std-format", () => {
@@ -12,13 +12,13 @@ describe("Testing std-format", () => {
     }
 
     it("test default export", () => {
-        expect(DefaultExport.stdFormat("The answer is {}.", 42)).toEqual("The answer is 42.");
+        expect(DefaultExport.stdFormat("The answer is {}.", int(42))).toEqual("The answer is 42.");
     });
 
     it("using curly braces", () => {
         expect(format("Test {{ }} {{}}", 1, 2)).toEqual("Test { } {}");
-        expect(format("frac{{{}}}{{{}}}", 1, 2)).toEqual("frac{1}{2}");
-        expect(format("frac{{{0}}}{{{1}}}", 1, 2)).toEqual("frac{1}{2}");
+        expect(format("frac{{{}}}{{{}}}", int(1), int(2))).toEqual("frac{1}{2}");
+        expect(format("frac{{{0}}}{{{1}}}", int(1), int(2))).toEqual("frac{1}{2}");
 
         expect(() => format("Hello { World!")).toThrow(); // Single '{'
         expect(() => format("Hello } World!")).toThrow(); // Single '}'
@@ -78,7 +78,7 @@ describe("Testing std-format", () => {
         expect(format("{:,.4G}", 123456.123456)).toEqual("1.235E+05");
         expect(format("{:,.2%}", 123)).toEqual("12,300.00%");
 
-        expect(format("{:,d}", BigInt("5555555555555555555555555555555555555555"))).
+        expect(format("{:,d}", int("5555555555555555555555555555555555555555"))).
             toEqual("5,555,555,555,555,555,555,555,555,555,555,555,555,555");
     });
 
@@ -107,7 +107,7 @@ describe("Testing std-format", () => {
         expect(format("{:#_x}", 8765432)).toEqual("0x85_bff8");
         expect(format("{:_X}", 8765432)).toEqual("85_BFF8");
 
-        expect(format("{:_d}", BigInt("-5555555555555555555555555555555555555555"))).
+        expect(format("{:_d}", int("-5555555555555555555555555555555555555555"))).
             toEqual("-5_555_555_555_555_555_555_555_555_555_555_555_555_555");
     });
 
@@ -133,12 +133,13 @@ describe("Testing std-format", () => {
     });
 
     it("sign", () => {
-        expect(format("{0:},{0:+},{0:-},{0: }", 1)).toEqual("1,+1,1, 1");
-        expect(format("{0:},{0:+},{0:-},{0: }", -1)).toEqual("-1,-1,-1,-1");
+        expect(format("{0:},{0:+},{0:-},{0: }", int(1))).toEqual("1,+1,1, 1");
+        expect(format("{0:},{0:+},{0:-},{0: }", int(-1))).toEqual("-1,-1,-1,-1");
         expect(format("{0:},{0:+},{0:-},{0: }", Infinity)).toEqual("inf,+inf,inf, inf");
         expect(format("{0:},{0:+},{0:-},{0: }", NaN)).toEqual("nan,+nan,nan, nan");
 
-        expect(format("{:+}, {: }", 314, 314)).toEqual("+314,  314");
+        expect(format("{:+}, {: }", 314, 314)).toEqual("+314.0,  314.0");
+        expect(format("{:+}, {: }", int(314), int(314))).toEqual("+314,  314");
 
         expect(format("{:+f}; {:+f}", 3.14, -3.14)).toEqual("+3.140000; -3.140000");
         expect(format("{: f}; {: f}", 3.14, -3.14)).toEqual(" 3.140000; -3.140000");
@@ -147,7 +148,8 @@ describe("Testing std-format", () => {
 
     it("fill and align", () => {
         // Default fill and default align
-        expect(format("{:6}", 42)).toEqual("    42");
+        expect(format("{:6}", int(42))).toEqual("    42");
+        expect(format("{:6}", 42)).toEqual("  42.0");
         expect(format("{:6}", "x")).toEqual("x     ");
         expect(format("{:*<6}", "x")).toEqual("x*****");
         expect(format("{:*>6}", "x")).toEqual("*****x");
@@ -159,24 +161,24 @@ describe("Testing std-format", () => {
         expect(format("{:?>8d}", 10)).toEqual("??????10");
         expect(format("{:?=8d}", 10)).toEqual("??????10");
 
-        expect(format("{:<6}", -42)).toEqual("-42   "); // Default fill char ' '
-        expect(format("{:^6}", -42)).toEqual(" -42  ");
-        expect(format("{:>6}", -42)).toEqual("   -42");
-        expect(format("{:=6}", -42)).toEqual("-   42");
+        expect(format("{:<9}", -42)).toEqual("-42.0    "); // Default fill char ' '
+        expect(format("{:^9}", -42)).toEqual("  -42.0  ");
+        expect(format("{:>9}", -42)).toEqual("    -42.0");
+        expect(format("{:=9}", -42)).toEqual("-    42.0");
 
-        expect(format("{:<06}", -42)).toEqual("-42000"); // '0' is specified
-        expect(format("{:^06}", -42)).toEqual("0-4200");
-        expect(format("{:>06}", -42)).toEqual("000-42");
-        expect(format("{:=06}", -42)).toEqual("-00042");
+        expect(format("{:<09}", int(-42))).toEqual("-42000000"); // '0' is specified
+        expect(format("{:^09}", int(-42))).toEqual("000-42000");
+        expect(format("{:>09}", int(-42))).toEqual("000000-42");
+        expect(format("{:=09}", int(-42))).toEqual("-00000042");
 
-        expect(format("{:q<6}", -42)).toEqual("-42qqq"); // Fill char is given
-        expect(format("{:q^6}", -42)).toEqual("q-42qq");
-        expect(format("{:q>6}", -42)).toEqual("qqq-42");
-        expect(format("{:q=6}", -42)).toEqual("-qqq42");
+        expect(format("{:#<9d}", -42)).toEqual("-42######"); // Fill char is given
+        expect(format("{:#^9d}", -42)).toEqual("###-42###");
+        expect(format("{:#>9d}", -42)).toEqual("######-42");
+        expect(format("{:#=9d}", -42)).toEqual("-######42");
 
-        expect(format("{:7}|{:7}|{:7}|{:7}", 1, -.2, "str", "c")).toEqual("      1|   -0.2|str    |c      ");
-        expect(format("{:*<7}|{:*<7}|{:*>7}|{:*>7}", 1, -.2, "str", "c")).toEqual("1******|-0.2***|****str|******c");
-        expect(format("{:07}|{:07}|{:^7}|{:^7}", 1, -.2, "str", "c")).toEqual("0000001|-0000.2|  str  |   c   ");
+        expect(format("{:7}|{:7}|{:7}|{:7}", int(1), -.2, "str", "c")).toEqual("      1|   -0.2|str    |c      ");
+        expect(format("{:*<7}|{:*<7}|{:*>7}|{:*>7}", int(1), -.2, "str", "c")).toEqual("1******|-0.2***|****str|******c");
+        expect(format("{:07}|{:07}|{:^7}|{:^7}", int(1), -.2, "str", "c")).toEqual("0000001|-0000.2|  str  |   c   ");
 
         expect(format("{:<30}", "left aligned")).toEqual("left aligned                  ");
         expect(format("{:>30}", "right aligned")).toEqual("                 right aligned");
@@ -253,27 +255,33 @@ describe("Testing std-format", () => {
         // Width alone
         expect(format("{:9}", "Apple")).toEqual("Apple    ");
         expect(format("{:9.3}", "Apple")).toEqual("App      ");
-        expect(format("{:9}", 42)).toEqual("       42");
-        expect(format("{:9}", BigInt(42))).toEqual("       42");
+        expect(format("{:9}", 42)).toEqual("     42.0");
+        expect(format("{:9}", int(42))).toEqual("       42");
         expect(format("{:9}", true)).toEqual("true     ");
     });
 
     it("negative and positive zero", () => {
-        // Default type, treat -0 and +0 zero as integer 0.
-        expect(format("{}", -0.0)).toEqual("0");
-        expect(format("{}", +0.0)).toEqual("0");
+        expect(format("{}", -0)).toEqual("-0.0");
+        expect(format("{}", +0)).toEqual("0.0");
+
+        // int has no -0.
+        expect(format("{}", int(-0))).toEqual("0");
+        expect(format("{}", int(+0))).toEqual("0");
+
+        expect(format("{}", int("-0"))).toEqual("0");
+        expect(format("{}", int("+0"))).toEqual("0");
 
         // With integer specifiers treat +0 and -0 as 0
-        expect(format("{:d}", -0.0)).toEqual("0");
-        expect(format("{:d}", +0.0)).toEqual("0");
-        expect(format("{:X}", -0.0)).toEqual("0");
-        expect(format("{:X}", +0.0)).toEqual("0");
+        expect(format("{:d}", -0)).toEqual("0");
+        expect(format("{:d}", +0)).toEqual("0");
+        expect(format("{:X}", -0)).toEqual("0");
+        expect(format("{:X}", +0)).toEqual("0");
 
         // With floating point specifiers there is -0 and +0
-        expect(format("{:.2e}", -0.0)).toEqual("-0.00e+00");
-        expect(format("{:.2e}", +0.0)).toEqual("0.00e+00");
-        expect(format("{:+.2e}", -0.0)).toEqual("-0.00e+00");
-        expect(format("{:+.2e}", +0.0)).toEqual("+0.00e+00");
+        expect(format("{:.2e}", -0)).toEqual("-0.00e+00");
+        expect(format("{:.2e}", +0)).toEqual("0.00e+00");
+        expect(format("{:+.2e}", -0)).toEqual("-0.00e+00");
+        expect(format("{:+.2e}", +0)).toEqual("+0.00e+00");
 
         expect(format("{:.2f}", +0.0005)).toEqual("0.00");
         expect(format("{:.2f}", -0.0005)).toEqual("-0.00");
@@ -343,15 +351,15 @@ describe("Testing std-format", () => {
     });
 
     it("type specifier <default int>", () => {
-        expect(format("{}", 100)).toEqual("100");
-        expect(format("{}", 10)).toEqual("10");
-        expect(format("{}", 1)).toEqual("1");
-        expect(format("{}", 0)).toEqual("0");
-        expect(format("{}", -1)).toEqual("-1");
-        expect(format("{}", -10)).toEqual("-10");
-        expect(format("{}", -100)).toEqual("-100");
+        expect(format("{}", int(100))).toEqual("100");
+        expect(format("{}", int(10))).toEqual("10");
+        expect(format("{}", int(1))).toEqual("1");
+        expect(format("{}", int(0))).toEqual("0");
+        expect(format("{}", int(-1))).toEqual("-1");
+        expect(format("{}", int(-10))).toEqual("-10");
+        expect(format("{}", int(-100))).toEqual("-100");
 
-        expect(format("{:}", 999)).toEqual("999");
+        expect(format("{:}", int(999))).toEqual("999");
     });
 
     it("type specifier <default float>", () => {
@@ -429,7 +437,7 @@ describe("Testing std-format", () => {
         // Char code must be int in range 0..0xFFFF.
         expect(() => format("{:c}", -1)).toThrow();
         expect(() => format("{:c}", 65536)).toThrow();
-        expect(() => format("{:c}", BigInt("888888888888888888888888"))).toThrow();
+        expect(() => format("{:c}", int("888888888888888888888888"))).toThrow();
         expect(() => format("{:c}", 111.1)).toThrow();
         expect(() => format("{:c}", NaN)).toThrow();
         expect(() => format("{:c}", Infinity)).toThrow();
@@ -673,36 +681,45 @@ describe("Testing std-format", () => {
     });
 
     it("supported arguments", () => {
-        // boolean, string, char, number, bigint
-        expect(format("{:s} {:s} {:c} {:d} {:d}", true, "string", "c", 10, BigInt("999"))).
+        // boolean, string, char, number, int
+        expect(format("{:s} {:s} {:c} {:d} {:d}", true, "string", "c", 10, int(999))).
             toEqual("true string c 10 999");
     });
 
-    it("bigint", () => {
-        // bigint has no separate negative/positive zero
-        expect(format("{}", BigInt("-0"))).toEqual("0");
-        expect(format("{}", BigInt("+0"))).toEqual("0");
+    it("int", () => {
+        // int(0)
+        expect(format("{}", int(""))).toEqual("0");
+        expect(format("{}", int())).toEqual("0");
+        expect(format("{}", int(undefined))).toEqual("0");
+        expect(format("{}", int(null))).toEqual("0");
+        expect(format("{}", int(0))).toEqual("0");
 
-        expect(format("{:d}", BigInt("123456789012345678901234567890"))).toEqual("123456789012345678901234567890");
-        expect(format("{:d}", BigInt("-123456789012345678901234567890"))).toEqual("-123456789012345678901234567890");
+        // Not int
+        expect(() => format("{}", int(1.1))).toThrow();
+        expect(() => format("{}", int(NaN))).toThrow();
+        expect(() => format("{}", int(-Infinity))).toThrow();
+        expect(() => format("{}", int(Infinity))).toThrow();
 
-        expect(format("{}", BigInt("90000000000000000000000"))).toEqual("90000000000000000000000");
-        expect(format("{}", BigInt("0000000009"))).toEqual("9");
+        expect(format("{:d}", int("123456789012345678901234567890"))).toEqual("123456789012345678901234567890");
+        expect(format("{:d}", int("-123456789012345678901234567890"))).toEqual("-123456789012345678901234567890");
 
-        expect(format("{:d}", BigInt("0x0A"))).toEqual("10");
-        expect(format("{:x}", BigInt("0x0A"))).toEqual("a");
-        expect(format("{}", BigInt("0b0011"))).toEqual("3");
+        expect(format("{}", int("90000000000000000000000"))).toEqual("90000000000000000000000");
+        expect(format("{}", int("0000000009"))).toEqual("9");
 
-        // BigInt not allowed for float types.
-        expect(() => format("{:.2e}", BigInt(1234))).toThrow();
-        expect(() => format("{:.2E}", BigInt(1234))).toThrow();
-        expect(() => format("{:.2f}", BigInt(1234))).toThrow();
-        expect(() => format("{:.2F}", BigInt(1234))).toThrow();
-        expect(() => format("{:.2%}", BigInt(1234))).toThrow();
-        expect(() => format("{:.2g}", BigInt(1234))).toThrow();
-        expect(() => format("{:.2G}", BigInt(1234))).toThrow();
-        expect(() => format("{:.2a}", BigInt(1234))).toThrow();
-        expect(() => format("{:.2A}", BigInt(1234))).toThrow();
+        expect(format("{:d}", int("0x0B"))).toEqual("11");
+        expect(format("{:x}", int("0x0A"))).toEqual("a");
+        expect(format("{}", int("0b0011"))).toEqual("3");
+
+        // Int not allowed for float types.
+        expect(() => format("{:.2e}", int(1234))).toThrow();
+        expect(() => format("{:.2E}", int(1234))).toThrow();
+        expect(() => format("{:.2f}", int(1234))).toThrow();
+        expect(() => format("{:.2F}", int(1234))).toThrow();
+        expect(() => format("{:.2%}", int(1234))).toThrow();
+        expect(() => format("{:.2g}", int(1234))).toThrow();
+        expect(() => format("{:.2G}", int(1234))).toThrow();
+        expect(() => format("{:.2a}", int(1234))).toThrow();
+        expect(() => format("{:.2A}", int(1234))).toThrow();
     });
 
     it("number digitizer algorithm", () => {

@@ -24,11 +24,35 @@ This is mix of both [c++20](https://en.cppreference.com/w/cpp/utility/format/spe
 * ('L' and 'n' partially implemented)
 * ('?' not yet implemented)
 
+### Design Note!
+Python and C++ has int and float types, JavaScript has number.
+
+When formatting with type specifier omitted (''):
+
+    // By default format number as float.
+    format("{}", 5);          // "5.0"
+    format("{}", 5.5);        // "5.5"
+    
+    // To format default as integer, use int().
+    format("{}", int(5));     // "5"
+
+    // With integer type specifier format number as integer.
+    format("{:d}", 5);        // "5"
+
+    // But!
+    format("{:d}", 5.5);      // Error!
+    format("{:.2e}", int(5)); // Error!
+
+This solution was introdiced to make formatting consistent, because there is no
+int and float in JavaScript. Also do not want to use BigInt for legacy reasons. 
+
 ## Library Bundle
 
 - Bundled to a Universal Module Definition (UMD) - module.
 - Transpiled using babel, targets "> 0.25%, not dead".
 - Does not do polyfills!
+
+Note! int() uses JSBI.BigInt internally. 
 
 ## Install
 
@@ -40,7 +64,7 @@ This is mix of both [c++20](https://en.cppreference.com/w/cpp/utility/format/spe
     import Fmt from "@sbrockma/std-format";
 
     // Or import named exports
-    import { format, setLocale, FormatError } from "@sbrockma/std-format";
+    import { format, int, setLocale, FormatError } from "@sbrockma/std-format";
 
 ## Declarations
 
@@ -62,8 +86,8 @@ This is mix of both [c++20](https://en.cppreference.com/w/cpp/utility/format/spe
     // Scientific notation
     let str = Fmt.format("{:.2e}", 1);
 
-    // Supported arguments are boolean, string, char, number and bigint
-    let str = Fmt.format("{:s} {:s} {:c} {:d} {:d}", true, "string", "c", 10, BigInt("999"));
+    // Supported arguments are boolean, string, char, number and int
+    let str = Fmt.format("{:s} {:s} {:c} {:d} {:d}", true, "string", "c", 10, int(999));
 
     // etc.
 
