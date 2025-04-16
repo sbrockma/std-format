@@ -70,22 +70,6 @@ export class NumberConverter {
 
             // Get digits, map each digit "0"-"9" to number 0-9.
             this.digits = valueStr.split("").map(c => +c);
-
-            // Remove leading zeroes.
-            while (this.digits.length > 1 && this.digits[0] === 0) {
-                assert(this.dotPos === 1, "Has leading zero but dotPos != 1.")
-                this.digits.shift();
-                this.exp--;
-            }
-
-            // Remove trailing zeroes.
-            while (this.digits.length > 1 && this.digits[this.digits.length - 1] === 0) {
-                this.digits.pop();
-                if (this.dotPos > this.digits.length) {
-                    this.dotPos--;
-                    this.exp++;
-                }
-            }
         }
         else if (typeof value === "number") {
             // Split absolute value into integer and fractional parts.
@@ -166,9 +150,21 @@ export class NumberConverter {
             this.exp = 0;
         }
 
-        // The digitizer algorithm above works so that there should not be any leading or trailing zeroes.
-        assert(this.digits.length === 1 || this.digits.length > 1 && this.digits[0] !== 0 && this.digits[this.digits.length - 1] !== 0,
-            "Unexpected leading or trailing zero.");
+        // Remove any leading zeroes.
+        while (this.digits.length > 1 && this.digits[0] === 0) {
+            assert(this.dotPos === 1, "Has leading zero but dotPos != 1.")
+            this.digits.shift();
+            this.exp--;
+        }
+
+        // Remove any trailing zeroes.
+        while (this.digits.length > 1 && this.digits[this.digits.length - 1] === 0) {
+            this.digits.pop();
+            if (this.dotPos > this.digits.length) {
+                this.dotPos--;
+                this.exp++;
+            }
+        }
 
         // If format specifier is "%" then convert value to percents.
         if (!this.isZero() && fs.hasType("%")) {
