@@ -1,4 +1,4 @@
-import { IntWrapper } from "./int";
+import { FloatWrapper, IntWrapper } from "./int-float";
 import { ThrowFormatError } from "./format-error";
 import { FormatSpecifiers, FormatStringParser } from "./format-string-parser";
 
@@ -87,7 +87,7 @@ export class FormatSpecification {
         if (typeof arg === "string" || typeof arg === "boolean") {
             this.allowSpecifiersWithType("", "<^>", arg);
         }
-        else if (typeof arg === "number") {
+        else if (typeof arg === "number" || arg instanceof FloatWrapper) {
             this.allowSpecifiersWithType("", "<^>=-+ z0,_L", arg);
         }
         else if (arg instanceof IntWrapper) {

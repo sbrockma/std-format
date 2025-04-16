@@ -1,4 +1,4 @@
-import { IntWrapper } from "./int";
+import { FloatWrapper, IntWrapper } from "./int-float";
 
 // Assertion error class.
 export class AssertionError extends Error {
@@ -38,8 +38,8 @@ export function mapDigitToChar(d: number) {
 }
 
 // Is value negative. For number -0 is negative and +0 is positive.
-export function isNegative(n: number | IntWrapper): boolean {
-    if (n instanceof IntWrapper) {
+export function isNegative(n: number | IntWrapper | FloatWrapper): boolean {
+    if (n instanceof IntWrapper || n instanceof FloatWrapper) {
         return n.isNegative();
     }
     else {
@@ -48,6 +48,6 @@ export function isNegative(n: number | IntWrapper): boolean {
 }
 
 // Get number from number or Int.
-export function getNumber(n: number | IntWrapper): number {
-    return n instanceof IntWrapper ? n.toSafeNumber() : n;
+export function getNumber(n: number | IntWrapper | FloatWrapper): number {
+    return n instanceof IntWrapper || n instanceof FloatWrapper ? n.toSafeNumber() : n;
 }

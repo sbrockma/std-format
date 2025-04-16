@@ -1,4 +1,4 @@
-import { format, setLocale, int, stdFormat, stdLocaleHint, stdSpecificationHint } from "../index";
+import { format, setLocale, int, stdFormat, stdLocaleHint, stdSpecificationHint, float } from "../index";
 import DefaultExport from "../index";
 
 describe("Testing std-format", () => {
@@ -264,6 +264,13 @@ describe("Testing std-format", () => {
         expect(format("{}", -0)).toEqual("-0.0");
         expect(format("{}", +0)).toEqual("0.0");
 
+        // float
+        expect(format("{}", float(-0))).toEqual("-0.0");
+        expect(format("{}", float(+0))).toEqual("0.0");
+
+        expect(format("{}", float("-0"))).toEqual("-0.0");
+        expect(format("{}", float("+0"))).toEqual("0.0");
+
         // int has no -0.
         expect(format("{}", int(-0))).toEqual("0");
         expect(format("{}", int(+0))).toEqual("0");
@@ -271,13 +278,13 @@ describe("Testing std-format", () => {
         expect(format("{}", int("-0"))).toEqual("0");
         expect(format("{}", int("+0"))).toEqual("0");
 
-        // With integer specifiers treat +0 and -0 as 0
+        // Integer has no -0
         expect(format("{:d}", -0)).toEqual("0");
         expect(format("{:d}", +0)).toEqual("0");
         expect(format("{:X}", -0)).toEqual("0");
         expect(format("{:X}", +0)).toEqual("0");
 
-        // With floating point specifiers there is -0 and +0
+        // Float has -0
         expect(format("{:.2e}", -0)).toEqual("-0.00e+00");
         expect(format("{:.2e}", +0)).toEqual("0.00e+00");
         expect(format("{:+.2e}", -0)).toEqual("-0.00e+00");
@@ -285,7 +292,6 @@ describe("Testing std-format", () => {
 
         expect(format("{:.2f}", +0.0005)).toEqual("0.00");
         expect(format("{:.2f}", -0.0005)).toEqual("-0.00");
-
     });
 
     it("specifier z", () => {
@@ -438,6 +444,7 @@ describe("Testing std-format", () => {
         expect(() => format("{:c}", -1)).toThrow();
         expect(() => format("{:c}", 65536)).toThrow();
         expect(() => format("{:c}", int("888888888888888888888888"))).toThrow();
+        expect(() => format("{:c}", float(65))).toThrow();
         expect(() => format("{:c}", 111.1)).toThrow();
         expect(() => format("{:c}", NaN)).toThrow();
         expect(() => format("{:c}", Infinity)).toThrow();
@@ -686,7 +693,7 @@ describe("Testing std-format", () => {
             toEqual("true string c 10 999");
     });
 
-    it("int", () => {
+    it("int()", () => {
         // int(0)
         expect(format("{}", int(""))).toEqual("0");
         expect(format("{}", int())).toEqual("0");
@@ -720,10 +727,44 @@ describe("Testing std-format", () => {
         expect(() => format("{:.2G}", int(1234))).toThrow();
         expect(() => format("{:.2a}", int(1234))).toThrow();
         expect(() => format("{:.2A}", int(1234))).toThrow();
+
+        // No int for string types
+        expect(() => format("{:s}", int(8))).toThrow();
+        expect(() => format("{:?}", int(8))).toThrow();
+    });
+
+    it("float()", () => {
+        // float(0)
+        expect(format("{}", float(""))).toEqual("0.0");
+        expect(format("{}", float())).toEqual("0.0");
+        expect(format("{}", float(undefined))).toEqual("0.0");
+        expect(format("{}", float(null))).toEqual("0.0");
+        expect(format("{}", float(0))).toEqual("0.0");
+
+        // More float
+        expect(format("{}", float(1.1))).toEqual("1.1");
+        expect(format("{}", float("-1.1"))).toEqual("-1.1");
+        expect(format("{}", float(NaN))).toEqual("nan");
+        expect(format("{}", float(-Infinity))).toEqual("-inf");
+        expect(format("{}", float(Infinity))).toEqual("inf");
+
+        // Float not allowed for integer types.
+        expect(() => format("{:c}", float(89))).toThrow();
+        expect(() => format("{:d}", float(12.34))).toThrow();
+        expect(() => format("{:n}", float(12.34))).toThrow();
+        expect(() => format("{:b}", float(12.34))).toThrow();
+        expect(() => format("{:B}", float(12.34))).toThrow();
+        expect(() => format("{:o}", float(12.34))).toThrow();
+        expect(() => format("{:x}", float(12.34))).toThrow();
+        expect(() => format("{:X}", float(12.34))).toThrow();
+
+        // No float for string types
+        expect(() => format("{:s}", float(9.1))).toThrow();
+        expect(() => format("{:?}", float(9.1))).toThrow();
     });
 
     it("number digitizer algorithm", () => {
-        // Handle zeroes around decimal dot
+        // This algorithm no longer used for base 10.
         expect(format("{:.5f}", 5.5)).toEqual("5.50000");
         expect(format("{:.5f}", 50.05)).toEqual("50.05000");
         expect(format("{:.5f}", 500.005)).toEqual("500.00500");

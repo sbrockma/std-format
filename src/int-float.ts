@@ -1,6 +1,6 @@
 import JSBI from "jsbi";
 import { ThrowFormatError } from "./format-error";
-import { assert, isInteger } from "./internal";
+import { isInteger, isNegative } from "./internal";
 
 export class IntWrapper {
     private bigInt: JSBI;
@@ -44,6 +44,52 @@ export class IntWrapper {
     }
 }
 
+export class FloatWrapper {
+    private num: number;
+
+    constructor(value: unknown) {
+        if (typeof value === "number") {
+            this.num = value;
+        }
+        else if (typeof value === "string") {
+            this.num = Number(value);
+        }
+        else if (typeof value === "bigint") {
+            this.num = Number(value.toString());
+        }
+        else if (value instanceof FloatWrapper) {
+            this.num = value.num;
+        }
+        else {
+            ThrowFormatError.throwValueNotFloat(value);
+        }
+    }
+
+    isNegative(): boolean {
+        return this.num < 0 || 1.0 / this.num === -Infinity;
+    }
+
+    toSafeNumber(): number {
+        return this.num;
+    }
+
+    isNaN(): boolean {
+        return isNaN(this.num);
+    }
+
+    isInfinity(): boolean {
+        return Math.abs(this.num) === Infinity;
+    }
+
+    toString(): string {
+        return this.num.toString();
+    }
+}
+
 export function int(value?: unknown): IntWrapper {
     return new IntWrapper(value === "" || value === undefined || value === null ? 0 : value);
+}
+
+export function float(value?: unknown): FloatWrapper {
+    return new FloatWrapper(value === "" || value === undefined || value === null ? 0.0 : value);
 }

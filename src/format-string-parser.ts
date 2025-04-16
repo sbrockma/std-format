@@ -4,7 +4,7 @@ import { FormatSpecification } from "./format-specification";
 import { formatNumber } from "./number-formatter";
 import { formatString } from "./string-formatter";
 import { ThrowFormatError } from "./format-error";
-import { IntWrapper, int } from "./int";
+import { FloatWrapper, IntWrapper, int } from "./int-float";
 
 /**
  * https://en.cppreference.com/w/cpp/utility/format/spec
@@ -116,7 +116,7 @@ export class FormatStringParser {
         // Is type specifier number compatible?
         let isFsTypeNumberCompatible = fs.hasType("", "cdnbBoxXeEfF%gGaA");
 
-        function formatNum(arg: number | IntWrapper): string {
+        function formatNum(arg: number | IntWrapper | FloatWrapper): string {
             // Default align for number is right.
             align ??= ">";
 
@@ -148,7 +148,7 @@ export class FormatStringParser {
                 ThrowFormatError.throwInvalidArgumentForType(this, arg, fs.type);
             }
         }
-        else if (typeof arg === "number" || arg instanceof IntWrapper) {
+        else if (typeof arg === "number" || arg instanceof IntWrapper || arg instanceof FloatWrapper) {
             // Argument can be number or int.
             if (isFsTypeNumberCompatible) {
                 // Use number argument as it is.

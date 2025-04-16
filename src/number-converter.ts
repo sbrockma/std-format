@@ -38,7 +38,7 @@ export class NumberConverter {
         this.dotPos = 0;
         this.exp = 0;
 
-        if (typeof value === "number" && this.base === 10) {
+        if (this.base === 10) {
             // Convert base 10 value using toString() and parsing the string.
             // Until I solve how to correctly get shortest decimal that's exact in binary form.
             let valueStr = value.toString(10);
@@ -71,7 +71,7 @@ export class NumberConverter {
             // Get digits, map each digit "0"-"9" to number 0-9.
             this.digits = valueStr.split("").map(c => +c);
         }
-        else if (typeof value === "number") {
+        else {
             // Split absolute value into integer and fractional parts.
             let absValue = Math.abs(value);
             let intPart = Math.floor(absValue);
