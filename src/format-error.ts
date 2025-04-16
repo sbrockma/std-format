@@ -1,3 +1,4 @@
+import { IntWrapper } from "./int";
 import { FormatStringParser } from "./format-string-parser";
 
 function getErrorMessage(parser: FormatStringParser | undefined, msg: string) {
@@ -23,6 +24,15 @@ export class FormatError extends Error {
     }
 }
 
+function getTypeOfArg(arg: unknown): string {
+    if(arg instanceof IntWrapper) {
+        return "int";
+    }
+    else {
+        return typeof arg;
+    }
+}
+
 export namespace ThrowFormatError {
     // Create specifier is not implemented error.
     export function throwSpecifierIsNotImplemented(p: FormatStringParser, specifier: string): never {
@@ -41,7 +51,7 @@ export namespace ThrowFormatError {
 
     // Create invalid argument error.
     export function throwInvalidArgumentForType(p: FormatStringParser, arg: unknown, type: string): never {
-        throw new FormatError(p, "Invalid " + typeof arg + " '" + String(arg) + "' argument for type specifier '" + type + "'");
+        throw new FormatError(p, "Invalid " + getTypeOfArg(arg) + " '" + String(arg) + "' argument for type specifier '" + type + "'");
     }
 
     // Create invalid nested argument error.
@@ -71,12 +81,12 @@ export namespace ThrowFormatError {
 
     // Create precision not allowed error.
     export function throwPrecisionNotAllowedWith(p: FormatStringParser, type: string, arg?: unknown): never {
-        throw new FormatError(p, "Precision not allowed with type specifier '" + type + "'" + (arg ? " (" + typeof arg + ")" : ""));
+        throw new FormatError(p, "Precision not allowed with type specifier '" + type + "'" + (arg ? " (" + getTypeOfArg(arg) + ")" : ""));
     }
 
     // Create specifier not allowed with default error.
     export function throwSpecifierNotAllowedWithDefault(p: FormatStringParser, specifier: string, withArg: unknown): never {
-        throw new FormatError(p, "Specifier '" + specifier + "' not allowed with specifier '' (default " + typeof withArg + ")");
+        throw new FormatError(p, "Specifier '" + specifier + "' not allowed with specifier '' (default " + getTypeOfArg(withArg) + ")");
     }
 
     // Create specifier not allowed with error.
