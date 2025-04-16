@@ -10,21 +10,6 @@ Format specifications for
 [c++20](https://en.cppreference.com/w/cpp/utility/format/spec) and
 [Python](https://docs.python.org/3/library/string.html#formatspec).
 
-    [[fill]align][sign]['z']['#']['0'][width][grouping]['.' precision]['L'][type]
-
-* [fill] (optional) any character except '{' or '}'
-* [align] (optional) '<', '^', '>' or '='
-* [sign] (optional ) '+', '-' or ' '
-* ['z'] (optional) coerse -0 to 0 on float types
-* ['#'] (optional) alternate form
-* ['0'] (optional) zero padding
-* [width] (optional) minimum total width
-* [precision] (optional) precision
-* ['L'] (optinlal) locale aware formatting
-* [type] (optional) 's', 'c', 'd', 'b', 'B', 'o', 'x', 'X', 'a', 'A', 'e', 'E', 'f', 'F', 'g', 'G', '%', 'n', or '?'
-* ('L' and 'n' partially implemented)
-* ('?' not yet implemented)
-
 ### Design Note!
 Python and C++ has int and float types, JavaScript has only number.
 
@@ -42,8 +27,6 @@ Python and C++ has int and float types, JavaScript has only number.
 - Bundled to a Universal Module Definition (UMD) - module.
 - Transpiled using babel, targets "> 0.25%, not dead".
 - Does not do polyfills!
-
-Note! int() uses JSBI.BigInt internally. 
 
 ## Install
 
