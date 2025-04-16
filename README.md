@@ -2,12 +2,13 @@
 
 std-format is a string formatting function for TS/JS.
 
-This is a hobby project of mine. This is early release, and has many bugs. Hoping to fix them.
+This is a hobby project. This is early release, and has many bugs. Hoping to fix them.
 
 ## Format Specification
 
-This is mix of both [c++20](https://en.cppreference.com/w/cpp/utility/format/spec) and
-[Python](https://docs.python.org/3/library/string.html#formatspec) format specifications.
+Format specifications for
+[c++20](https://en.cppreference.com/w/cpp/utility/format/spec) and
+[Python](https://docs.python.org/3/library/string.html#formatspec).
 
     [[fill]align][sign]['z']['#']['0'][width][grouping]['.' precision]['L'][type]
 
@@ -25,26 +26,16 @@ This is mix of both [c++20](https://en.cppreference.com/w/cpp/utility/format/spe
 * ('?' not yet implemented)
 
 ### Design Note!
-Python and C++ has int and float types, JavaScript has number.
-
-When formatting with type specifier omitted (''):
+Python and C++ has int and float types, JavaScript has only number.
 
     // By default format number as float.
-    format("{}", 5);          // "5.0"
-    format("{}", 5.5);        // "5.5"
+    Fmt.format("{}", 5);          // "5.0"
+
+    // With integer type 'd' format number as integer.
+    Fmt.format("{:d}", 5);        // "5"
     
-    // To format default as integer, use int().
-    format("{}", int(5));     // "5"
-
-    // With integer type specifier format number as integer.
-    format("{:d}", 5);        // "5"
-
-    // But!
-    format("{:d}", 5.5);      // Error!
-    format("{:.2e}", int(5)); // Error!
-
-This solution was introdiced to make formatting consistent, because there is no
-int and float in JavaScript. Also do not want to use BigInt for legacy reasons. 
+    // Or use wrapper function Fmt.int().
+    Fmt.format("{}", Fmt.int(5)); // "5"
 
 ## Library Bundle
 
