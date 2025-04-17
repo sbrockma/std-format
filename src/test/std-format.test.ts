@@ -433,9 +433,11 @@ describe("Testing std-format", () => {
         expect(format("{:x^5c}", 65)).toEqual("xxAxx");
         expect(format("{:x>5c}", 65)).toEqual("xxxxA");
         expect(format("{:x=5c}", 65)).toEqual("xxxxA");
+
+        // Precision for char throws
         expect(() => format("{:x=5.2c}", 65)).toThrow();
 
-        // Use single char string as char (in c++ you could use char 'A').
+        // Get char code from single char (in c++ you could use char 'A').
         expect(format("{:c}", "A")).toEqual("A");
         expect(() => format("{:c}", "")).toThrow();
         expect(() => format("{:c}", "Hello")).toThrow();
@@ -456,45 +458,78 @@ describe("Testing std-format", () => {
     });
 
     it("type specifier d", () => {
+        expect(format("{:d}", -1)).toEqual("-1");
+        expect(format("{:d}", -0)).toEqual("0");
+        expect(format("{:d}", 0)).toEqual("0");
+        expect(format("{:d}", 1)).toEqual("1");
         expect(format("{:d}", 321)).toEqual("321");
         expect(format("{:d}", -321)).toEqual("-321");
+        expect(() => format("{:d}", 0.1)).toThrow();
+        expect(() => format("{:d}", -5.9)).toThrow();
 
-        // Use single char string as char (in c++ you could use char 'c').
+        // Get char code from single char (in c++ you could use char 'c').
         expect(format("{:d}", "c")).toEqual("99");
-        expect(format("{:+06d}", String.fromCharCode(120))).toEqual("+00120");
-        expect(format("{:+06d}", 120)).toEqual("+00120");
+        expect(format("{:+06d}", String.fromCharCode(99))).toEqual("+00099");
+        expect(format("{:+06d}", 99)).toEqual("+00099");
 
+        // But other string throw.
+        expect(() => format("{:d}", "")).toThrow();
+        expect(() => format("{:d}", "Hello")).toThrow();
+
+        // boolean to int
         expect(format("{:d} {:d}", true, false)).toEqual("1 0");
 
-        expect(() => format("{:d}", "hello")).toThrow();
+        // Precision for integer throws.
+        expect(() => format("{:.4d}", 32)).toThrow();
     });
 
     it("type specifier x and X", () => {
+        expect(format("{:#x}", -1)).toEqual("-0x1");
+        expect(format("{:#x}", -0)).toEqual("0x0");
+        expect(format("{:#X}", 0)).toEqual("0X0");
+        expect(format("{:#X}", 1)).toEqual("0X1");
+
         expect(format("{:#06x}", 0xa)).toEqual("0x000a");
         expect(format("{:#06x}", -0xa)).toEqual("-0x00a");
         expect(format("{:x}", 314)).toEqual("13a");
         expect(format("{:x}", "c")).toEqual("63");
         expect(format("{:#x}", 314)).toEqual("0x13a");
         expect(format("{:#X}", 314)).toEqual("0X13A");
+
+        // Precision for integer throws.
+        expect(() => format("{:.4x}", 32)).toThrow();
+        expect(() => format("{:.4X}", 32)).toThrow();
     });
 
     it("type specifier b and B", () => {
+        expect(format("{:#b}", -1)).toEqual("-0b1");
+        expect(format("{:#b}", -0)).toEqual("0b0");
+        expect(format("{:#B}", 0)).toEqual("0B0");
+        expect(format("{:#B}", 1)).toEqual("0B1");
+
         expect(format("{:b}", 314)).toEqual("100111010");
         expect(format("{:#b}", 314)).toEqual("0b100111010");
+
+        // Precision for integer throws.
+        expect(() => format("{:.4b}", 32)).toThrow();
+        expect(() => format("{:.4B}", 32)).toThrow();
     });
 
     it("type specifier o", () => {
+        expect(format("{:#o}", -1)).toEqual("-0o1");
+        expect(format("{:#o}", -0)).toEqual("0o0");
+        expect(format("{:#o}", 0)).toEqual("0o0");
+        expect(format("{:#o}", 1)).toEqual("0o1");
+
         expect(format("{:o}", 834)).toEqual("1502");
         expect(format("{:o}", -834)).toEqual("-1502");
 
         expect(format("{:#o}", 834)).toEqual("0o1502");
         expect(format("{:#o}", -834)).toEqual("-0o1502");
         expect(format("{:#o}", 0)).toEqual("0o0");
-    });
 
-    it("precision for integer", () => {
-        expect(() => format("{:.4d}", 32)).toThrow();
-        expect(() => format("{:.4B}", 32)).toThrow();
+        // Precision for integer throws.
+        expect(() => format("{:.4o}", 32)).toThrow();
     });
 
     it("type specifier f and F", () => {
