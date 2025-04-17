@@ -1,4 +1,5 @@
-import { format, setLocale, int, stdFormat, stdLocaleHint, stdSpecificationHint, float } from "../index";
+import { format, setLocale, stdFormat, stdLocaleHint, stdSpecificationHint } from "../index";
+import { int, float } from "../int-float";
 import DefaultExport from "../index";
 
 describe("Testing std-format", () => {

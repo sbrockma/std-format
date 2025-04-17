@@ -18,9 +18,6 @@ Python and C++ has int and float types, JavaScript has only number.
 
     // With integer type 'd' format number as integer.
     Fmt.format("{:d}", 5);        // "5"
-    
-    // Or use wrapper function Fmt.int().
-    Fmt.format("{}", Fmt.int(5)); // "5"
 
 ## Library Bundle
 

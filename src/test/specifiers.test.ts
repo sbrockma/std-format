@@ -1,4 +1,5 @@
-import { format, int } from "../index";
+import { format } from "../index";
+import { int } from "../int-float";
 
 /**
  * Test allowed specifiers for each type.
