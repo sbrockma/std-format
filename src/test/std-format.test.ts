@@ -13,7 +13,7 @@ describe("Testing std-format", () => {
     }
 
     it("test default export", () => {
-        expect(DefaultExport.stdFormat("The answer is {}.", int(42))).toEqual("The answer is 42.");
+        expect(DefaultExport.format("The answer is {}.", int(42))).toEqual("The answer is 42.");
     });
 
     it("using curly braces", () => {
@@ -134,6 +134,8 @@ describe("Testing std-format", () => {
     });
 
     it("sign", () => {
+        expect(format("{0:d},{0:+d},{0:-d},{0: d}", 1)).toEqual("1,+1,1, 1");
+        expect(format("{0:d},{0:+d},{0:-d},{0: d}", -1)).toEqual("-1,-1,-1,-1");
         expect(format("{0:},{0:+},{0:-},{0: }", int(1))).toEqual("1,+1,1, 1");
         expect(format("{0:},{0:+},{0:-},{0: }", int(-1))).toEqual("-1,-1,-1,-1");
         expect(format("{0:},{0:+},{0:-},{0: }", Infinity)).toEqual("inf,+inf,inf, inf");
@@ -198,7 +200,7 @@ describe("Testing std-format", () => {
         expect(format("{:*>8d}", 10)).toEqual("******10");
     });
 
-    it("fill specifier =", () => {
+    it("align specifier =", () => {
         expect(format("{:*=8d}", 10)).toEqual("******10");
         expect(format("{:*=8d}", -10)).toEqual("-*****10");
         expect(format("{:0=#10x}", 10)).toEqual("0x0000000a");
@@ -211,7 +213,7 @@ describe("Testing std-format", () => {
         expect(format("{:*= #08d}", -10)).toEqual("-*****10");
     });
 
-    it("specifier 0", () => {
+    it("padding specifier 0", () => {
         expect(format("{:015.2f}", 1234.5678)).toEqual("000000001234.57");
         expect(format("{:15.02f}", 1234.5678)).toEqual("        1234.57");
 
@@ -309,26 +311,34 @@ describe("Testing std-format", () => {
     });
 
     it("nan", () => {
+        expect(() => format("{:s}", NaN)).toThrow();
+        expect(() => format("{:?}", NaN)).toThrow();
+        expect(() => format("{:c}", NaN)).toThrow();
         expect(format("{:d}", NaN)).toEqual("nan");
+        expect(format("{:n}", NaN)).toEqual("nan");
         expect(format("{:x}", NaN)).toEqual("nan");
         expect(format("{:X}", NaN)).toEqual("NAN");
         expect(format("{:b}", NaN)).toEqual("nan");
         expect(format("{:B}", NaN)).toEqual("NAN");
         expect(format("{:o}", NaN)).toEqual("nan");
-        expect(format("{:a}", NaN)).toEqual("nan");
-        expect(format("{:A}", NaN)).toEqual("NAN");
         expect(format("{:e}", NaN)).toEqual("nan");
         expect(format("{:E}", NaN)).toEqual("NAN");
         expect(format("{:f}", NaN)).toEqual("nan");
         expect(format("{:F}", NaN)).toEqual("NAN");
         expect(format("{:g}", NaN)).toEqual("nan");
         expect(format("{:G}", NaN)).toEqual("NAN");
+        expect(format("{:a}", NaN)).toEqual("nan");
+        expect(format("{:A}", NaN)).toEqual("NAN");
 
         expect(format("{:08}", NaN)).toEqual("00000nan");
     });
 
     it("inf", () => {
-        expect(format("{:d}", +Infinity)).toEqual("inf");
+        expect(() => format("{:s}", +Infinity)).toThrow();
+        expect(() => format("{:?}", -Infinity)).toThrow();
+        expect(() => format("{:c}", +Infinity)).toThrow();
+        expect(format("{:d}", -Infinity)).toEqual("-inf");
+        expect(format("{:n}", +Infinity)).toEqual("inf");
         expect(format("{:d}", -Infinity)).toEqual("-inf");
         expect(format("{:x}", +Infinity)).toEqual("inf");
         expect(format("{:X}", -Infinity)).toEqual("-INF");
@@ -357,21 +367,9 @@ describe("Testing std-format", () => {
         expect(format("{}", "string")).toEqual("string");
     });
 
-    it("type specifier <default int>", () => {
-        expect(format("{}", int(100))).toEqual("100");
-        expect(format("{}", int(10))).toEqual("10");
-        expect(format("{}", int(1))).toEqual("1");
-        expect(format("{}", int(0))).toEqual("0");
-        expect(format("{}", int(-1))).toEqual("-1");
-        expect(format("{}", int(-10))).toEqual("-10");
-        expect(format("{}", int(-100))).toEqual("-100");
-
-        expect(format("{:}", int(999))).toEqual("999");
-    });
-
-    it("type specifier <default float>", () => {
-        expect(format("{:}", 482.1)).toEqual("482.1"); // TODO
-        expect(format("{:}", 482.2)).toEqual("482.2"); // TODO
+    it("type specifier <default number>", () => {
+        expect(format("{:}", 482.1)).toEqual("482.1");
+        expect(format("{:}", 482.2)).toEqual("482.2");
 
         expect(format("{:.2}", Math.PI)).toEqual("3.1");
 
@@ -393,11 +391,27 @@ describe("Testing std-format", () => {
         expect(format("{:.2}", 678e-8)).toEqual("6.8e-06");
     });
 
+    it("type specifier <default int>", () => {
+        expect(format("{}", int(100))).toEqual("100");
+        expect(format("{}", int(10))).toEqual("10");
+        expect(format("{}", int(1))).toEqual("1");
+        expect(format("{}", int(0))).toEqual("0");
+        expect(format("{}", int(-1))).toEqual("-1");
+        expect(format("{}", int(-10))).toEqual("-10");
+        expect(format("{}", int(-100))).toEqual("-100");
+
+        expect(format("{:}", int(999))).toEqual("999");
+    });
+
+    it("type specifier <default float>", () => {
+        // TODO
+    });
+
     it("type specifier s", () => {
         expect(format("{:s}", "Hello")).toEqual("Hello");
         expect(format("{:s}", "42")).toEqual("42");
-
         expect(() => format("{:s}", 42)).toThrow();
+        expect(format("{:s}", false)).toEqual("false");
 
         // Fill and align
         expect(format("{:15s}", "Banana")).toEqual("Banana         ");
@@ -473,14 +487,15 @@ describe("Testing std-format", () => {
         expect(format("{:+06d}", String.fromCharCode(99))).toEqual("+00099");
         expect(format("{:+06d}", 99)).toEqual("+00099");
 
-        // But other string throw.
+        // But other strings throw.
         expect(() => format("{:d}", "")).toThrow();
         expect(() => format("{:d}", "Hello")).toThrow();
 
-        // boolean to int
+        // boolean to number
         expect(format("{:d} {:d}", true, false)).toEqual("1 0");
+        expect(format("{:g} {:g}", true, false)).toEqual("1 0");
 
-        // Precision for integer throws.
+        // Precision for integer not allowed.
         expect(() => format("{:.4d}", 32)).toThrow();
     });
 
@@ -497,7 +512,7 @@ describe("Testing std-format", () => {
         expect(format("{:#x}", 314)).toEqual("0x13a");
         expect(format("{:#X}", 314)).toEqual("0X13A");
 
-        // Precision for integer throws.
+        // Precision for integer not allowed.
         expect(() => format("{:.4x}", 32)).toThrow();
         expect(() => format("{:.4X}", 32)).toThrow();
     });
@@ -511,7 +526,7 @@ describe("Testing std-format", () => {
         expect(format("{:b}", 314)).toEqual("100111010");
         expect(format("{:#b}", 314)).toEqual("0b100111010");
 
-        // Precision for integer throws.
+        // Precision for integer not allowed.
         expect(() => format("{:.4b}", 32)).toThrow();
         expect(() => format("{:.4B}", 32)).toThrow();
     });
@@ -529,7 +544,7 @@ describe("Testing std-format", () => {
         expect(format("{:#o}", -834)).toEqual("-0o1502");
         expect(format("{:#o}", 0)).toEqual("0o0");
 
-        // Precision for integer throws.
+        // Precision for integer not allowed.
         expect(() => format("{:.4o}", 32)).toThrow();
     });
 
@@ -700,6 +715,8 @@ describe("Testing std-format", () => {
     it("float to integer throws", () => {
         expect(() => format("{:d}", 777.777)).toThrow();
         expect(() => format("{:d}", -777.777)).toThrow();
+        expect(() => format("{:d}", float(777))).toThrow();
+        expect(() => format("{:d}", float(-777))).toThrow();
 
         expect(() => format("{:#x}", 222.222)).toThrow();
         expect(() => format("{:#X}", -222.222)).toThrow();
@@ -714,19 +731,28 @@ describe("Testing std-format", () => {
         expect(() => format("{:x}", 1.23)).toThrow();
     });
 
+    it("integer to float throws", () => {
+        // Allowed, treat number as float by default
+        expect(() => format("{:g}", 777)).not.toThrow();
+        expect(() => format("{:g}", -777)).not.toThrow();
+
+        // Integer to float throws.
+        expect(() => format("{:g}", int(777))).toThrow();
+        expect(() => format("{:g}", int(-777))).toThrow();
+    });
+
     it("all together", () => {
         expect(format("{:*<+10.4f}", Math.PI)).toEqual("+3.1416***");
         expect(format("{:+#09x}", 314)).toEqual("+0x00013a");
     });
 
-    it("invalid argument object", () => {
-        expect(() => format("{}", {})).toThrow();
-    });
-
     it("supported arguments", () => {
-        // boolean, string, char, number, int
-        expect(format("{:s} {:s} {:c} {:d} {:d}", true, "string", "c", 10, int(999))).
-            toEqual("true string c 10 999");
+        // boolean, string, "char", number, int, float
+        expect(format("{:s} {:s} {:c} {:d} {:d} {:g} {:g}", true, "string", "c", 10, int(999), -5, float(-5))).
+            toEqual("true string c 10 999 -5 -5");
+
+        // Invalid argument.
+        expect(() => format("{}", {})).toThrow();
     });
 
     it("int()", () => {
@@ -745,6 +771,8 @@ describe("Testing std-format", () => {
 
         expect(format("{:d}", int("123456789012345678901234567890"))).toEqual("123456789012345678901234567890");
         expect(format("{:d}", int("-123456789012345678901234567890"))).toEqual("-123456789012345678901234567890");
+
+        expect(format("{:c}", int(65))).toEqual("A");
 
         expect(format("{}", int("90000000000000000000000"))).toEqual("90000000000000000000000");
         expect(format("{}", int("0000000009"))).toEqual("9");
