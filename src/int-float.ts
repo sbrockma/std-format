@@ -66,7 +66,7 @@ export class FloatWrapper {
     }
 
     isNegative(): boolean {
-        return this.num < 0 || 1.0 / this.num === -Infinity;
+        return isNegative(this.num);
     }
 
     toSafeNumber(): number {

@@ -1,4 +1,3 @@
-import { FloatWrapper, IntWrapper } from "./int-float";
 
 // Assertion error class.
 export class AssertionError extends Error {
@@ -27,27 +26,17 @@ export function zeroArray(zeroCount: number): 0[] {
     return new Array<0>(zeroCount).fill(0);
 }
 
-// Test if number is integer.
-export function isInteger(n: unknown): n is number {
-    return typeof n === "number" && isFinite(n) && n === Math.trunc(n);
-}
-
 // Function to convert digit value to digit character.
 export function mapDigitToChar(d: number) {
     return "0123456789abcdef".charAt(d);
 }
 
-// Is value negative. For number -0 is negative and +0 is positive.
-export function isNegative(n: number | IntWrapper | FloatWrapper): boolean {
-    if (n instanceof IntWrapper || n instanceof FloatWrapper) {
-        return n.isNegative();
-    }
-    else {
-        return n < 0 || 1.0 / n === -Infinity;
-    }
+// Test if number is integer.
+export function isInteger(n: unknown): n is number {
+    return typeof n === "number" && isFinite(n) && n === Math.trunc(n);
 }
 
-// Get number from number or Int.
-export function getNumber(n: number | IntWrapper | FloatWrapper): number {
-    return n instanceof IntWrapper || n instanceof FloatWrapper ? n.toSafeNumber() : n;
+// Is number negative. For number -0 is negative and +0 is positive.
+export function isNegative(n: number): boolean {
+    return n < 0 || 1.0 / n === -Infinity;
 }

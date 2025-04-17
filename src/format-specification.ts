@@ -127,4 +127,8 @@ export class FormatSpecification {
             ThrowFormatError.throwSpecifierNotAllowedWith(this.parser, this.grouping, this.locale);
         }
     }
+
+    getSignChar(isNeg: boolean) {
+        return isNeg ? "-" : ((this.sign === "+" || this.sign === " ") ? this.sign : "");
+    }
 }
