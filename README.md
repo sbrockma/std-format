@@ -2,7 +2,7 @@
 
 std-format is a string formatting function for TS/JS.
 
-This is a hobby project. This is early release, and has many bugs. Hoping to fix them.
+This is a hobby project. This is early release, still going through some changes, and has many bugs. Hoping to fix them.
 
 ## Format Specification
 
@@ -10,13 +10,13 @@ Format specifications for
 [c++20](https://en.cppreference.com/w/cpp/utility/format/spec) and
 [Python](https://docs.python.org/3/library/string.html#formatspec).
 
-### Design Note!
+### Note!
 Python and C++ has int and float types, JavaScript has only number.
 
     // By default format number as float.
     Fmt.format("{}", 5);          // "5.0"
 
-    // With integer type 'd' format number as integer.
+    // To format number as integer, use type 'd'.
     Fmt.format("{:d}", 5);        // "5"
 
 ## Library Bundle
@@ -35,7 +35,7 @@ Python and C++ has int and float types, JavaScript has only number.
     import Fmt from "@sbrockma/std-format";
 
     // Or import named exports
-    import { format, int, setLocale, FormatError } from "@sbrockma/std-format";
+    import { format } from "@sbrockma/std-format";
 
 ## Declarations
 
@@ -43,22 +43,12 @@ Python and C++ has int and float types, JavaScript has only number.
 
     import Fmt from "@sbrockma/std-format";
 
-    // Automatic field numbering
     let str = Fmt.format("{}, {}, {}", "a", "b", "c");
-
-    // Manual field specification
     let str = Fmt.format("{2}, {1}, {0}", "a", "b", "c");
-
-    // Fill and align
     let str = Fmt.format("{:*<6}", "x");
     let str = Fmt.format("{:*>6}", "x");
     let str = Fmt.format("{:*^6}", "x");
-
-    // Scientific notation
     let str = Fmt.format("{:.2e}", 1);
-
-    // Supported arguments are boolean, string, char, number and int
-    let str = Fmt.format("{:s} {:s} {:c} {:d} {:d}", true, "string", "c", 10, int(999));
 
     // etc.
 
@@ -111,4 +101,4 @@ Function stdLocaleHint() is deprecated. Use function setLocale() instead.
 
 ### Class StdFormatError
 
-Class StdFormatError is deprecated. Use class FormatError instead.
+StdFormatError is deprecated. Use class FormatError instead.
