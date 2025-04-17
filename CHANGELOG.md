@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.3.5] - 2025-04-17
+### Fixed
+- Format number as float by default (JavaScript has no int/float types). To format as integer, use specifier 'd'.
+- Fixed formatting error when type specifier was omitted.
+### Changed
+- Omit functions int() and float() from public interface for now.
+- Added functions int() and float(), classes IntWrapper and FloatWrapper.
+- Added dependency "jsbi" (IntWrapper uses JSBI).
+- Removed usage of JavaScript BigInt for legacy support.
+- Format integers directly in formatNumber(). No need to use NumberConverter.
+
 ## [1.3.4] - 2025-04-15
 ### Changed
 - Improved number formatting with locale-specific grouping (e.g. "hi-IN").
