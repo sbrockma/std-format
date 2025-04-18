@@ -1,6 +1,7 @@
 import { FloatWrapper, IntWrapper } from "./int-float";
 import { FormatStringParser } from "./format-string-parser";
 
+// Get error message.
 function getErrorMessage(parser: FormatStringParser | undefined, msg: string) {
     if (parser) {
         if (parser.errorString === parser.formatString) {
@@ -21,14 +22,16 @@ export class FormatError extends Error {
     constructor(parser: FormatStringParser | undefined, msg: string) {
         super(getErrorMessage(parser, msg));
         this.name = "FormatError";
+        // console.log(this.message);
     }
 }
 
+// Get type of arg.
 function getTypeOfArg(arg: unknown): string {
-    if(arg instanceof IntWrapper) {
+    if (arg instanceof IntWrapper) {
         return "int";
     }
-    else if(arg instanceof FloatWrapper) {
+    else if (arg instanceof FloatWrapper) {
         return "float";
     }
     else {
@@ -83,8 +86,8 @@ export namespace ThrowFormatError {
     }
 
     // Throw invalid replacement field error.
-    export function throwInvalidReplacementField(p: FormatStringParser): never {
-        throw new FormatError(p, "Invalid replacement field");
+    export function throwInvalidFormatSpecifiers(p: FormatStringParser): never {
+        throw new FormatError(p, "Invalid format specifiers");
     }
 
     // Throw precision not allowed error.

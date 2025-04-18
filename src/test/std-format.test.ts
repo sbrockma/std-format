@@ -59,6 +59,11 @@ describe("Testing std-format", () => {
         expect(() => format("{0}{}", 0, 1)).toThrow();
         expect(() => format("{2:!^{}.{}f}", 123.45, 8, 1)).toThrow();
         expect(() => format("{:!^{1}.{0}f}", 123.45, 8, 1)).toThrow();
+
+        // Field number not a number
+        expect(() => format("{a}")).toThrow();
+        expect(() => format("{b:}")).toThrow();
+        expect(() => format("{c:d}")).toThrow();
     });
 
     it("grouping specifier ,", () => {
@@ -240,6 +245,11 @@ describe("Testing std-format", () => {
         expect(() => format("{:.{}f}", Math.PI, 5.2)).toThrow(); // Precision is not integer
         expect(() => format("{:.{}f}", Math.PI, -2)).toThrow();  // Precision is negative
 
+        expect(() => format("{:00}", 9)).toThrow();       // Width = 0
+        expect(() => format("{:01}", 9)).not.toThrow();   // Width = 1
+        expect(() => format("{:001}", 9)).not.toThrow();  // Width = 01
+        expect(() => format("{:01.0}", 9)).not.toThrow(); // Precision can be 0.
+
         expect(format("{:.0s}", "Hello World!")).toEqual("");
         expect(format("{:.1s}", "Hello World!")).toEqual("H");
         expect(format("{:.2s}", "Hello World!")).toEqual("He");
@@ -370,7 +380,7 @@ describe("Testing std-format", () => {
     it("type specifier <default number>", () => {
         expect(format("{}", 482.1)).toEqual("482.1");
         expect(format("{}", 482.2)).toEqual("482.2");
-        
+
         expect(format("{}", 482.2e+1)).toEqual("4822.0");
         expect(format("{}", 482.2e+2)).toEqual("48220.0");
         expect(format("{}", 482.2e-1)).toEqual("48.22");

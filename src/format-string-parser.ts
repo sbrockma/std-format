@@ -1,4 +1,4 @@
-import { AssertionError, getCodePoint, isInteger, isSingleSymbol, repeatString } from "./internal";
+import { assert, AssertionError, getCodePoint, isInteger, isSingleSymbol, repeatString } from "./internal";
 import { deprecatedFalseString, deprecatedOctalPrefix, deprecatedTrueString } from "./deprecated";
 import { FormatSpecification } from "./format-specification";
 import { formatNumber } from "./number-formatter";
@@ -6,63 +6,13 @@ import { formatString } from "./string-formatter";
 import { ThrowFormatError } from "./format-error";
 import { FloatWrapper, IntWrapper, int } from "./int-float";
 
-/**
- * https://en.cppreference.com/w/cpp/utility/format/spec
- * https://docs.python.org/3/library/string.html#formatspec
- * 
- * [[fill]align][sign]["z"]["#"]["0"][width][grouping_option]["." precision][L][type]
- */
-
-export type FormatSpecifiers = {
-    fill?: string,
-    align?: string,
-    sign?: string,
-    zeta?: string,
-    sharp?: string,
-    zero?: string,
-    width?: string,
-    width_field_n?: string,
-    grouping?: string,
-    precision?: string,
-    precision_field_n?: string,
-    locale?: string,
-    type?: string
-}
-
-// The format specification regex. THis is combination of c++ and python specifications.
-const FormatSpecificationRegExString =
-    "((?<fill>[^{}]?)(?<align>[<^>=]))?" + // fill (any char except '{' or '}') and align
-    "(?<sign>[-+ ])?" + // sign
-    "(?<zeta>[z])?" + // z
-    "(?<sharp>[#])?" + // #
-    "(?<zero>[0])?" + // 0
-    "((?<width>\\d+)|\{(?<width_field_n>\\d*)\})?" + // width
-    "(?<grouping>[,_])?" +  // , or _
-    "(\.((?<precision>\\d+)|\{(?<precision_field_n>\\d*)\}))?" + // precision
-    "(?<locale>[L])?" + // L
-    "(?<type>[s?cdnbBoxXeEfF%gGaA])?"; // type
-
-// Replacement field regex.
-const ReplacementFieldRegEx = new RegExp(
-    "^\{" +
-    "(?<field_n>\\d+)?" +
-    "(\:" + FormatSpecificationRegExString + ")?" +
-    "\}"
-);
-
 // Regex to test if string loosely matches of replacement field.
 const LooseMatchReplacementFieldRegEx = new RegExp(
     "^\{" +
-    "[^{}]*" +
+    "([0-9]+)?" +
     "(:([^{}]*" + "\{[^{}]*\}" + "){0,2}[^{}]*)?" +
     "\}"
 );
-
-// Get replacement field string that looks like replacement field but could be invalid.
-function getLooseMatchReplacementFieldString(p: FormatStringParser): string | undefined {
-    let m = LooseMatchReplacementFieldRegEx.exec(p.parseString);
-    return m && m[0] ? m[0] : undefined;
-}
 
 // Regex to get index of next curly bracet.
 const CurlyBracesRegEx = /[{}]/;
@@ -272,84 +222,38 @@ export class FormatStringParser {
     }
 
     // Function to parse replacement field.
-    private parseReplacementField(): boolean {
-        // Replacement field starts with "{".
-        if (this.parseString[0] !== "{") {
-            // Failed to parse replacement field, return false.
-            return false;
-        }
+    private parseReplacementField(): void {
+        assert(this.parseString[0] === "{");
 
-        // Match string.
-        let matchString: string;
+        // Get replacement field match.
+        let m = LooseMatchReplacementFieldRegEx.exec(this.parseString);
 
-        // Replacement field match, or undefined for simple cases "{}" and "{d}".
-        let formatSpecifiers: FormatSpecifiers | undefined;
+        if (m && m[0]) {
+            let match = m[0];
+            let fieldNumber = m[1] ?? "";
+            let specifiers = (m[2] ?? ":").substring(1); // Remove ":" with substring(1)
 
-        // Field number n of "{n:}".
-        let fieldNumber: string;
+            // Set error string.
+            this.errorString = match;
 
-        if (this.parseString[1] === "}") {
-            // Special case where match string is simple "{}"
+            // Get argument.
+            let arg = this.getArgument(fieldNumber);
 
-            // Set match string
-            matchString = this.parseString.substring(0, 2);
+            // Create format specification.
+            let fs = new FormatSpecification(this, specifiers);
 
-            // Has no format specifiers.
-            formatSpecifiers = undefined;
+            // Format replacement field and add it to result string.
+            this.resultString += this.formatReplacementField(arg, fs);
 
-            // Has no field number.
-            fieldNumber = "";
-        }
-        else if (this.parseString[2] === "}" && isDigits(this.parseString[1])) {
-            // Special case where match string is simple "{d}".
-
-            // Set match string.
-            matchString = this.parseString.substring(0, 3);
-
-            // Has no format specifiers.
-            formatSpecifiers = undefined;
-
-            // Has single digit field number.
-            fieldNumber = this.parseString[1];
+            // Jump over matched replacement field in parsing string.
+            this.parseString = this.parseString.substring(match.length);
+            this.parsePosition += match.length;
         }
         else {
-            // Execute replacement field regex.
-            let replFieldMatch = ReplacementFieldRegEx.exec(this.parseString)
-
-            if (!replFieldMatch || !replFieldMatch[0] || !replFieldMatch.groups) {
-                // Failed to parse replacement field, return false.
-                return false;
-            }
-
-            // Set match string
-            matchString = replFieldMatch[0];
-
-            // Set format specifiers.
-            formatSpecifiers = <FormatSpecifiers>replFieldMatch.groups;
-
-            // Set field number.
-            fieldNumber = replFieldMatch.groups.field_n ?? "";
+            // Ecountered single '{' followed by random stuff.
+            this.errorString = "{";
+            ThrowFormatError.throwEncounteredSingleCurlyBrace(this);
         }
-
-
-        // Set error string.
-        this.errorString = matchString;
-
-        // Get argument.
-        let arg = this.getArgument(fieldNumber);
-
-        // Create format specification.
-        let fs = new FormatSpecification(this, formatSpecifiers);
-
-        // Format replacement field and add it to result string.
-        this.resultString += this.formatReplacementField(arg, fs);
-
-        // Jump over matched replacement field in  parsing string.
-        this.parseString = this.parseString.substring(matchString.length);
-        this.parsePosition += matchString.length;
-
-        // Parsed replacement field ok, return true.
-        return true;
     }
 
     // Get next curly brace index, or end of parsing string if no curly braces found.
@@ -393,21 +297,7 @@ export class FormatStringParser {
             }
             else if (this.parseString[0] === "{") {
                 // If parsing string starts with '{' then parse replacement field.
-                // Throw exception if it returns false (parsing replacement field failed).
-                if (!this.parseReplacementField()) {
-                    // For more precise error message get loose match replacement field string.
-                    let str = getLooseMatchReplacementFieldString(this);
-                    if (str) {
-                        this.errorString = str;
-                        // Got loose match of replacement field string that just failed to parse.
-                        ThrowFormatError.throwInvalidReplacementField(this);
-                    }
-                    else {
-                        // Ecountered single '{' followed by random stuff.
-                        this.errorString = "{";
-                        ThrowFormatError.throwEncounteredSingleCurlyBrace(this);
-                    }
-                }
+                this.parseReplacementField();
 
                 // Continue parsing on next loop.
                 continue;

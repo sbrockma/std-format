@@ -1,6 +1,13 @@
 import { FloatWrapper, IntWrapper } from "./int-float";
 import { ThrowFormatError } from "./format-error";
-import { FormatSpecifiers, FormatStringParser } from "./format-string-parser";
+import { FormatStringParser } from "./format-string-parser";
+
+/**
+ * https://en.cppreference.com/w/cpp/utility/format/spec
+ * https://docs.python.org/3/library/string.html#formatspec
+ * 
+ * [[fill]align][sign]["z"]["#"]["0"][width][grouping]["." precision][L][type]
+ */
 
 // The format specification class
 export class FormatSpecification {
@@ -16,33 +23,97 @@ export class FormatSpecification {
     readonly locale: "L" | undefined;
     readonly type: "" | "s" | "?" | "c" | "d" | "n" | "b" | "B" | "o" | "x" | "X" | "e" | "E" | "f" | "F" | "%" | "g" | "G" | "a" | "A";
 
-    constructor(readonly parser: FormatStringParser, readonly formatSpecifiers: FormatSpecifiers | undefined) {
-        if (!formatSpecifiers) {
+    private parsePos: number = 0;
+
+    constructor(readonly parser: FormatStringParser, readonly specifiers: string) {
+        if (this.specifiers === "") {
             this.type = "";
+            return;
+        }
+
+        // Get fill and align.
+        if (specifiers.length >= 1 && ["<", "^", ">", "="].indexOf(this.specifiers[this.parsePos]) >= 0) {
+            this.fill = undefined;
+            this.align = this.specifiers[this.parsePos++] as any;
+        }
+        else if (specifiers.length >= 2 && ["<", "^", ">", "="].indexOf(this.specifiers[this.parsePos + 1]) >= 0) {
+            this.fill = this.specifiers[this.parsePos++];
+            this.align = this.specifiers[this.parsePos++] as any;
+        }
+
+        // Get rest of the specifiers.
+        this.sign = this.parseSpecifier("-", "+", " ");
+        this.zeta = this.parseSpecifier("z");
+        this.sharp = this.parseSpecifier("#");
+        this.zero = this.parseSpecifier("0");
+        this.width = this.parseWidthOrPrecision("width");
+        this.grouping = this.parseSpecifier(",", "_");
+        this.precision = this.parseWidthOrPrecision("precision");
+        this.locale = this.parseSpecifier("L");
+        this.type = this.parseSpecifier("s", "?", "c", "d", "n", "b", "B", "o", "x", "X", "e", "E", "f", "F", "%", "g", "G", "a", "A") ?? "";
+
+        // Parse position should have reached end of specifiers.
+        if (this.parsePos !== this.specifiers.length) {
+            ThrowFormatError.throwInvalidFormatSpecifiers(this.parser);
+        }
+    }
+
+    // Parse specifier.
+    private parseSpecifier(...specArr: string[]): any {
+        return this.parsePos < this.specifiers.length && specArr.indexOf(this.specifiers[this.parsePos]) >= 0 ? this.specifiers[this.parsePos++] : undefined;
+    }
+
+    // Parse digits.
+    private parseDigits() {
+        let digits = "";
+        while (this.parsePos < this.specifiers.length && /\d/.test(this.specifiers[this.parsePos])) {
+            digits += this.specifiers[this.parsePos++];
+        }
+        return digits;
+    }
+
+    // Parse width and precision, can be nested arg or value.
+    private parseWidthOrPrecision(type: "width" | "precision"): number | undefined {
+        // Precision needs '.'
+        if (type === "precision") {
+            if (this.specifiers[this.parsePos] !== ".") {
+                return undefined;
+            }
+            this.parsePos++;
+        }
+
+        if (this.specifiers[this.parsePos] === "{") {
+            // Get nested arg value.
+            this.parsePos++;
+            let digits = this.parseDigits();
+            if (this.specifiers[this.parsePos] === "}") {
+                this.parsePos++;
+                return this.parser.getNestedArgumentInt(digits);
+            }
+            else {
+                ThrowFormatError.throwInvalidFormatSpecifiers(this.parser);
+            }
         }
         else {
-            let { fill, align, sign, zeta, sharp, zero, width, width_field_n, grouping, precision, precision_field_n, locale, type } = formatSpecifiers;
-
-            this.fill = (fill && fill.length === 1) ? fill : undefined;
-            this.align = (align === "<" || align === "^" || align === ">" || align === "=") ? align : undefined;
-            this.sign = (sign === "-" || sign === "+" || sign === " ") ? sign : undefined;
-            this.zeta = zeta === "z" ? zeta : undefined;
-            this.sharp = sharp === "#" ? sharp : undefined;
-            this.zero = zero === "0" ? zero : undefined;
-            this.width = width_field_n !== undefined ? parser.getNestedArgumentInt(width_field_n) : (!!width ? +width : undefined);
-            this.grouping = (grouping === "," || grouping === "_") ? grouping : undefined;
-            this.precision = precision_field_n !== undefined ? parser.getNestedArgumentInt(precision_field_n) : (!!precision ? +precision : undefined);
-            this.locale = locale === "L" ? locale : undefined;
-            this.type = (type === "" || type && "s?cdnbBoxXeEfF%gGaA".indexOf(type) >= 0) ? type as any : "";
+            // Get value.
+            let digits = this.parseDigits();
+            if (digits.length > 0) {
+                let value = +digits;
+                if (type === "width" && value === 0) {
+                    ThrowFormatError.throwInvalidFormatSpecifiers(this.parser);
+                }
+                return value;
+            }
         }
+
+        // No width or precision specified.
+        return undefined;
     }
 
     // Test if type is one of types given as argument.
     // For example isType("", "d", "xX") tests if type is either "", "d", "x" or "X".
     hasType(...types: string[]) {
-        return !this.formatSpecifiers
-            ? types.some(type => this.type === type) // If has no specifiers then this.type = "".
-            : types.some(type => this.type === type || this.type !== "" && type.indexOf(this.type) >= 0);
+        return types.some(type => this.type === type || this.type !== "" && type.indexOf(this.type) >= 0);
     }
 
     // Throws error if this has given type and has specifier that is not on whitelist.
@@ -79,7 +150,7 @@ export class FormatSpecification {
 
     // Validate what specifiers can be used together.
     validate(arg: unknown) {
-        if (!this.formatSpecifiers) {
+        if (this.specifiers === "") {
             return;
         }
 
