@@ -36,7 +36,9 @@ export class FormatStringParser {
     hasManualFieldSpecification: boolean;
 
     private constructor(readonly formatString: string, readonly formatArgs: unknown[], readonly usingDeprecatedStdFormat: boolean) {
-        this.parseString = formatString;
+        assert(typeof this.formatString === "string", "Invalid format string!");
+
+        this.parseString = this.formatString;
         this.parsePosition = 0;
         this.resultString = "";
         this.errorString = "";
@@ -330,9 +332,9 @@ export class FormatStringParser {
             return parser.resultString;
         }
         catch (e) {
-            // Log internal error to console.
+            // Log assertion error to console.
             if (e instanceof AssertionError) {
-                console.error(e);
+                console.error(e.toString());
             }
 
             // Throw exception forward.
