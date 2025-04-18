@@ -30,9 +30,10 @@ describe("Testing std-format", () => {
 
     it("invalid replacement field", () => {
         expect(() => format("{***}", 1, 2)).toThrow();
+        expect(() => format("{:q}", 1, 2)).toThrow();
         expect(() => format("{x:q}", 1, 2)).toThrow();
         expect(() => format("{:{}D}", 1, 2)).toThrow();
-        expect(() => format("{:{}{}}", 0, 5, 2)).toThrow(); // Missing '.' between braces {:{}.{}}
+        expect(() => format("{:{}{}}", 0, 5, 2)).toThrow(); // Missing '.' before precision
     });
 
     it("field numbering", () => {
