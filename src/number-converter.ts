@@ -40,11 +40,10 @@ export class NumberConverter {
 
         if (this.base === 10) {
             // Convert base 10 value using toString() and parsing the string.
-            // Until I solve how to correctly get shortest decimal that's exact in binary form.
             let valueStr = value.toString(10);
 
-            // Remove sign.
-            if (valueStr.startsWith("-")) {
+            // Remove sign
+            if (valueStr[0] === "-") {
                 valueStr = valueStr.substring(1);
             }
 

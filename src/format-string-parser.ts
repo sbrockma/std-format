@@ -374,7 +374,7 @@ export class FormatStringParser {
 
             // Now parsing string starts with "{", "}", or is empty.
 
-            if (this.parseString.startsWith("{{") || this.parseString.startsWith("}}")) {
+            if (this.parseString[0] === "{" && this.parseString[1] === "{" || this.parseString[0] === "}" && this.parseString[1] === "}") {
                 // If parsing string starts with double curly braces
                 // Then add single curly brace to result string.
                 this.resultString += this.parseString[0];
@@ -386,12 +386,12 @@ export class FormatStringParser {
                 // Continue parsing on next loop.
                 continue;
             }
-            else if (this.parseString.startsWith("}")) {
+            else if (this.parseString[0] === "}") {
                 // Encountered single '}' ff parsing string starts with '}'.
                 this.errorString = "}";
                 ThrowFormatError.throwEncounteredSingleCurlyBrace(this);
             }
-            else if (this.parseString.startsWith("{")) {
+            else if (this.parseString[0] === "{") {
                 // If parsing string starts with '{' then parse replacement field.
                 // Throw exception if it returns false (parsing replacement field failed).
                 if (!this.parseReplacementField()) {

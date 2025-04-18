@@ -131,7 +131,7 @@ export function formatNumber(value: number | IntWrapper | FloatWrapper, fs: Form
         let valueStr = value.toString(base);
 
         // Remove sign.
-        if (valueStr.startsWith("-")) {
+        if (valueStr[0] === "-") {
             valueStr = valueStr.substring(1);
         }
 
