@@ -40,3 +40,56 @@ export function isInteger(n: unknown): n is number {
 export function isNegative(n: number): boolean {
     return n < 0 || 1.0 / n === -Infinity;
 }
+
+// Get code point from symbol.
+export function getCodePoint(sym: string): number | undefined {
+    if (sym.length === 0) {
+        return undefined;
+    }
+
+    // Get first 16-bit UTF-16 code unit
+    const first = sym.charCodeAt(0);
+
+    // Check if first is a high surrogate.
+    if (first >= 0xD800 && first <= 0xDBFF && sym.length > 1) {
+        // Get second 16-bit UTF-16 code unit
+        let second = sym.charCodeAt(1);
+        if (second >= 0xDC00 && second <= 0xDFFF) {
+            // Combine the surrogate pair.
+            return ((first - 0xD800) << 10) + (second - 0xDC00) + 0x10000;
+        }
+    }
+
+    // Not a surrogate pair.
+    return first;
+}
+
+// Is str single symbol?
+export function isSingleSymbol(str: string): boolean {
+    return str.length === 1 || (str.length === 2 && getCodePoint(str)! > 0xFFFF);
+}
+
+// Is valid code point value?
+export function isValidCodePoint(codePoint: number): boolean {
+    return isInteger(codePoint) && codePoint >= 0 && codePoint <= 0x10FFFF;
+}
+
+// Get symbol from code point.
+export function getSymbol(codePoint: number): string {
+    if (!isValidCodePoint(codePoint)) {
+        throw RangeError("Invalid code point: " + codePoint);
+    }
+
+    if (codePoint <= 0xFFFF) {
+        return String.fromCharCode(codePoint);
+    }
+    else {
+        // Encode surrogate pair.
+        codePoint -= 0x10000;
+
+        const highSurrogate = 0xD800 + (codePoint >> 10);
+        const lowSurrogate = 0xDC00 + (codePoint & 0x3FF);
+
+        return String.fromCharCode(highSurrogate, lowSurrogate);
+    }
+}

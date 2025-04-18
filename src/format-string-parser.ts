@@ -1,4 +1,4 @@
-import { AssertionError, isInteger, repeatString } from "./internal";
+import { AssertionError, getCodePoint, isInteger, isSingleSymbol, repeatString } from "./internal";
 import { deprecatedFalseString, deprecatedOctalPrefix, deprecatedTrueString } from "./deprecated";
 import { FormatSpecification } from "./format-specification";
 import { formatNumber } from "./number-formatter";
@@ -161,9 +161,9 @@ export class FormatStringParser {
         }
         else if (typeof arg === "string") {
             // Argument can be string.
-            if (fs.hasType("cdnxXobB") && arg.length === 1) {
-                // If type is integer then use single char string as char and convert it to char code (integer).
-                argStr = formatNum(arg.charCodeAt(0));
+            if (fs.hasType("cdnxXobB") && isSingleSymbol(arg)) {
+                // If type is integer then get code point from single symbol string.
+                argStr = formatNum(getCodePoint(arg)!);
             }
             else if (fs.hasType("", "s?")) {
                 // Else use string argument as it is.

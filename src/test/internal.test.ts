@@ -1,4 +1,4 @@
-import { assert, isInteger, isNegative, mapDigitToChar, repeatString, zeroArray } from "../internal";
+import { assert, getCodePoint, getSymbol, isInteger, isNegative, isSingleSymbol, mapDigitToChar, repeatString, zeroArray } from "../internal";
 
 describe("Testing internal functions", () => {
 
@@ -64,5 +64,42 @@ describe("Testing internal functions", () => {
         expect(isNegative(NaN)).toEqual(false);
         expect(isNegative(Infinity)).toEqual(false);
         expect(isNegative(-Infinity)).toEqual(true);
+    });
+
+    it("getCodePoint", () => {
+        expect(getCodePoint("")).toEqual(undefined);
+        expect(getCodePoint("A")).toEqual(65);
+        expect(getCodePoint("Ω")).toEqual(0x03A9);
+        expect(getCodePoint("𐍈")).toEqual(0x10348);
+        expect(getCodePoint("\uD800\uDF48")).toEqual(0x10348); // 𐍈
+        expect(getCodePoint("𝄞")).toEqual(0x1D11E);
+        expect(getCodePoint("\uD834\uDD1E")).toEqual(0x1D11E); // 𝄞
+    });
+
+    it("isSingleSymbol", () => {
+        expect(isSingleSymbol("")).toEqual(false);
+        expect(isSingleSymbol("Aa")).toEqual(false);
+        expect(isSingleSymbol("A")).toEqual(true);
+        expect(isSingleSymbol("Ω")).toEqual(true);
+        expect(isSingleSymbol("\u03A9")).toEqual(true); // Ω
+        expect(isSingleSymbol("𝄞")).toEqual(true);
+        expect(isSingleSymbol("\uD834\uDD1E")).toEqual(true); // 𝄞
+    });
+
+    it("getSymbol", () => {
+        expect(getSymbol(65)).toEqual("A");
+        expect(getSymbol(0x03A9)).toEqual("Ω");
+        expect(getSymbol(0x10348)).toEqual("𐍈");
+        expect(getSymbol(0x10348)).toEqual("\uD800\uDF48"); // 𐍈
+        expect(getSymbol(119070)).toEqual("𝄞");
+        expect(getSymbol(119070)).toEqual("\uD834\uDD1E"); // 𝄞
+
+        // Invalid code points.
+        expect(() => getSymbol(-1)).toThrow();
+        expect(() => getSymbol(0x10FFFF + 1)).toThrow();
+        expect(() => getSymbol(100.1)).toThrow();
+        expect(() => getSymbol(NaN)).toThrow();
+        expect(() => getSymbol(Infinity)).toThrow();
+        expect(() => getSymbol(-Infinity)).toThrow();
     });
 });

@@ -459,12 +459,23 @@ describe("Testing std-format", () => {
 
         // Char code must be int in range 0..0xFFFF.
         expect(() => format("{:c}", -1)).toThrow();
-        expect(() => format("{:c}", 65536)).toThrow();
+        expect(() => format("{:c}", 0x10FFFF + 1)).toThrow();
         expect(() => format("{:c}", int("888888888888888888888888"))).toThrow();
         expect(() => format("{:c}", float(65))).toThrow();
         expect(() => format("{:c}", 111.1)).toThrow();
         expect(() => format("{:c}", NaN)).toThrow();
         expect(() => format("{:c}", Infinity)).toThrow();
+
+        // Ω
+        expect(format("{:c}", 0x03A9)).toEqual("Ω");
+        expect(format("{:c}", 0x03A9)).toEqual("\u03A9");
+        expect(format("{:c}", "\u03A9")).toEqual("Ω");
+        expect(format("{:c}", "\u03A9")).toEqual("\u03A9");
+        // 𐍈
+        expect(format("{:c}", 0x10348)).toEqual("𐍈");
+        expect(format("{:c}", 0x10348)).toEqual("\uD800\uDF48");
+        expect(format("{:c}", "\uD800\uDF48")).toEqual("𐍈");
+        expect(format("{:c}", "\uD800\uDF48")).toEqual("\uD800\uDF48");
     });
 
     it("type specifier ?", () => {

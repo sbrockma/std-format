@@ -1,4 +1,4 @@
-import { assert, isInteger, mapDigitToChar, repeatString } from "./internal";
+import { assert, getSymbol, isInteger, isValidCodePoint, mapDigitToChar, repeatString } from "./internal";
 import { FormatSpecification } from "./format-specification";
 import { ThrowFormatError } from "./format-error";
 import { NumberConverter } from "./number-converter";
@@ -43,13 +43,13 @@ function getGroupingInfo(fs: FormatSpecification): GroupingInfo {
     return GroupingInfo.noGrouping;
 }
 
-// Get char code
-function getCharCode(value: number | IntWrapper, fs: FormatSpecification): number {
+// Get valid code point
+function toValidCodePoint(value: number | IntWrapper, fs: FormatSpecification): number {
     try {
-        // Is char code valid integer and in range?
-        let charCode = value instanceof IntWrapper ? value.toSafeNumber() : value;
-        assert(isInteger(charCode) && charCode >= 0 && charCode <= 65535, "Invalid char code.");
-        return charCode;
+        // Is code point valid integer and in range?
+        let codePoint = value instanceof IntWrapper ? value.toSafeNumber() : value;
+        assert(isValidCodePoint(codePoint), "Invalid code point value: " + codePoint);
+        return codePoint;
     }
     catch (e) {
         ThrowFormatError.throwInvalidArgumentForType(fs.parser, value, fs.type);
@@ -103,8 +103,8 @@ export function formatNumber(value: number | IntWrapper | FloatWrapper, fs: Form
     let postfix: string = fs.hasType("%") ? "%" : "";
 
     if (fs.hasType("c") && (typeof value === "number" || value instanceof IntWrapper)) {
-        // Is char? Set digits string to contain single char obtained from char code.
-        digits = String.fromCharCode(getCharCode(value, fs));
+        // Set digits string to contain single symbol.
+        digits = getSymbol(toValidCodePoint(value, fs));
 
         // Other props empty.
         sign = exp = prefix = "";
