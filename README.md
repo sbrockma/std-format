@@ -10,6 +10,11 @@ Format specifications for
 [c++20](https://en.cppreference.com/w/cpp/utility/format/spec) and
 [Python](https://docs.python.org/3/library/string.html#formatspec).
 
+    [[fill]<^>=][+- ][z][#][0][width][,_][.precision][L][s?cdnbBoxXeEfF%gGaA]
+
+- ('n', 'L' partially implemented)
+- ('?' not implemented)
+
 ### Note!
 Python and C++ has int and float types, JavaScript has only number.
 
