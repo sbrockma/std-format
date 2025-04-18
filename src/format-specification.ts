@@ -26,19 +26,19 @@ export class FormatSpecification {
     private parsePos: number = 0;
 
     constructor(readonly parser: FormatStringParser, readonly specifiers: string) {
-        if (this.specifiers === "") {
+        if (!specifiers) {
             this.type = "";
             return;
         }
 
         // Get fill and align.
-        if (specifiers.length >= 1 && ["<", "^", ">", "="].indexOf(this.specifiers[this.parsePos]) >= 0) {
+        if (specifiers.length >= 1 && ["<", "^", ">", "="].indexOf(specifiers[this.parsePos]) >= 0) {
             this.fill = undefined;
-            this.align = this.specifiers[this.parsePos++] as any;
+            this.align = specifiers[this.parsePos++] as any;
         }
-        else if (specifiers.length >= 2 && ["<", "^", ">", "="].indexOf(this.specifiers[this.parsePos + 1]) >= 0) {
-            this.fill = this.specifiers[this.parsePos++];
-            this.align = this.specifiers[this.parsePos++] as any;
+        else if (specifiers.length >= 2 && ["<", "^", ">", "="].indexOf(specifiers[this.parsePos + 1]) >= 0) {
+            this.fill = specifiers[this.parsePos++];
+            this.align = specifiers[this.parsePos++] as any;
         }
 
         // Get rest of the specifiers.
@@ -53,7 +53,7 @@ export class FormatSpecification {
         this.type = this.parseSpecifier("s", "?", "c", "d", "n", "b", "B", "o", "x", "X", "e", "E", "f", "F", "%", "g", "G", "a", "A") ?? "";
 
         // Parse position should have reached end of specifiers.
-        if (this.parsePos !== this.specifiers.length) {
+        if (this.parsePos !== specifiers.length) {
             ThrowFormatError.throwInvalidFormatSpecifiers(this.parser);
         }
     }
