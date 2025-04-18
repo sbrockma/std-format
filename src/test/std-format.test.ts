@@ -368,8 +368,13 @@ describe("Testing std-format", () => {
     });
 
     it("type specifier <default number>", () => {
-        expect(format("{:}", 482.1)).toEqual("482.1");
-        expect(format("{:}", 482.2)).toEqual("482.2");
+        expect(format("{}", 482.1)).toEqual("482.1");
+        expect(format("{}", 482.2)).toEqual("482.2");
+        expect(format("{}", 0.456)).toEqual("0.456");
+        expect(format("{}", 56.454577)).toEqual("56.454577");
+        expect(format("{}", 567.5675583333766658)).toEqual("567.5675583333766");
+        expect(format("{}", 756437.6586784566668)).toEqual("756437.6586784567");
+        expect(format("{}", 56375685864.67575445)).toEqual("56375685864.67575");
 
         expect(format("{:.2}", Math.PI)).toEqual("3.1");
 
