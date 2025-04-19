@@ -1,7 +1,8 @@
 "use strict";
 
-let webpackConfigFunc = require("./webpack.config");
-let webpackConfig = webpackConfigFunc({}, { mode: "development" });
+const webpackConfigFunc = require("./webpack.config");
+const webpackConfigArr = webpackConfigFunc({}, { mode: "development" });
+const webpackConfig = webpackConfigArr[0];
 
 module.exports = function (config) {
     config.set({

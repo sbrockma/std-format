@@ -1,0 +1,16 @@
+{
+    "mainEntryPointFilePath": "./dist/types/index.d.ts",
+    "dtsRollup": {
+        "enabled": true,
+        "untrimmedFilePath": "./dist/std-format.d.ts"
+    },
+    "tsdocMetadata": {
+        "enabled": false
+    },
+    "apiReport": {
+        "enabled": false
+    },
+    "docModel": {
+        "enabled": false
+    }
+}

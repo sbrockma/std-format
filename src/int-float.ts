@@ -86,10 +86,16 @@ export class FloatWrapper {
     }
 }
 
+/**
+ * @public
+ */
 export function int(value?: unknown): IntWrapper {
     return new IntWrapper(value === "" || value === undefined || value === null ? 0 : value);
 }
 
+/**
+ * @public
+ */
 export function float(value?: unknown): FloatWrapper {
     return new FloatWrapper(value === "" || value === undefined || value === null ? 0.0 : value);
 }

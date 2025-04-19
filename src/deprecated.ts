@@ -3,7 +3,8 @@ import { FormatError, ThrowFormatError } from "./format-error";
 import { setLocale } from "./set-locale";
 
 /**
- * @deprecated
+ * @deprecated This is alias to FormatError.
+ * @public
  */
 export const StdFormatError = FormatError;
 
@@ -12,7 +13,8 @@ let stdSpecificationHintWarned = false;
 let stdLocaleHintWarned = false;
 
 /**
- * @deprecated
+ * @deprecated Use format() instead.
+ * @public
  */
 export function stdFormat(formatString: string, ...formatArgs: unknown[]): string {
     if (!stdFormatWarned) {
@@ -24,7 +26,8 @@ export function stdFormat(formatString: string, ...formatArgs: unknown[]): strin
 }
 
 /**
- * @deprecated
+ * @deprecated Use setLocale() instead.
+ * @public
  */
 export function stdLocaleHint(locale?: string | undefined) {
     if (!stdLocaleHintWarned) {
@@ -41,7 +44,8 @@ export let deprecatedTrueString: "true" | "True" = "True";
 export let deprecatedFalseString: "false" | "False" = "False";
 
 /**
- * @deprecated
+ * @deprecated This has no replacement.
+ * @public
  */
 export function stdSpecificationHint(specHint: "cpp" | "python" | "js") {
     if (!stdSpecificationHintWarned) {

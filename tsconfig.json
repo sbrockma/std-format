@@ -23,7 +23,7 @@
         "noImplicitThis": true,
         "noImplicitReturns": true,
         "alwaysStrict": true,
-        "removeComments": true,
+        "removeComments": false, // Let babel remove comments.
         "allowSyntheticDefaultImports": true,
         "skipLibCheck": true
     },

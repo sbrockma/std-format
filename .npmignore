@@ -6,10 +6,11 @@
 .gitattributes
 .npmignore
 package-lock.json
-babel.config.json
+babel.config.js
 karma.conf.js
 tsconfig.json
 typedoc.json
 webpack.config.js
+api-extractor.json
 workspace.code-workspace
 INSTRUCTIONS.md

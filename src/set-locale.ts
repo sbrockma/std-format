@@ -22,7 +22,10 @@ export function getLocaleGroupingInfo(): GroupingInfo {
     return localeGroupingInfo;
 }
 
-// Set locale.
+/** 
+ * Set locale
+ * @public
+ */
 export function setLocale(locale?: string) {
     // Get locale group info.
     // Use default locale if locale is empty string or undefined/null.
