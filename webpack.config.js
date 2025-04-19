@@ -18,8 +18,9 @@ const makeConfig = ({ env, argv, format, filename, libraryType, bundleJsbi }) =>
             filename,
             path: path.resolve(__dirname, "dist"),
             library: {
-                name: isModule ? undefined : "StdFormat",
-                type: libraryType
+                name: libraryType === "umd" ? "StdFormat" : undefined,
+                type: libraryType,
+                export: "default"
             },
             module: isModule,
             environment: { module: isModule },
