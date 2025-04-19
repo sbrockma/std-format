@@ -55,8 +55,8 @@
         }
     },
     "scripts": {
-        "build:dev": "rimraf dist && webpack --mode development && api-extractor run --local && rimraf dist/types",
-        "build:prod": "rimraf dist && webpack --mode production && api-extractor run --local && rimraf dist/types",
+        "build:dev": "rimraf dist && webpack --mode development && api-extractor run --local && rimraf dist/temp-types",
+        "build:prod": "rimraf dist && webpack --mode production && api-extractor run --local && rimraf dist/temp-types",
         "watch": "npm-watch build:dev",
         "test": "karma start",
         "docs": "typedoc"

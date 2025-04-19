@@ -1,5 +1,5 @@
 {
-    "mainEntryPointFilePath": "./dist/types/index.d.ts",
+    "mainEntryPointFilePath": "./dist/temp-types/index.d.ts",
     "dtsRollup": {
         "enabled": true,
         "untrimmedFilePath": "./dist/std-format.d.ts"
