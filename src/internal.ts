@@ -79,7 +79,7 @@ export function isValidCodePoint(codePoint: number): boolean {
 // Get symbol from code point.
 export function getSymbol(codePoint: number): string {
     if (!isValidCodePoint(codePoint)) {
-        ThrowFormatError.throwRangeError("code point", codePoint);
+        ThrowFormatError.throwInvalidCodePoint(codePoint);
     }
 
     if (codePoint <= 0xFFFF) {

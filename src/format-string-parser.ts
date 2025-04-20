@@ -329,6 +329,16 @@ export class FormatStringParser {
         return this.usingDeprecatedStdFormat ? (b ? deprecatedTrueString : deprecatedFalseString) : (b ? "true" : "false");
     }
 
+    // Get error message.
+    getErrorMessage(msg: string) {
+        if (this.errorString === this.formatString) {
+            return msg + ", in \"" + this.errorString + "\"";
+        }
+        else {
+            return msg + ", in \"" + this.formatString + "\" (col " + this.parsePosition + " = \"" + this.errorString + "\")";
+        }
+    }
+
     static exec(formatString: string, formatArgs: unknown[], usingDeprecatedStdFormat: boolean): string {
         // Init parser.
         let parser = new FormatStringParser(formatString, formatArgs, usingDeprecatedStdFormat);

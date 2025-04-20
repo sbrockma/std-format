@@ -1,6 +1,7 @@
 import { FormatStringParser } from "format-string-parser";
-import { FormatError, ThrowFormatError } from "./format-error";
+import { FormatError } from "./format-error";
 import { setLocale } from "./set-locale";
+import { assert } from "internal";
 
 /**
  * @deprecated This is alias to FormatError.
@@ -53,6 +54,8 @@ export function stdSpecificationHint(specHint: "cpp" | "python" | "js") {
         stdSpecificationHintWarned = true;
     }
 
+    assert(specHint === "cpp" || specHint === "python" || specHint === "js", "Invalid specification hint '" + specHint + "'");
+
     if (specHint === "cpp") {
         deprecatedOctalPrefix = "0";
         deprecatedTrueString = "true";
@@ -67,9 +70,5 @@ export function stdSpecificationHint(specHint: "cpp" | "python" | "js") {
         deprecatedOctalPrefix = "0o";
         deprecatedTrueString = "true";
         deprecatedFalseString = "false";
-    }
-    else {
-        // Invalid specification hint.
-        ThrowFormatError.throwInvalidSpecificationHint(specHint);
     }
 }
