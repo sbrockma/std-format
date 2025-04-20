@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.4.0] - 2025-04-20
+### Added
+- Build targets esm, cjs and umd (browser). 
+- Support code points > 0xFFFF for type specifier 'c'.
+### Changed
+- Create single std-format.d.ts types file.
+- Transpile to ES5 (ie 11) for build targets cjs and umd.
+- Removed use of named regex groups and parse format specification manually, for legacy JS support.
+
 ## [1.3.5] - 2025-04-17
 ### Fixed
 - Format number as float by default (JavaScript has no int/float types). To format as integer, use specifier 'd'.

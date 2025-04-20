@@ -12,6 +12,8 @@
     npm run build:prod
 
 ## Publish
+    // Update changelog
+    git log --pretty="- %s"
 
     npm version major|minor|patch
 
@@ -19,8 +21,4 @@
 
     npm login
     npm publish --access public
-
-## Create Change Log
-
-    git log --pretty="- %s"
 
