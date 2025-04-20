@@ -94,3 +94,48 @@ export function getSymbol(codePoint: number): string {
         return String.fromCharCode(highSurrogate, lowSurrogate);
     }
 }
+
+// Get string real length
+export function getStringRealLength(str: string): number {
+    let len = 0;
+
+    for (let pos = 0; pos < str.length;) {
+        let symbolInfo = getSymbolInfoAt(str, pos);
+        if (symbolInfo) {
+            len++;
+            pos += symbolInfo.chars.length;
+        }
+        else {
+            pos++;
+        }
+    }
+
+    return len;
+}
+
+// Set string real length.
+export function setStringRealLength(str: string, newLen: number): string {
+    let curLen = 0;
+
+    for (let pos = 0; pos < str.length;) {
+        let symbolInfo = getSymbolInfoAt(str, pos);
+        if (symbolInfo) {
+            curLen++;
+            pos += symbolInfo.chars.length;
+            if (curLen == newLen) {
+                // Got exact length
+                return str.substring(0, pos);
+            }
+            else if (curLen > newLen) {
+                // Do not go over in length!
+                return str.substring(0, pos - symbolInfo.chars.length);
+            }
+        }
+        else {
+            pos++;
+        }
+    }
+
+    // Did not reach length, return full string.
+    return str;
+}

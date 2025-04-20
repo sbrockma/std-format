@@ -1,4 +1,4 @@
-import { assert, AssertionError, getSymbolInfoAt, isInteger, repeatString } from "./internal";
+import { assert, AssertionError, getStringRealLength, getSymbolInfoAt, isInteger, repeatString } from "./internal";
 import { deprecatedFalseString, deprecatedOctalPrefix, deprecatedTrueString } from "./deprecated";
 import { FormatSpecification } from "./format-specification";
 import { formatNumber } from "./number-formatter";
@@ -146,7 +146,7 @@ export class FormatStringParser {
         let width = fs.width ?? 0;
 
         // Calculate fillCount
-        let fillCount = Math.max(0, width - argStr.length);
+        let fillCount = Math.max(0, width - getStringRealLength(argStr));
 
         // Get fill char.
         let fillChar = fs.fill ?? fs.zero ?? " ";

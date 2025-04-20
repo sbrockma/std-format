@@ -251,6 +251,7 @@ describe("Testing std-format", () => {
         expect(() => format("{:001}", 9)).not.toThrow();  // Width = 01
         expect(() => format("{:01.0}", 9)).not.toThrow(); // Precision can be 0.
 
+        // Width and precision with strings.
         expect(format("{:.0s}", "Hello World!")).toEqual("");
         expect(format("{:.1s}", "Hello World!")).toEqual("H");
         expect(format("{:.2s}", "Hello World!")).toEqual("He");
@@ -272,6 +273,20 @@ describe("Testing std-format", () => {
         expect(format("{:9}", 42)).toEqual("     42.0");
         expect(format("{:9}", int(42))).toEqual("       42");
         expect(format("{:9}", true)).toEqual("true     ");
+    });
+
+    it("wider unicode symbols", () => {
+        // Fill symbol.
+        expect(format("{:𝞅<8d}", 22)).toEqual("22𝞅𝞅𝞅𝞅𝞅𝞅");
+        expect(format("{:𝄞^8d}", 22)).toEqual("𝄞𝄞𝄞22𝄞𝄞𝄞");
+        expect(format("{:🧠>8d}", 22)).toEqual("🧠🧠🧠🧠🧠🧠22");
+        expect(format("{:\uD802\uDC00^9d}", 555)).toEqual(
+            "\uD802\uDC00\uD802\uDC00\uD802\uDC00555\uD802\uDC00\uD802\uDC00\uD802\uDC00");
+
+        // String with precision.
+        expect(format("{:.5s}", "🐉🐉🐉🐉🐉🐉🐉🐉🐉🐉")).toEqual("🐉🐉🐉🐉🐉");
+        expect(format("{:𝒜^5.3s}", "😀")).toEqual("𝒜𝒜😀𝒜𝒜");
+        expect(format("{:𝒜^5.3s}", "😀😀😀😀😀")).toEqual("𝒜😀😀😀𝒜");
     });
 
     it("negative and positive zero", () => {

@@ -1,5 +1,6 @@
 import { FormatSpecification } from "./format-specification";
 import { ThrowFormatError } from "./format-error";
+import { getStringRealLength, setStringRealLength } from "internal";
 
 export function formatString(str: string, fs: FormatSpecification) {
     if (fs.hasType("?")) {
@@ -9,8 +10,8 @@ export function formatString(str: string, fs: FormatSpecification) {
 
     // For string presentation types precision field indicates the maximum
     // field size - in other words, how many characters will be used from the field content.
-    if (fs.precision !== undefined && str.length > fs.precision) {
-        str = str.substring(0, fs.precision);
+    if (fs.precision !== undefined && getStringRealLength(str) > fs.precision) {
+        str = setStringRealLength(str, fs.precision);
     }
 
     return str;
