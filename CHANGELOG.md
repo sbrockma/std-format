@@ -1,4 +1,7 @@
 # Changelog
+## [1.4.1] - 2025-04-20
+### Fixed
+- Missing "exports" "types" in package.json.
 
 ## [1.4.0] - 2025-04-20
 ### Added

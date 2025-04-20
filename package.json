@@ -10,12 +10,13 @@
     "main": "./dist/std-format.cjs.js",
     "module": "./dist/std-format.esm.mjs",
     "browser": "./dist/std-format.umd.js",
+    "types": "./dist/std-format.d.ts",
     "exports": {
         "require": "./dist/std-format.cjs.js",
         "import": "./dist/std-format.esm.mjs",
-        "browser": "./dist/std-format.umd.js"
+        "browser": "./dist/std-format.umd.js",
+        "types": "./dist/std-format.d.ts"
     },
-    "types": "./dist/std-format.d.ts",
     "dependencies": {
         "jsbi": "^4.3.2"
     },
