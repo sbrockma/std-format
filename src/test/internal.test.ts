@@ -1,4 +1,4 @@
-import { assert, getCodePoint, getSymbol, isInteger, isNegative, isSingleSymbol, mapDigitToChar, repeatString, zeroArray } from "../internal";
+import { assert, getSymbol, getSymbolInfoAt, isInteger, isNegative, mapDigitToChar, repeatString, zeroArray } from "../internal";
 
 describe("Testing internal functions", () => {
 
@@ -67,23 +67,19 @@ describe("Testing internal functions", () => {
     });
 
     it("getCodePoint", () => {
-        expect(getCodePoint("")).toEqual(undefined);
-        expect(getCodePoint("A")).toEqual(65);
-        expect(getCodePoint("Ω")).toEqual(0x03A9);
-        expect(getCodePoint("𐍈")).toEqual(0x10348);
-        expect(getCodePoint("\uD800\uDF48")).toEqual(0x10348); // 𐍈
-        expect(getCodePoint("𝄞")).toEqual(0x1D11E);
-        expect(getCodePoint("\uD834\uDD1E")).toEqual(0x1D11E); // 𝄞
-    });
-
-    it("isSingleSymbol", () => {
-        expect(isSingleSymbol("")).toEqual(false);
-        expect(isSingleSymbol("Aa")).toEqual(false);
-        expect(isSingleSymbol("A")).toEqual(true);
-        expect(isSingleSymbol("Ω")).toEqual(true);
-        expect(isSingleSymbol("\u03A9")).toEqual(true); // Ω
-        expect(isSingleSymbol("𝄞")).toEqual(true);
-        expect(isSingleSymbol("\uD834\uDD1E")).toEqual(true); // 𝄞
+        expect(getSymbolInfoAt("", 0)).toEqual(undefined);
+        expect(getSymbolInfoAt("A", -1)).toEqual(undefined);
+        expect(getSymbolInfoAt("A", 0)).toEqual({ codePoint: 65, chars: "A" });
+        expect(getSymbolInfoAt("A", 1)).toEqual(undefined);
+        expect(getSymbolInfoAt("Ω", 0)).toEqual({ codePoint: 0x03A9, chars: "Ω" });
+        expect(getSymbolInfoAt("𐍈", 0)).toEqual({ codePoint: 0x10348, chars: "\uD800\uDF48"}); // 𐍈
+        expect(getSymbolInfoAt("\uD800\uDF48", 0)).toEqual({ codePoint: 0x10348, chars: "𐍈"}); // 𐍈
+        expect(getSymbolInfoAt("𝄞", 0)).toEqual({ codePoint: 0x1D11E, chars: "\uD834\uDD1E"}); // 𝄞
+        expect(getSymbolInfoAt("\uD834\uDD1E", 0)).toEqual({ codePoint: 0x1D11E, chars: "𝄞"}); // 𝄞
+        expect(getSymbolInfoAt("𐍈𝄞𐍈", 2)).toEqual({ codePoint: 0x1D11E, chars: "𝄞"});
+        
+        // Get second char of symbol "𝄞", ok?
+        expect(getSymbolInfoAt("\uD834\uDD1E", 1)).toEqual({ codePoint: 0xDD1E, chars: "\uDD1E" });
     });
 
     it("getSymbol", () => {

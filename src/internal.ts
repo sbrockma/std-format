@@ -41,32 +41,33 @@ export function isNegative(n: number): boolean {
     return n < 0 || 1.0 / n === -Infinity;
 }
 
-// Get code point from symbol.
-export function getCodePoint(sym: string): number | undefined {
-    if (sym.length === 0) {
+// Get symbol info (code point and symbol chars) at pos.
+export function getSymbolInfoAt(str: string, pos: number): { codePoint: number, chars: string } | undefined {
+    if (pos < 0 || pos >= str.length) {
         return undefined;
     }
 
     // Get first 16-bit UTF-16 code unit
-    const first = sym.charCodeAt(0);
+    const first = str.charCodeAt(pos);
 
     // Check if first is a high surrogate.
-    if (first >= 0xD800 && first <= 0xDBFF && sym.length > 1) {
-        // Get second 16-bit UTF-16 code unit
-        let second = sym.charCodeAt(1);
+    if (first >= 0xD800 && first <= 0xDBFF && pos + 1 < str.length) {
+        // Get second 16-bit UTF-16 code unit.
+        let second = str.charCodeAt(pos + 1);
         if (second >= 0xDC00 && second <= 0xDFFF) {
             // Combine the surrogate pair.
-            return ((first - 0xD800) << 10) + (second - 0xDC00) + 0x10000;
+            return {
+                codePoint: ((first - 0xD800) << 10) + (second - 0xDC00) + 0x10000,
+                chars: str[pos] + str[pos + 1]
+            }
         }
     }
 
     // Not a surrogate pair.
-    return first;
-}
-
-// Is str single symbol?
-export function isSingleSymbol(str: string): boolean {
-    return str.length === 1 || (str.length === 2 && getCodePoint(str)! > 0xFFFF);
+    return {
+        codePoint: first,
+        chars: str[pos]
+    }
 }
 
 // Is valid code point value?

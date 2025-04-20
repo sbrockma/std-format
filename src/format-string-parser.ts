@@ -1,4 +1,4 @@
-import { assert, AssertionError, getCodePoint, isInteger, isSingleSymbol, repeatString } from "./internal";
+import { assert, AssertionError, getSymbolInfoAt, isInteger, repeatString } from "./internal";
 import { deprecatedFalseString, deprecatedOctalPrefix, deprecatedTrueString } from "./deprecated";
 import { FormatSpecification } from "./format-specification";
 import { formatNumber } from "./number-formatter";
@@ -113,9 +113,18 @@ export class FormatStringParser {
         }
         else if (typeof arg === "string") {
             // Argument can be string.
-            if (fs.hasType("cdnxXobB") && isSingleSymbol(arg)) {
-                // If type is integer then get code point from single symbol string.
-                argStr = formatNum(getCodePoint(arg)!);
+            if (fs.hasType("cdnxXobB")) {
+                // For integer types get code point of arg if it contains single symbol.
+                let symbolInfo = getSymbolInfoAt(arg, 0);
+
+                // Does arg contain single symbol?
+                if (symbolInfo && arg === symbolInfo.chars) {
+                    argStr = formatNum(symbolInfo.codePoint);
+                }
+                else {
+                    // Invalid argument conversion from string.
+                    ThrowFormatError.throwInvalidArgumentForType(this, arg, fs.type);
+                }
             }
             else if (fs.hasType("", "s?")) {
                 // Else use string argument as it is.
