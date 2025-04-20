@@ -344,11 +344,11 @@ export class NumberConverter {
     }
 
     // Convert to precision (number of digits). Performs rounding if necessary.
-    private toPrecision(precision: number, precisionType: "fixed" | "precision") {
+    private toPrecision(precision: number, precisionType: "after_dot" | "total") {
         // Get new digit count.
         // * In fixed type new digit count is number of digits after dot.
         // * Else new digit count is precision. 
-        let newDigitCount = precisionType === "fixed" ? (this.dotPos + precision) : precision;
+        let newDigitCount = precisionType === "after_dot" ? (this.dotPos + precision) : precision;
 
         if (newDigitCount === this.digits.length || newDigitCount < 1) {
             // Nothing to do, newDigitCount equals digits.length or is less than 1.
@@ -398,14 +398,14 @@ export class NumberConverter {
                     // Digit pos < 0, need to add "1" to start of digits
                     this.digits.unshift(1);
 
-                    if (precisionType === "fixed") {
-                        // If type = "fixed" then increase dot pos to compensate 
+                    if (precisionType === "after_dot") {
+                        // If type = "after_dot" then increase dot pos to compensate 
                         // because we just added new digit to start of digits.
                         // Digits after dot position and exponent remains unaltered.
                         this.dotPos++;
                     }
                     else {
-                        // If type = "precision" then need to keep total digit count 
+                        // If type = "total" then need to keep total digit count 
                         // unaltered, so remove digit (0) from right.
                         this.digits.pop();
 
@@ -439,7 +439,7 @@ export class NumberConverter {
         this.toZeroExponent();
 
         // Set fixed precision digits after dot
-        this.toPrecision(precision, "fixed");
+        this.toPrecision(precision, "after_dot");
     }
 
     // Convert number to scientific notation.
@@ -451,7 +451,7 @@ export class NumberConverter {
         this.dotPos = 1;
 
         // Set total (precision + 1) digits.
-        this.toPrecision(precision + 1, "precision");
+        this.toPrecision(precision + 1, "total");
     }
 
     // Convert number to normalised hexadecimal exponential notation
