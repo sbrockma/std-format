@@ -1,8 +1,10 @@
 # std-format
 
-std-format is a string formatting function for TS/JS.
+std-format is a string formatting library for TS/JS.
 
-This is a hobby project. This is early release, still going through some changes, and has many bugs. Hoping to fix them.
+This is a hobby project. I am trying to learn how to create and publish an npm package. 
+
+Still going through some changes. Has many bugs, hoping to fix them.
 
 ## Format Specification
 
@@ -36,7 +38,7 @@ Python and C++ has int and float types, JavaScript has only number.
 
 ## Bundling
 
-This library contains bundles for ESM, CJS and UMD library types.
+This library is bundled with webpack now to ESM, CJS and UMD bundles.
 
 - Does not do polyfills.
 - Trying to use legacy JS functions only.
@@ -115,29 +117,3 @@ Decimal and grouping separators are decided by locale when formatting with type 
             console.error(e);
         }
     }
-
-## Deprecated Declarations
-
-### Function stdFormat(formatString, ...args)
-
-Function stdFormat() is deprecated. Use function format() instead.
-
-### Function stdSpecificationHint("pyhon" | "cpp" | "js")
-
-Function stdSpecificationHint() is deprecated.
-
-Specification hint was attempt to support both Python and C++ language ways:
- * "python": octal prefix is "0o", boolean strings are "True" and "False"
- * "cpp": octal prefix is "0", boolean strings are "true" and "false"
- * "js": octal prefix is "0o", boolean strings are "true" and "false"
-
-Using format() function instead the result is not affected by specification hint:
- * octal prefix is "0o", boolean strings are "true" and "false".
-
-### Function stdLocaleHint(locale)
-
-Function stdLocaleHint() is deprecated. Use function setLocale() instead.
-
-### Class StdFormatError
-
-StdFormatError is deprecated. Use class FormatError instead.
