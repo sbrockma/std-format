@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "target": "es6",
+        "target": "ES6",
         "baseUrl": "./src",
         "rootDir": "./src",
         "outDir": "./dist",
@@ -8,7 +8,7 @@
             "ES2015",
             "DOM"
         ],
-        "module": "es2015",
+        "module": "ES2015",
         "moduleResolution": "bundler",
         "declaration": true,
         "declarationDir": "./dist/temp-types",

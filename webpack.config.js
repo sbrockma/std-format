@@ -18,6 +18,8 @@ const makeConfig = ({ env, argv, format, filename, libraryType, bundleJsbi }) =>
             filename,
             path: path.resolve(__dirname, "dist"),
             library: {
+                // Set library name to "StdFormat" for "umd" only, to enable StdFormat.format(...) in browser.
+                // Do not set library name for "cjs", or it would require const Fmt = require(...).StdFormat;
                 name: libraryType === "umd" ? "StdFormat" : undefined,
                 type: libraryType,
                 export: "default"

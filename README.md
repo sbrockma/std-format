@@ -10,6 +10,12 @@ Format specifications for
 [c++20](https://en.cppreference.com/w/cpp/utility/format/spec) and
 [Python](https://docs.python.org/3/library/string.html#formatspec).
 
+Replacement field:
+    
+    {[field id][:format specification]}
+
+Format specification:
+    
     [[fill]<^>=][+- ][z][#][0][width][,_][.precision][L][s?cdnbBoxXeEfF%gGaA]
 
 - ('n', 'L' partially implemented)
@@ -24,27 +30,55 @@ Python and C++ has int and float types, JavaScript has only number.
     // To format number as integer, use type 'd'.
     Fmt.format("{:d}", 5);        // "5"
 
-## Library Bundle
-
-- Bundled to a Universal Module Definition (UMD) - module.
-- Transpiled using babel, targets "> 0.25%, not dead".
-- Does not do polyfills!
-
 ## Install
 
     npm i @sbrockma/std-format
 
-## Import
+## Bundling
 
-    // Import default export.
+This library contains bundles for ESM, CJS and UMD library types.
+
+- Does not do polyfills.
+- Trying to use legacy JS functions only.
+
+Transpiling
+- Compiled from TypeScript to JavaScript with ES6 target.
+- CJS and UMD bundles transpiled with babel targets ie 11.
+
+## Usage
+
+### ESM
+    // Import default export
     import Fmt from "@sbrockma/std-format";
+
+    let str = Fmt.format("...");
 
     // Or import named exports
     import { format } from "@sbrockma/std-format";
 
+    let str = format("...");
+
+### CJS
+    const Fmt = require("@sbrockma/std-format");
+    
+    let str = Fmt.format("...");
+
+### UMD (browser)
+UMD version bundles with "jsbi" dependency, so it can be used standalone in browser.
+
+Has library name set to "StdFormat", so it can be accessed With (window.)StdFormat.
+
+    <script src="std-format.umd.js></script>
+    
+    <script>
+        let str = StdFormat.format("...");
+    </script>
+
 ## Declarations
 
 ### Function format(formatString, ...args)
+
+This is the main formatting function.
 
     import Fmt from "@sbrockma/std-format";
 
