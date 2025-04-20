@@ -58,8 +58,8 @@ export namespace ThrowFormatError {
     }
 
     // Throw range error
-    export function throwRangeError(value: unknown): never {
-        throw new FormatError(getErrorMessage(undefined, "Range errror, '" + value + "' out of range"));
+    export function throwRangeError(what: string, value: unknown): never {
+        throw new FormatError(getErrorMessage(undefined, "Range error, " + what + " value " + value + " out of range"));
     }
 
     // Throw invalid argument error.

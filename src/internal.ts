@@ -1,4 +1,4 @@
-import { FormatError } from "./format-error";
+import { FormatError, ThrowFormatError } from "./format-error";
 
 // Assertion error class.
 export class AssertionError extends FormatError {
@@ -79,7 +79,7 @@ export function isValidCodePoint(codePoint: number): boolean {
 // Get symbol from code point.
 export function getSymbol(codePoint: number): string {
     if (!isValidCodePoint(codePoint)) {
-        throw RangeError("Invalid code point: " + codePoint);
+        ThrowFormatError.throwRangeError("code point", codePoint);
     }
 
     if (codePoint <= 0xFFFF) {

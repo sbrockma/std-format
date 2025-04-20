@@ -33,7 +33,7 @@ export class IntWrapper {
 
         // Make sure is in safe number range.
         if (JSBI.GT(this.bigInt, MAX_SAFE_INTEGER) || JSBI.LT(this.bigInt, MIN_SAFE_INTEGER)) {
-            ThrowFormatError.throwRangeError(this.bigInt.toString());
+            ThrowFormatError.throwRangeError("number", this.bigInt.toString());
         }
 
         return JSBI.toNumber(this.bigInt);
