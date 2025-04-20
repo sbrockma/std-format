@@ -1,6 +1,7 @@
+import { FormatError } from "./format-error";
 
 // Assertion error class.
-export class AssertionError extends Error {
+export class AssertionError extends FormatError {
     constructor(msg?: string) {
         super("Assertion failed" + (msg === undefined ? "!" : (": " + msg)));
         this.name = "AssertionError";

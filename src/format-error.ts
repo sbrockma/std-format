@@ -6,7 +6,6 @@ import { FormatStringParser } from "./format-string-parser";
  * @public
  */
 export class FormatError extends Error {
-    // FormatError constructor.
     constructor(message: string) {
         super(message);
         this.name = "FormatError";

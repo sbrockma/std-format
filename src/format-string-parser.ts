@@ -330,24 +330,13 @@ export class FormatStringParser {
     }
 
     static exec(formatString: string, formatArgs: unknown[], usingDeprecatedStdFormat: boolean): string {
-        try {
-            // Init parser.
-            let parser = new FormatStringParser(formatString, formatArgs, usingDeprecatedStdFormat);
+        // Init parser.
+        let parser = new FormatStringParser(formatString, formatArgs, usingDeprecatedStdFormat);
 
-            // Parse format string.
-            parser.parseFormatString();
+        // Parse format string.
+        parser.parseFormatString();
 
-            // Return result string.
-            return parser.resultString;
-        }
-        catch (e) {
-            // Log assertion error to console.
-            if (e instanceof AssertionError) {
-                console.error(e.toString());
-            }
-
-            // Throw exception forward.
-            throw e;
-        }
+        // Return result string.
+        return parser.resultString;
     }
 }
