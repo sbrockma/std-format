@@ -2,6 +2,9 @@
 
 std-format is a string formatting library for TS/JS.
 
+    // Curly braces formatting example
+    format("{:!<+9.2f}", Math.PI); // returns "!!+3.14!!"
+
 This is a hobby project. I am trying to learn how to create and publish an npm package. 
 
 Still going through some changes. Has many bugs, hoping to fix them.
