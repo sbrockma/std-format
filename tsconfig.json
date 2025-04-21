@@ -25,6 +25,7 @@
         "alwaysStrict": true,
         "removeComments": false, // Let babel remove comments.
         "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
         "skipLibCheck": true
     },
     "include": [

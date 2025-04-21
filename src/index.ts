@@ -5,13 +5,14 @@ import { FormatError } from "./format-error";
 import { stdFormat, stdSpecificationHint, stdLocaleHint, StdFormatError } from "./deprecated";
 
 // Default export
-export default {
-    format, setLocale, FormatError, 
+/** @public */
+const DefaultExport = {
+    format, setLocale, FormatError,
     stdFormat, stdSpecificationHint, stdLocaleHint, StdFormatError
 }
 
-// Named exports
+export default DefaultExport;
 export {
-    format, setLocale, FormatError, 
+    format, setLocale, FormatError,
     stdFormat, stdSpecificationHint, stdLocaleHint, StdFormatError
 }

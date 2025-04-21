@@ -22,7 +22,7 @@ const makeConfig = ({ env, argv, format, filename, libraryType, bundleJsbi }) =>
                 // Do not set library name for "cjs", or it would require const Fmt = require(...).StdFormat;
                 name: libraryType === "umd" ? "StdFormat" : undefined,
                 type: libraryType,
-                export: "default"
+                export: isModule ? undefined : 'default',
             },
             module: isModule,
             environment: { module: isModule },
