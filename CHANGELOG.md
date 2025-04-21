@@ -1,4 +1,11 @@
 # Changelog
+
+## [1.4.2] - 2025-04-21
+### Fixed
+- Importing default export error with esm.
+- Fill char can now be align specifier '<', '^', '>' or '='.
+- Fill characters can now be > UTF-16, and set real string length when precision specified. 
+
 ## [1.4.1] - 2025-04-20
 ### Fixed
 - Missing "exports" "types" in package.json.
