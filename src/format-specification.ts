@@ -119,81 +119,94 @@ export class FormatSpecification {
         return types.some(type => this.type === type || this.type !== "" && type.indexOf(this.type) >= 0);
     }
 
-    // Throws error if this has given type and has specifier that is not on whitelist.
-    private allowSpecifiersWithType(type: string, specifierWhiteList: string, withArg?: unknown) {
-        if (this.hasType(type)) {
-            // Fuction to throw error depending whether specifier is default specifier ('') or regular pecifier. 
-            const throwSpecifierNotAllowedWith = this.type === "" && withArg !== undefined
-                ? (specifier: string): never => { ThrowFormatError.throwSpecifierNotAllowedWithDefault(this.parser, specifier, withArg); }
-                : (specifier: string): never => { ThrowFormatError.throwSpecifierNotAllowedWith(this.parser, specifier, this.type); }
-
-            if (this.align !== undefined && specifierWhiteList.indexOf(this.align) < 0) {
-                throwSpecifierNotAllowedWith(this.align);
-            }
-            else if (this.sign !== undefined && specifierWhiteList.indexOf(this.sign) < 0) {
-                throwSpecifierNotAllowedWith(this.sign);
-            }
-            else if (this.zeta !== undefined && specifierWhiteList.indexOf(this.zeta) < 0) {
-                throwSpecifierNotAllowedWith(this.zeta);
-            }
-            else if (this.sharp !== undefined && specifierWhiteList.indexOf(this.sharp) < 0) {
-                throwSpecifierNotAllowedWith(this.sharp);
-            }
-            else if (this.zero !== undefined && specifierWhiteList.indexOf(this.zero) < 0) {
-                throwSpecifierNotAllowedWith(this.zero);
-            }
-            else if (this.grouping !== undefined && specifierWhiteList.indexOf(this.grouping) < 0) {
-                throwSpecifierNotAllowedWith(this.grouping);
-            }
-            else if (this.locale !== undefined && specifierWhiteList.indexOf(this.locale) < 0) {
-                throwSpecifierNotAllowedWith(this.locale);
-            }
-        }
-    }
-
     // Validate what specifiers can be used together.
     validate(arg: unknown) {
         if (this.specifiers === "") {
             return;
         }
 
-        // Specifiers that are allowed with default type '' depend on argument type.
-        if (typeof arg === "string" || typeof arg === "boolean") {
-            this.allowSpecifiersWithType("", "<^>", arg);
-        }
-        else if (typeof arg === "number" || arg instanceof FloatWrapper) {
-            this.allowSpecifiersWithType("", "<^>=-+ z0,_L", arg);
-        }
-        else if (arg instanceof IntWrapper) {
-            this.allowSpecifiersWithType("", "<^>=-+ 0,_L", arg);
-        }
-
-        // Specifiers that are allowed with string types.
-        this.allowSpecifiersWithType("s?", "<^>");
-
-        // Specifiers that are allowed with char type.
-        this.allowSpecifiersWithType("c", "<^>=0");
-
-        // Specifiers that are allowed with integer type 'd'.
-        this.allowSpecifiersWithType("d", "<^>=-+ #0,_L");
-
-        // Specifiers that are allowed with locale aware integer type 'n'.
-        this.allowSpecifiersWithType("n", "<^>=-+ #0");
-
-        // Specifiers that are allowed with binary, octal and hexadecimal types.
-        this.allowSpecifiersWithType("bBoxX", "<^>=-+ #0_");
-
-        // Specifiers that are allowed with floating point types.
-        this.allowSpecifiersWithType("eEfF%gGaA", "<^>=-+ z#0,_L");
-
-        // Precision not allowed for integer format specifiers.
-        if (this.hasType("cdnbBoxX") && this.precision !== undefined) {
-            ThrowFormatError.throwPrecisionNotAllowedWith(this.parser, this.type);
+        const rejectSpecifiers = (rejectedSpecifiers: string, arg?: unknown) => {
+            if (this.align !== undefined && rejectedSpecifiers.indexOf(this.align) >= 0) {
+                ThrowFormatError.throwSpecifierNotAllowedWith(this.parser, this.align, this.type, arg);
+            }
+            else if (this.sign !== undefined && rejectedSpecifiers.indexOf(this.sign) >= 0) {
+                ThrowFormatError.throwSpecifierNotAllowedWith(this.parser, this.sign, this.type, arg);
+            }
+            else if (this.zeta !== undefined && rejectedSpecifiers.indexOf(this.zeta) >= 0) {
+                ThrowFormatError.throwSpecifierNotAllowedWith(this.parser, this.zeta, this.type, arg);
+            }
+            else if (this.sharp !== undefined && rejectedSpecifiers.indexOf(this.sharp) >= 0) {
+                ThrowFormatError.throwSpecifierNotAllowedWith(this.parser, this.sharp, this.type, arg);
+            }
+            else if (this.zero !== undefined && rejectedSpecifiers.indexOf(this.zero) >= 0) {
+                ThrowFormatError.throwSpecifierNotAllowedWith(this.parser, this.zero, this.type, arg);
+            }
+            else if (this.grouping !== undefined && rejectedSpecifiers.indexOf(this.grouping) >= 0) {
+                ThrowFormatError.throwSpecifierNotAllowedWith(this.parser, this.grouping, this.type, arg);
+            }
+            else if (this.locale !== undefined && rejectedSpecifiers.indexOf(this.locale) >= 0) {
+                ThrowFormatError.throwSpecifierNotAllowedWith(this.parser, this.locale, this.type, arg);
+            }
         }
 
-        // Precision not allowed for '' with int.
-        if (this.hasType("") && arg instanceof IntWrapper && this.precision !== undefined) {
-            ThrowFormatError.throwPrecisionNotAllowedWith(this.parser, this.type, arg);
+        const rejectPrecision = () => {
+            if (this.precision !== undefined) {
+                ThrowFormatError.throwPrecisionNotAllowedWith(this.parser, this.type);
+            }
+        }
+
+        switch (this.type) {
+            case "": {
+                // Specifiers that are allowed with default type '' depends on arg.
+                if (typeof arg === "string" || typeof arg === "boolean") {
+                    // allowSpecifiers("<^>", arg);
+                    rejectSpecifiers("=-+ z#0,_L", arg);
+                }
+                else if (typeof arg === "number" || arg instanceof FloatWrapper) {
+                    // allowSpecifiers("<^>=-+ z0,_L", arg);
+                    rejectSpecifiers("#", arg);
+                }
+                else if (arg instanceof IntWrapper) {
+                    // allowSpecifiers("<^>=-+ 0,_L", arg);
+                    rejectSpecifiers("z#", arg);
+                    rejectPrecision();
+                }
+                break;
+            }
+            case "s": case "?": {
+                // allowSpecifiers("<^>");
+                rejectSpecifiers("=-+ z#0,_L");
+                break;
+            }
+            case "c": {
+                // allowSpecifiers("<^>=0");
+                rejectSpecifiers("-+ z#,_L");
+                rejectPrecision();
+                break;
+            }
+            case "d": {
+                // allowSpecifiers("<^>=-+ #0,_L");
+                rejectSpecifiers("z");
+                rejectPrecision();
+                break;
+            }
+            case "n": {
+                // allowSpecifiers("<^>=-+ #0");
+                rejectSpecifiers("z,_L");
+                rejectPrecision();
+                break;
+            }
+            case "b": case "B": case "o": case "x": case "X": {
+                // allowSpecifiers("<^>=-+ #0_");
+                rejectSpecifiers("z,L");
+                rejectPrecision();
+                break;
+            }
+            case "e": case "E": case "f": case "F": case "%": case "g": case "G": case "a": case "A": {
+                // allowSpecifiers("<^>=-+ z#0,_L");
+                // rejectSpecifiers("");
+                break;
+            }
         }
 
         // Grouping not allowed with locale.

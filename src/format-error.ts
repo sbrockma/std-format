@@ -89,15 +89,10 @@ export namespace ThrowFormatError {
             "Precision not allowed with type specifier '" + type + "'" + (arg ? " with " + getTypeOfArg(arg) + " argument" : "")));
     }
 
-    // Throw specifier not allowed with default error.
-    export function throwSpecifierNotAllowedWithDefault(p: FormatStringParser, specifier: string, withArg: unknown): never {
-        throw new FormatError(p.getErrorMessage(
-            "Specifier '" + specifier + "' not allowed with specifier '' with " + getTypeOfArg(withArg) + " argument"));
-    }
-
     // Throw specifier not allowed with error.
-    export function throwSpecifierNotAllowedWith(p: FormatStringParser, specifier1: string, specifier2: string): never {
+    export function throwSpecifierNotAllowedWith(p: FormatStringParser, specifier1: string, specifier2: string, arg?: unknown): never {
         throw new FormatError(p.getErrorMessage(
-            "Specifier '" + specifier1 + "' not allowed with specifier '" + specifier2 + "'"));
+            "Specifier '" + specifier1 + "' not allowed with specifier '" + specifier2 + "'" +
+            (arg === undefined ? "" : (" with " + getTypeOfArg(arg) + " argument"))));
     }
 }
