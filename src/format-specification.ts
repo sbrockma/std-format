@@ -33,17 +33,15 @@ export class FormatSpecification {
         }
 
         // Get fill and align.
-        if (specifiers.length >= 1 && ["<", "^", ">", "="].indexOf(specifiers[this.parsePos]) >= 0) {
-            this.fill = undefined;
+        let fill = getSymbolInfoAt(specifiers, 0);
+        if (fill && specifiers.length >= fill.chars.length + 1 && ["<", "^", ">", "="].indexOf(specifiers[this.parsePos + fill.chars.length]) >= 0) {
+            this.fill = fill.chars;
+            this.parsePos += fill.chars.length;
             this.align = specifiers[this.parsePos++] as any;
         }
-        else if (specifiers.length >= 2) {
-            let fill = getSymbolInfoAt(specifiers, 0);
-            if (fill && ["<", "^", ">", "="].indexOf(specifiers[this.parsePos + fill.chars.length]) >= 0) {
-                this.fill = fill.chars;
-                this.parsePos += fill.chars.length;
-                this.align = specifiers[this.parsePos++] as any;
-            }
+        else if (specifiers.length >= 1 && ["<", "^", ">", "="].indexOf(specifiers[this.parsePos]) >= 0) {
+            this.fill = undefined;
+            this.align = specifiers[this.parsePos++] as any;
         }
 
         // Get rest of the specifiers.

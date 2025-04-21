@@ -204,6 +204,12 @@ describe("Testing std-format", () => {
         expect(format("{:>08d}", 10)).toEqual("00000010");
         expect(format("{:*>08d}", 10)).toEqual("******10");
         expect(format("{:*>8d}", 10)).toEqual("******10");
+
+        // Fill char is align char '<', '^', '>' or '='
+        expect(format("{:^<8d}", 10)).toEqual("10^^^^^^");
+        expect(format("{:>^8d}", 10)).toEqual(">>>10>>>");
+        expect(format("{:=>8d}", 10)).toEqual("======10");
+        expect(format("{:<=8d}", 10)).toEqual("<<<<<<10");
     });
 
     it("align specifier =", () => {
