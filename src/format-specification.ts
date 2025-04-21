@@ -24,22 +24,23 @@ export class FormatSpecification {
     readonly locale: "L" | undefined;
     readonly type: "" | "s" | "?" | "c" | "d" | "n" | "b" | "B" | "o" | "x" | "X" | "e" | "E" | "f" | "F" | "%" | "g" | "G" | "a" | "A";
 
-    private parsePos: number = 0;
+    // Parse starts from pos 1, skip ":" at pos 0.
+    private parsePos: number = 1; 
 
     constructor(readonly parser: FormatStringParser, readonly specifiers: string) {
-        if (!specifiers) {
+        if (!specifiers || specifiers[0] !== ":") {
             this.type = "";
             return;
         }
 
         // Get fill and align.
-        let fill = getSymbolInfoAt(specifiers, 0);
-        if (fill && specifiers.length >= fill.chars.length + 1 && ["<", "^", ">", "="].indexOf(specifiers[this.parsePos + fill.chars.length]) >= 0) {
+        let fill = getSymbolInfoAt(specifiers, this.parsePos);
+        if (fill && specifiers.length >= this.parsePos + fill.chars.length + 1 && ["<", "^", ">", "="].indexOf(specifiers[this.parsePos + fill.chars.length]) >= 0) {
             this.fill = fill.chars;
             this.parsePos += fill.chars.length;
             this.align = specifiers[this.parsePos++] as any;
         }
-        else if (specifiers.length >= 1 && ["<", "^", ">", "="].indexOf(specifiers[this.parsePos]) >= 0) {
+        else if (specifiers.length >= this.parsePos + 1 && ["<", "^", ">", "="].indexOf(specifiers[this.parsePos]) >= 0) {
             this.fill = undefined;
             this.align = specifiers[this.parsePos++] as any;
         }

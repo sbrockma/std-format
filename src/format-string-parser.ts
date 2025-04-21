@@ -242,7 +242,7 @@ export class FormatStringParser {
         if (m && m[0]) {
             let match = m[0];
             let fieldNumber = m[1] ?? "";
-            let specifiers = (m[2] ?? ":").substring(1); // Remove ":" with substring(1)
+            let specifiers = m[2] ?? "";
 
             // Set error string.
             this.errorString = match;
