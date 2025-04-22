@@ -889,6 +889,29 @@ describe("Testing std-format", () => {
         expect(format("{:.5f}", 5000.0005)).toEqual("5000.00050");
     });
 
+    it("array formatting", () => {
+        expect(format("{}", [])).toEqual("[]");
+        expect(format("{}", [0])).toEqual("[0.0]");
+        expect(format("{:d}", [0])).toEqual("[0]");
+        expect(format("{}", [0, 1])).toEqual("[0.0, 1.0]");
+        expect(format("{:d}", [0, 1])).toEqual("[0, 1]");
+        expect(format("{:d}", [0, [1, 2]])).toEqual("[0, [1, 2]]");
+        expect(format("{}", ["Hello", "world!"])).toEqual("[Hello, world!]");
+        expect(format("{:!^3s}", ["A", "B", "C"])).toEqual("[!A!, !B!, !C!]");
+        expect(format("{::}", [1])).toEqual("[1.0]");
+        expect(format("{:::b}", [3, -2])).toEqual("[11, -10]");
+        expect(format("{:d::b}", [3, -2])).toEqual("[11, -10]");
+        expect(format("{:n::b}", [3, -2])).toEqual("11, -10");
+        expect(format("{:b::b}", [3, -2])).toEqual("{11, -10}");
+        expect(format("|{:20d::d}|", [1, 2, 3])).toEqual("|[1, 2, 3]           |");  // Default alignment '<'
+        expect(format("|{:*<20d::d}|", [1, 2, 3])).toEqual("|[1, 2, 3]***********|");
+        expect(format("|{:*^20d::d}|", [1, 2, 3])).toEqual("|*****[1, 2, 3]******|");
+        expect(format("|{:*>20d::.1f}|", [1, 2, 3])).toEqual("|*****[1.0, 2.0, 3.0]|");
+        expect(() => format("{:*=20d::d}", [1, 2, 3])).toThrow(); // Invalid alignment '='
+        expect(format("{:e<40b:x^10b:a>5::x}", [[[11], [7, 4]], [[13]]])).toEqual("{{aa[b], [7, 4]}, x{aa[d]}xx}eeeeeeeeeee");
+        expect(format("{:#^7b::d}", [[1], [7], [3]])).toEqual("[##{1}##, ##{7}##, ##{3}##]");
+    });
+
     it("deprecated stuff", () => {
         function stdFormatSpec(spec: "cpp" | "python" | "js", fmt: string, ...args: unknown[]) {
             stdSpecificationHint(spec);

@@ -1,4 +1,4 @@
-import { assert, getSymbol, getSymbolInfoAt, isInteger, isNegative, mapDigitToChar, repeatString, zeroArray } from "../internal";
+import { assert, getArrayDepth, getSymbol, getSymbolInfoAt, isArray, isInteger, isNegative, mapDigitToChar, repeatString, zeroArray } from "../internal";
 
 describe("Testing internal functions", () => {
 
@@ -72,12 +72,12 @@ describe("Testing internal functions", () => {
         expect(getSymbolInfoAt("A", 0)).toEqual({ codePoint: 65, chars: "A" });
         expect(getSymbolInfoAt("A", 1)).toEqual(undefined);
         expect(getSymbolInfoAt("Ω", 0)).toEqual({ codePoint: 0x03A9, chars: "Ω" });
-        expect(getSymbolInfoAt("𐍈", 0)).toEqual({ codePoint: 0x10348, chars: "\uD800\uDF48"}); // 𐍈
-        expect(getSymbolInfoAt("\uD800\uDF48", 0)).toEqual({ codePoint: 0x10348, chars: "𐍈"}); // 𐍈
-        expect(getSymbolInfoAt("𝄞", 0)).toEqual({ codePoint: 0x1D11E, chars: "\uD834\uDD1E"}); // 𝄞
-        expect(getSymbolInfoAt("\uD834\uDD1E", 0)).toEqual({ codePoint: 0x1D11E, chars: "𝄞"}); // 𝄞
-        expect(getSymbolInfoAt("𐍈𝄞𐍈", 2)).toEqual({ codePoint: 0x1D11E, chars: "𝄞"});
-        
+        expect(getSymbolInfoAt("𐍈", 0)).toEqual({ codePoint: 0x10348, chars: "\uD800\uDF48" }); // 𐍈
+        expect(getSymbolInfoAt("\uD800\uDF48", 0)).toEqual({ codePoint: 0x10348, chars: "𐍈" }); // 𐍈
+        expect(getSymbolInfoAt("𝄞", 0)).toEqual({ codePoint: 0x1D11E, chars: "\uD834\uDD1E" }); // 𝄞
+        expect(getSymbolInfoAt("\uD834\uDD1E", 0)).toEqual({ codePoint: 0x1D11E, chars: "𝄞" }); // 𝄞
+        expect(getSymbolInfoAt("𐍈𝄞𐍈", 2)).toEqual({ codePoint: 0x1D11E, chars: "𝄞" });
+
         // Get second char of symbol "𝄞", ok?
         expect(getSymbolInfoAt("\uD834\uDD1E", 1)).toEqual({ codePoint: 0xDD1E, chars: "\uDD1E" });
     });
@@ -97,5 +97,32 @@ describe("Testing internal functions", () => {
         expect(() => getSymbol(NaN)).toThrow();
         expect(() => getSymbol(Infinity)).toThrow();
         expect(() => getSymbol(-Infinity)).toThrow();
+    });
+
+    it("isArray", () => {
+        expect(isArray(undefined)).toEqual(false);
+        expect(isArray(null)).toEqual(false);
+        expect(isArray(0)).toEqual(false);
+        expect(isArray("0")).toEqual(false);
+        expect(isArray({})).toEqual(false);
+        expect(isArray(() => { })).toEqual(false);
+        expect(isArray([])).toEqual(true);
+        expect(isArray([0])).toEqual(true);
+        expect(isArray(["0"])).toEqual(true);
+    });
+
+    it("getArrayDepth", () => {
+        expect(getArrayDepth(undefined)).toEqual(0);
+        expect(getArrayDepth(null)).toEqual(0);
+        expect(getArrayDepth(0)).toEqual(0);
+        expect(getArrayDepth("0")).toEqual(0);
+        expect(getArrayDepth({})).toEqual(0);
+        expect(getArrayDepth(() => { })).toEqual(0);
+        expect(getArrayDepth([])).toEqual(1);
+        expect(getArrayDepth([0, 1, 2])).toEqual(1);
+        expect(getArrayDepth([[0], [1], [2]])).toEqual(2);
+        expect(getArrayDepth([[[0], [1]], [2]])).toEqual(3);
+        expect(getArrayDepth([0, [1, 2]])).toEqual(2);
+        expect(getArrayDepth([[], "0"])).toEqual(2);
     });
 });

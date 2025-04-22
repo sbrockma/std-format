@@ -134,3 +134,24 @@ export function setStringRealLength(str: string, newLen: number): string {
     // Did not reach length, return full string.
     return str.substring(0, charPos);
 }
+
+// Is array
+export function isArray<T>(item: unknown | T[]): item is T[] {
+    return Object.prototype.toString.call(item) === "[object Array]";
+}
+
+// Get depth of (nested) array.
+export function getArrayDepth<T>(item: unknown | T[]): number {
+    if (isArray(item)) {
+        let depth = 1;
+
+        for (let i = 0; i < item.length; i++) {
+            depth = Math.max(depth, getArrayDepth(item[i]) + 1);
+        }
+
+        return depth;
+    }
+    else {
+        return 0;
+    }
+}

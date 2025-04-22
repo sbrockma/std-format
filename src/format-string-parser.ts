@@ -1,4 +1,4 @@
-import { assert, AssertionError, getStringRealLength, getSymbolInfoAt, isInteger, repeatString } from "./internal";
+import { assert, AssertionError, getArrayDepth, getStringRealLength, getSymbolInfoAt, isArray, isInteger, repeatString } from "./internal";
 import { deprecatedFalseString, deprecatedOctalPrefix, deprecatedTrueString } from "./deprecated";
 import { FormatSpecification } from "./format-specification";
 import { formatNumber } from "./number-formatter";
@@ -54,13 +54,19 @@ export class FormatStringParser {
         }
     }
 
-    // Formats replacement field.
-    private formatReplacementField(arg: unknown, fs: FormatSpecification): string {
+    // Formats argument according to fs.
+    private formatArgument(arg: unknown, fs: FormatSpecification, curArrayDepth?: number, totArrayDepth?: number): string {
         // Validate format specification.
         fs.validate(arg);
 
         // Get align.
         let { align } = fs;
+
+        // Width of field or 0 if not given.
+        let width = 0;
+
+        // Fill char.
+        let fill = " ";
 
         // Convert to valid argument: string or number.
         let argStr: string;
@@ -72,6 +78,12 @@ export class FormatStringParser {
             // Default align for number is right.
             align ??= ">";
 
+            // Get width.
+            width = fs.width ?? 0;
+
+            // Get fill char.
+            fill = fs.fill ?? fs.zero ?? " ";
+
             // Format number to string.
             return formatNumber(arg, fs);
         }
@@ -79,6 +91,12 @@ export class FormatStringParser {
         function formatStr(arg: string): string {
             // Default align for string is left.
             align ??= "<";
+
+            // Get width.
+            width = fs.width ?? 0;
+
+            // Get fill char.
+            fill = fs.fill ?? fs.zero ?? " ";
 
             // Apply string formatting.
             return formatString(arg, fs);
@@ -135,6 +153,28 @@ export class FormatStringParser {
                 ThrowFormatError.throwInvalidArgumentForType(this, arg, fs.type);
             }
         }
+        else if (isArray(arg)) {
+            // Format array.
+            totArrayDepth ??= getArrayDepth(arg);
+            curArrayDepth ??= 0
+
+            let range = fs.getRangePresentation(curArrayDepth, totArrayDepth);
+
+            argStr = range.leftBrace;
+
+            for (let i = 0; i < arg.length; i++) {
+                if (i > 0) {
+                    argStr += ", ";
+                }
+                argStr += this.formatArgument(arg[i], fs, curArrayDepth + 1, totArrayDepth);
+            }
+
+            argStr += range.rightBrace;
+
+            fill = range.fill ?? " ";
+            align = range.align ?? "<";
+            width = range.width ?? 0;
+        }
         else {
             // Invalid argument type.
             ThrowFormatError.throwInvalidArgumentForType(this, arg, fs.type);
@@ -142,14 +182,8 @@ export class FormatStringParser {
 
         // Next apply fill and alignment according to format specification.
 
-        // Get width of field or 0 if not given.
-        let width = fs.width ?? 0;
-
         // Calculate fillCount
         let fillCount = Math.max(0, width - getStringRealLength(argStr));
-
-        // Get fill char.
-        let fillChar = fs.fill ?? fs.zero ?? " ";
 
         // Initialize replacement string.
         let replacementStr: string = argStr;
@@ -159,15 +193,15 @@ export class FormatStringParser {
             switch (align) {
                 case "<":
                     // Field is left aligned. Add filling to right.
-                    replacementStr = argStr + repeatString(fillChar, fillCount);
+                    replacementStr = argStr + repeatString(fill, fillCount);
                     break;
                 case "^":
                     // Field is center aligned. Add filling to left and right right.
-                    replacementStr = repeatString(fillChar, Math.floor(fillCount / 2)) + argStr + repeatString(fillChar, Math.ceil(fillCount / 2));
+                    replacementStr = repeatString(fill, Math.floor(fillCount / 2)) + argStr + repeatString(fill, Math.ceil(fillCount / 2));
                     break;
                 case ">":
                     // Field is right aligned. Add filling to left.
-                    replacementStr = repeatString(fillChar, fillCount) + argStr;
+                    replacementStr = repeatString(fill, fillCount) + argStr;
                     break;
             }
         }
@@ -253,8 +287,8 @@ export class FormatStringParser {
             // Create format specification.
             let fs = new FormatSpecification(this, specifiers);
 
-            // Format replacement field and add it to result string.
-            this.resultString += this.formatReplacementField(arg, fs);
+            // Format argument and add it to result string.
+            this.resultString += this.formatArgument(arg, fs);
 
             // Jump over matched replacement field in parsing string.
             this.parseString = this.parseString.substring(match.length);
