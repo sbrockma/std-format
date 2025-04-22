@@ -25,7 +25,7 @@ export class FormatSpecification {
     readonly type: "" | "s" | "?" | "c" | "d" | "n" | "b" | "B" | "o" | "x" | "X" | "e" | "E" | "f" | "F" | "%" | "g" | "G" | "a" | "A";
 
     // Parse starts from pos 1, skip ":" at pos 0.
-    private parsePos: number = 1; 
+    private parsePos: number = 1;
 
     constructor(readonly parser: FormatStringParser, readonly specifiers: string) {
         if (!specifiers || specifiers[0] !== ":") {
@@ -34,16 +34,9 @@ export class FormatSpecification {
         }
 
         // Get fill and align.
-        let fill = getSymbolInfoAt(specifiers, this.parsePos);
-        if (fill && specifiers.length >= this.parsePos + fill.chars.length + 1 && ["<", "^", ">", "="].indexOf(specifiers[this.parsePos + fill.chars.length]) >= 0) {
-            this.fill = fill.chars;
-            this.parsePos += fill.chars.length;
-            this.align = specifiers[this.parsePos++] as any;
-        }
-        else if (specifiers.length >= this.parsePos + 1 && ["<", "^", ">", "="].indexOf(specifiers[this.parsePos]) >= 0) {
-            this.fill = undefined;
-            this.align = specifiers[this.parsePos++] as any;
-        }
+        let { fill, align } = this.parseFillAndAlign("<", "^", ">", "=");
+        this.fill = fill;
+        this.align = align as any;
 
         // Get rest of the specifiers.
         this.sign = this.parseSpecifier("-", "+", " ");
@@ -59,6 +52,21 @@ export class FormatSpecification {
         // Parse position should have reached end of specifiers.
         if (this.parsePos !== specifiers.length) {
             ThrowFormatError.throwInvalidFormatSpecifiers(this.parser);
+        }
+    }
+
+    // Parse fill and align
+    private parseFillAndAlign(...alignChars: string[]): { fill: string | undefined, align: string | undefined } {
+        let fill = getSymbolInfoAt(this.specifiers, this.parsePos);
+        if (fill && this.specifiers.length >= this.parsePos + fill.chars.length + 1 && alignChars.indexOf(this.specifiers[this.parsePos + fill.chars.length]) >= 0) {
+            this.parsePos += fill.chars.length;
+            return { fill: fill.chars, align: this.specifiers[this.parsePos++] }
+        }
+        else if (this.specifiers.length >= this.parsePos + 1 && alignChars.indexOf(this.specifiers[this.parsePos]) >= 0) {
+            return { fill: undefined, align: this.specifiers[this.parsePos++] }
+        }
+        else {
+            return { fill: undefined, align: undefined }
         }
     }
 
