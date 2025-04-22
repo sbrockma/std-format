@@ -1,3 +1,4 @@
+import { assert } from "internal";
 import { GroupingInfo } from "./grouping-info";
 
 // Get user/system locale
@@ -27,7 +28,8 @@ export function getLocaleGroupingInfo(): GroupingInfo {
  * @public
  */
 export function setLocale(locale?: string) {
-    // Get locale group info.
-    // Use default locale if locale is empty string or undefined/null.
+    assert(locale === undefined || typeof locale === "string", "Invalid locale: " + locale);
+
+    // Get locale group info. If locale is empty string or undefined then use default locale.
     localeGroupingInfo = GroupingInfo.getFromLocale(locale || defaultLocale);
 }
