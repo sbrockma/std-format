@@ -9,8 +9,6 @@ const makeConfig = ({ env, argv, format, filename, libraryType, bundleJsbi }) =>
         options: { envName: format }
     }
 
-    const isModule = libraryType === "module";
-
     const config = {
         mode: argv.mode,
         entry: path.resolve(__dirname, "src/index.ts"),
@@ -23,14 +21,14 @@ const makeConfig = ({ env, argv, format, filename, libraryType, bundleJsbi }) =>
                 name: libraryType === "umd" ? "StdFormat" : undefined,
                 type: libraryType,
                 // Importing default export on esm failed if "exports" was set to "default".
-                export: isModule ? undefined : "default",
+                export: libraryType === "module" ? undefined : "default",
             },
-            module: isModule,
-            environment: { module: isModule },
+            module: libraryType === "module",
+            environment: { module: libraryType === "module" },
             globalObject: "this"
         },
         experiments: {
-            outputModule: isModule
+            outputModule: libraryType === "module"
         },
         resolve: {
             // mainFields: ['exports', 'module', 'main'],
