@@ -1,4 +1,4 @@
-import { FloatWrapper, IntWrapper } from "./int-float";
+import { NumberWrapper } from "./int-float";
 import { ThrowFormatError } from "./format-error";
 import { FormatStringParser } from "./format-string-parser";
 import { getSymbolInfoAt } from "internal";
@@ -254,11 +254,11 @@ export class FormatSpecification {
                     // allowSpecifiers("<^>", arg);
                     rejectSpecifiers("=-+ z#0,_L", arg);
                 }
-                else if (typeof arg === "number" || arg instanceof FloatWrapper) {
+                else if (typeof arg === "number" || NumberWrapper.isFloatType(arg)) {
                     // allowSpecifiers("<^>=-+ z0,_L", arg);
                     rejectSpecifiers("#", arg);
                 }
-                else if (arg instanceof IntWrapper) {
+                else if (NumberWrapper.isIntType(arg)) {
                     // allowSpecifiers("<^>=-+ 0,_L", arg);
                     rejectSpecifiers("z#", arg);
                     rejectPrecision();

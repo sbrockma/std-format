@@ -1,4 +1,4 @@
-import { FloatWrapper, IntWrapper } from "./int-float";
+import { NumberWrapper } from "./int-float";
 import { FormatStringParser } from "./format-string-parser";
 
 /**
@@ -16,10 +16,10 @@ export class FormatError extends Error {
 export namespace ThrowFormatError {
     // Get type of arg.
     function getTypeOfArg(arg: unknown): string {
-        if (arg instanceof IntWrapper) {
+        if (NumberWrapper.isIntType(arg)) {
             return "int";
         }
-        else if (arg instanceof FloatWrapper) {
+        else if (NumberWrapper.isFloatType(arg)) {
             return "float";
         }
         else {

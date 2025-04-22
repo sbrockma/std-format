@@ -4,7 +4,7 @@ import { ThrowFormatError } from "./format-error";
 import { NumberConverter } from "./number-converter";
 import { getLocaleGroupingInfo } from "./set-locale";
 import { GroupingInfo } from "./grouping-info";
-import { FloatWrapper, IntWrapper } from "./int-float";
+import { NumberWrapper } from "./int-float";
 
 // Get number prefix.
 function getNumberPrefix(fs: FormatSpecification) {
@@ -44,10 +44,10 @@ function getGroupingInfo(fs: FormatSpecification): GroupingInfo {
 }
 
 // Get valid code point
-function toValidCodePoint(value: number | IntWrapper, fs: FormatSpecification): number {
+function toValidCodePoint(value: number | NumberWrapper, fs: FormatSpecification): number {
     try {
         // Is code point valid integer and in range?
-        let codePoint = value instanceof IntWrapper ? value.toSafeNumber() : value;
+        let codePoint = value instanceof NumberWrapper ? value.toSafeNumber() : value;
         assert(isValidCodePoint(codePoint), "Invalid code point value: " + codePoint);
         return codePoint;
     }
@@ -86,7 +86,7 @@ function applyGrouping(fs: FormatSpecification, intDigits: string) {
 }
 
 // Convert this number to string.
-export function formatNumber(value: number | IntWrapper | FloatWrapper, fs: FormatSpecification): string {
+export function formatNumber(value: number | NumberWrapper, fs: FormatSpecification): string {
     // Set sign. "-", "+", " " or "".
     let sign: string;
 
@@ -102,28 +102,28 @@ export function formatNumber(value: number | IntWrapper | FloatWrapper, fs: Form
     // Postfix string. "%" for percentage types, or "".
     let postfix: string = fs.hasType("%") ? "%" : "";
 
-    if (fs.hasType("c") && (typeof value === "number" || value instanceof IntWrapper)) {
+    if (fs.hasType("c") && (typeof value === "number" || NumberWrapper.isIntType(value))) {
         // Set digits string to contain single symbol.
         digits = getSymbol(toValidCodePoint(value, fs));
 
         // Other props empty.
         sign = exp = prefix = "";
     }
-    else if (typeof value === "number" && isNaN(value) || value instanceof FloatWrapper && value.isNaN()) {
+    else if (typeof value === "number" && isNaN(value) || value instanceof NumberWrapper && value.isNaN()) {
         // Is nan?
         prefix = "";
-        sign = fs.getSignChar(value instanceof FloatWrapper ? value.isNegative() : value < 0);
+        sign = fs.getSignChar(value instanceof NumberWrapper ? value.isNegative() : value < 0);
         digits = "nan";
         exp = "";
     }
-    else if (typeof value === "number" && Math.abs(value) === Infinity || value instanceof FloatWrapper && value.isInfinity()) {
+    else if (typeof value === "number" && Math.abs(value) === Infinity || value instanceof NumberWrapper && value.isInfinity()) {
         // Is inf?
         prefix = "";
-        sign = fs.getSignChar(value instanceof FloatWrapper ? value.isNegative() : value < 0);
+        sign = fs.getSignChar(value instanceof NumberWrapper ? value.isNegative() : value < 0);
         digits = "inf";
         exp = "";
     }
-    else if (fs.hasType("") && value instanceof IntWrapper || fs.hasType("dnbBoxX") && (value instanceof IntWrapper || isInteger(value))) {
+    else if (fs.hasType("") && NumberWrapper.isIntType(value) || fs.hasType("dnbBoxX") && (NumberWrapper.isIntType(value) || isInteger(value))) {
         // Get target base
         let base = fs.hasType("bB") ? 2 : fs.hasType("o") ? 8 : fs.hasType("xX") ? 16 : 10;
 
@@ -136,7 +136,7 @@ export function formatNumber(value: number | IntWrapper | FloatWrapper, fs: Form
         }
 
         // Get sign.
-        sign = fs.getSignChar(value instanceof IntWrapper ? value.isNegative() : value < 0);
+        sign = fs.getSignChar(value instanceof NumberWrapper ? value.isNegative() : value < 0);
 
         // Apply grouping.
         digits = applyGrouping(fs, valueStr);
@@ -147,8 +147,8 @@ export function formatNumber(value: number | IntWrapper | FloatWrapper, fs: Form
         // Get prefix.
         prefix = getNumberPrefix(fs);
     }
-    else if (fs.hasType("", "eEfF%gGaA") && (typeof value === "number" || value instanceof FloatWrapper)) {
-        let n = new NumberConverter(value instanceof FloatWrapper ? value.toSafeNumber() : value, fs);
+    else if (fs.hasType("", "eEfF%gGaA") && (typeof value === "number" || NumberWrapper.isFloatType(value))) {
+        let n = new NumberConverter(value instanceof NumberWrapper ? value.toSafeNumber() : value, fs);
 
         sign = fs.getSignChar(n.sign < 0);
 

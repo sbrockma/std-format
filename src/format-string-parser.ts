@@ -1,10 +1,10 @@
-import { assert, AssertionError, getArrayDepth, getStringRealLength, getSymbolInfoAt, isArray, isInteger, repeatString } from "./internal";
+import { assert, getArrayDepth, getStringRealLength, getSymbolInfoAt, isArray, isInteger, repeatString } from "./internal";
 import { deprecatedFalseString, deprecatedOctalPrefix, deprecatedTrueString } from "./deprecated";
 import { FormatSpecification } from "./format-specification";
 import { formatNumber } from "./number-formatter";
 import { formatString } from "./string-formatter";
 import { ThrowFormatError } from "./format-error";
-import { FloatWrapper, IntWrapper, int } from "./int-float";
+import { NumberWrapper, int } from "./int-float";
 
 // Regex to test if string loosely matches of replacement field.
 const LooseMatchReplacementFieldRegEx = new RegExp(
@@ -74,7 +74,7 @@ export class FormatStringParser {
         // Is type specifier number compatible?
         let isFsTypeNumberCompatible = fs.hasType("", "cdnbBoxXeEfF%gGaA");
 
-        function formatNum(arg: number | IntWrapper | FloatWrapper): string {
+        function formatNum(arg: number | NumberWrapper): string {
             // Default align for number is right.
             align ??= ">";
 
@@ -118,7 +118,7 @@ export class FormatStringParser {
                 ThrowFormatError.throwInvalidArgumentForType(this, arg, fs.type);
             }
         }
-        else if (typeof arg === "number" || arg instanceof IntWrapper || arg instanceof FloatWrapper) {
+        else if (typeof arg === "number" || arg instanceof NumberWrapper) {
             // Argument can be number or int.
             if (isFsTypeNumberCompatible) {
                 // Use number argument as it is.

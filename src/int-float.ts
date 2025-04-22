@@ -1,11 +1,34 @@
 import JSBI from "jsbi";
 import { ThrowFormatError } from "./format-error";
-import { isInteger, isNegative } from "./internal";
+import { assert, isInteger, isNegative } from "./internal";
 
-export class IntWrapper {
+const MAX_SAFE_INTEGER = 9007199254740991;
+const MIN_SAFE_INTEGER = -9007199254740991;
+
+export abstract class NumberWrapper {
+    abstract isIntType(): boolean;
+    abstract isFloatType(): boolean;
+    abstract isNaN(): boolean;
+    abstract isInfinity(): boolean;
+    abstract isNegative(): boolean;
+    abstract toSafeNumber(): number;
+    abstract toString(radix?: number): string;
+
+    static isIntType(arg: unknown): arg is NumberWrapper {
+        return arg instanceof NumberWrapper && arg.isIntType();
+    }
+
+    static isFloatType(arg: unknown): arg is NumberWrapper {
+        return arg instanceof NumberWrapper && arg.isFloatType();
+    }
+}
+
+class IntWrapper extends NumberWrapper {
     private bigInt: JSBI;
 
     constructor(value: unknown) {
+        super();
+
         if (typeof value === "number" && isInteger(value)) {
             this.bigInt = JSBI.BigInt(value);
         }
@@ -23,14 +46,27 @@ export class IntWrapper {
         }
     }
 
+    isIntType(): boolean {
+        return true;
+    }
+
+    isFloatType(): boolean {
+        return false;
+    }
+
+    isNaN(): boolean {
+        return false;
+    }
+
+    isInfinity(): boolean {
+        return false;
+    }
+
     isNegative(): boolean {
         return JSBI.LT(this.bigInt, 0);
     }
 
     toSafeNumber(): number {
-        const MAX_SAFE_INTEGER = 9007199254740991;
-        const MIN_SAFE_INTEGER = -9007199254740991;
-
         // Make sure is in safe number range.
         if (JSBI.GT(this.bigInt, MAX_SAFE_INTEGER) || JSBI.LT(this.bigInt, MIN_SAFE_INTEGER)) {
             ThrowFormatError.throwToSafeNumberError(this.bigInt.toString());
@@ -44,10 +80,12 @@ export class IntWrapper {
     }
 }
 
-export class FloatWrapper {
+class FloatWrapper extends NumberWrapper {
     private num: number;
 
     constructor(value: unknown) {
+        super();
+
         if (typeof value === "number") {
             this.num = value;
         }
@@ -65,12 +103,12 @@ export class FloatWrapper {
         }
     }
 
-    isNegative(): boolean {
-        return isNegative(this.num);
+    isIntType(): boolean {
+        return false;
     }
 
-    toSafeNumber(): number {
-        return this.num;
+    isFloatType(): boolean {
+        return true;
     }
 
     isNaN(): boolean {
@@ -81,7 +119,16 @@ export class FloatWrapper {
         return Math.abs(this.num) === Infinity;
     }
 
-    toString(): string {
+    isNegative(): boolean {
+        return isNegative(this.num);
+    }
+
+    toSafeNumber(): number {
+        return this.num;
+    }
+
+    toString(radix?: number): string {
+        assert(radix === undefined || radix === 10, "FloatWrapper cannot toString to radix = " + radix);
         return this.num.toString();
     }
 }
