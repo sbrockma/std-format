@@ -1,39 +1,22 @@
 # std-format
 
-std-format is a string formatting library for TS/JS.
+This is a simple string formatting library for TS/JS.
 
-    // Curly braces formatting example
-    format("{:!<+9.2f}", Math.PI); // returns "!!+3.14!!"
-
-This is a hobby project. I am trying to learn how to create and publish an npm package. 
+This is a non-professional hobby project. Learning how to create and publish an npm package. 
 
 Still going through some changes. Has many bugs, hoping to fix them.
 
-## Format Specification
-
-Format specifications for
-[c++20](https://en.cppreference.com/w/cpp/utility/format/spec) and
+Trying to follow standard format specification, for example:
+[C++20](https://en.cppreference.com/w/cpp/utility/format/spec) and
 [Python](https://docs.python.org/3/library/string.html#formatspec).
 
-Replacement field:
-    
-    {[field id][:format specification]}
-
-Format specification:
-    
-    [[fill]<^>=][+- ][z][#][0][width][,_][.precision][L][s?cdnbBoxXeEfF%gGaA]
-
-- ('n', 'L' partially implemented)
-- ('?' not implemented)
-
-### Note!
-Python and C++ has int and float types, JavaScript has only number.
+Note! Legacy JavaScript has only *number* type, not separate *int* and *float*.
 
     // By default format number as float.
-    Fmt.format("{}", 5);          // "5.0"
+    Fmt.format("{}", 5);   // "5.0"
 
-    // To format number as integer, use type 'd'.
-    Fmt.format("{:d}", 5);        // "5"
+    // To format number as integer, use type "d".
+    Fmt.format("{:d}", 5); // "5"
 
 ## Install
 
@@ -41,10 +24,10 @@ Python and C++ has int and float types, JavaScript has only number.
 
 ## Bundling
 
-This library is bundled with webpack now to ESM, CJS and UMD bundles.
+This library is bundled with webpack to ESM, CJS and UMD bundles.
 
 - Does not do polyfills.
-- Trying to use legacy JS functions only.
+- But! Trying to use legacy JS functions only.
 
 Transpiling
 - Compiled from TypeScript to JavaScript with ES6 target.
@@ -69,9 +52,7 @@ Transpiling
     let str = Fmt.format("...");
 
 ### UMD (browser)
-UMD version bundles with "jsbi" dependency, so it can be used standalone in browser.
-
-Has library name set to "StdFormat", so it can be accessed With (window.)StdFormat.
+This version is bundled with dependencies so it can be used standalone in browser.
 
     <script src="std-format.umd.js></script>
     
@@ -81,32 +62,37 @@ Has library name set to "StdFormat", so it can be accessed With (window.)StdForm
 
 ## Declarations
 
-### Function format(formatString, ...args)
+### Function format(str, ...args)
 
 This is the main formatting function.
 
     import Fmt from "@sbrockma/std-format";
 
-    let str = Fmt.format("{}, {}, {}", "a", "b", "c");
-    let str = Fmt.format("{2}, {1}, {0}", "a", "b", "c");
-    let str = Fmt.format("{:*<6}", "x");
-    let str = Fmt.format("{:*>6}", "x");
-    let str = Fmt.format("{:*^6}", "x");
+    // Automatic field numbering
+    let str = Fmt.format("{}{}", "A", "B");
+    
+    // Manual field numbering
+    let str = Fmt.format("{1}{0}", "A", "B");
+
+    // Fill, align and width
+    let str = Fmt.format("{: ^10}", "Banana");
+
+    // Floating point, precision
     let str = Fmt.format("{:.2e}", 1);
+
+    // Array
+    let str = Fmt.format("{:d}", [1, 2, 3]);
 
     // etc.
 
 ### Function setLocale(locale)
 
-Decimal and grouping separators are decided by locale when formatting with type specifier "n" or locale specifier "L".
+Default locale is detected. Locale affects decimal and grouping separators when using specifiers "n" or "L".
 
     import Fmt from "@sbrockma/std-format";
-
-    // Use default locale
-    Fmt.setLocale();
-
-    // Use locale "en-UK"
+    
     Fmt.setLocale("en-UK");
+    Fmt.setLocale(); // Reset
 
 ### Class FormatError
 
