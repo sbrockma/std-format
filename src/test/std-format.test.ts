@@ -85,7 +85,7 @@ describe("Testing std-format", () => {
         expect(format("{:,.4G}", 123456.123456)).toEqual("1.235E+05");
         expect(format("{:,.2%}", 123)).toEqual("12,300.00%");
 
-        expect(format("{:,d}", int("5555555555555555555555555555555555555555"))).
+        expect(format("{:,d}", BigInt("5555555555555555555555555555555555555555"))).
             toEqual("5,555,555,555,555,555,555,555,555,555,555,555,555,555");
     });
 
@@ -114,7 +114,7 @@ describe("Testing std-format", () => {
         expect(format("{:#_x}", 8765432)).toEqual("0x85_bff8");
         expect(format("{:_X}", 8765432)).toEqual("85_BFF8");
 
-        expect(format("{:_d}", int("-5555555555555555555555555555555555555555"))).
+        expect(format("{:_d}", BigInt("-5555555555555555555555555555555555555555"))).
             toEqual("-5_555_555_555_555_555_555_555_555_555_555_555_555_555");
     });
 
@@ -823,10 +823,14 @@ describe("Testing std-format", () => {
         expect(() => format("{}", int(-Infinity))).toThrow();
         expect(() => format("{}", int(Infinity))).toThrow();
 
+        expect(format("{:c}", int(65))).toEqual("A");
+
         expect(format("{:d}", int("123456789012345678901234567890"))).toEqual("123456789012345678901234567890");
         expect(format("{:d}", int("-123456789012345678901234567890"))).toEqual("-123456789012345678901234567890");
 
-        expect(format("{:c}", int(65))).toEqual("A");
+        // Can also pass BigInt
+        expect(format("{:d}", BigInt("123456789012345678901234567890"))).toEqual("123456789012345678901234567890");
+        expect(format("{:d}", BigInt("-123456789012345678901234567890"))).toEqual("-123456789012345678901234567890");
 
         expect(format("{}", int("90000000000000000000000"))).toEqual("90000000000000000000000");
         expect(format("{}", int("0000000009"))).toEqual("9");

@@ -23,7 +23,7 @@ export abstract class NumberWrapper {
     }
 }
 
-class IntWrapper extends NumberWrapper {
+export class IntWrapper extends NumberWrapper {
     private bigInt: JSBI;
 
     constructor(value: unknown) {
@@ -80,7 +80,7 @@ class IntWrapper extends NumberWrapper {
     }
 }
 
-class FloatWrapper extends NumberWrapper {
+export class FloatWrapper extends NumberWrapper {
     private num: number;
 
     constructor(value: unknown) {

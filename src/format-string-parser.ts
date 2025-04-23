@@ -4,7 +4,7 @@ import { FormatSpecification } from "./format-specification";
 import { formatNumber } from "./number-formatter";
 import { formatString } from "./string-formatter";
 import { ThrowFormatError } from "./format-error";
-import { NumberWrapper, int } from "./int-float";
+import { IntWrapper, NumberWrapper } from "./int-float";
 
 // Regex to test if string loosely matches of replacement field.
 const LooseMatchReplacementFieldRegEx = new RegExp(
@@ -46,10 +46,10 @@ export class FormatStringParser {
         this.hasAutomaticFieldNumbering = false;
         this.hasManualFieldSpecification = false;
 
-        // Convert BigInts to ints.
+        // Convert BigInts to BigIntWrappers.
         for (let i = 0; i < this.formatArgs.length; i++) {
             if (typeof this.formatArgs[i] === "bigint") {
-                this.formatArgs[i] = int(this.formatArgs[i]);
+                this.formatArgs[i] = new IntWrapper(this.formatArgs[i]);
             }
         }
     }
