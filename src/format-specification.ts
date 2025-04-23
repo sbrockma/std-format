@@ -11,14 +11,14 @@ import { getSymbolInfoAt } from "internal";
  */
 
 /**
- * Format specification for range/array formatting.
+ * Format specification for array (ArrayPresentation)
  * 
  * [[fill]align][width][type]
  * align: '<', '^', '>'
  * type: '' (default), 'd' (default), 'n' (no braces), 'b' (curly braces)
  */
 
-type RengePresentation = {
+type ArrayPresentation = {
     fill?: string,
     align?: "<" | "^" | ">",
     width?: number,
@@ -27,7 +27,7 @@ type RengePresentation = {
     rightBrace: "" | "]" | "}"
 }
 
-const DefaultRangePresenation: RengePresentation = {
+const DefaultArrayPresenation: ArrayPresentation = {
     type: "",
     leftBrace: "[",
     rightBrace: "]"
@@ -48,9 +48,9 @@ export class FormatSpecification {
     readonly type: "" | "s" | "?" | "c" | "d" | "n" | "b" | "B" | "o" | "x" | "X" | "e" | "E" | "f" | "F" | "%" | "g" | "G" | "a" | "A";
 
     readonly elemSpecifiers: string;
-    readonly rangeSpecifiers: string[];
+    readonly arraySpecifiers: string[];
 
-    readonly rangePresentations: RengePresentation[];
+    readonly arrayPresentations: ArrayPresentation[];
 
     // Parse str and pos.
     private parseStr: string = "";
@@ -59,8 +59,8 @@ export class FormatSpecification {
     constructor(readonly parser: FormatStringParser, specifiers: string) {
         if (!specifiers || specifiers[0] !== ":") {
             this.elemSpecifiers = "";
-            this.rangeSpecifiers = [];
-            this.rangePresentations = [];
+            this.arraySpecifiers = [];
+            this.arrayPresentations = [];
             this.type = "";
             return;
         }
@@ -74,17 +74,17 @@ export class FormatSpecification {
         let i = specifiers.lastIndexOf("::");
         if (i >= 0) {
             this.elemSpecifiers = specifiers.substring(i + 2);
-            this.rangeSpecifiers = specifiers.substring(0, i).split(":");
+            this.arraySpecifiers = specifiers.substring(0, i).split(":");
         }
         else {
             let colonId = specifiers.indexOf(":");
             if (colonId < 0) {
                 this.elemSpecifiers = specifiers;
-                this.rangeSpecifiers = [];
+                this.arraySpecifiers = [];
             }
             else {
                 this.elemSpecifiers = "";
-                this.rangeSpecifiers = specifiers.split(":");
+                this.arraySpecifiers = specifiers.split(":");
             }
         }
 
@@ -112,7 +112,7 @@ export class FormatSpecification {
             ThrowFormatError.throwInvalidFormatSpecifiers(this.parser);
         }
 
-        this.rangePresentations = this.rangeSpecifiers.map(s => {
+        this.arrayPresentations = this.arraySpecifiers.map(s => {
             this.parseStr = s;
             this.parsePos = 0;
 
@@ -133,9 +133,9 @@ export class FormatSpecification {
         });
     }
 
-    getRangePresentation(curArrayDepth: number, totArrayDepth: number): RengePresentation {
-        let i = curArrayDepth + this.rangePresentations.length - totArrayDepth;
-        return i >= 0 && i < this.rangePresentations.length ? this.rangePresentations[i] : DefaultRangePresenation;
+    getArrayPresentation(curArrayDepth: number, totArrayDepth: number): ArrayPresentation {
+        let i = curArrayDepth + this.arrayPresentations.length - totArrayDepth;
+        return i >= 0 && i < this.arrayPresentations.length ? this.arrayPresentations[i] : DefaultArrayPresenation;
     }
 
     // Parse fill and align

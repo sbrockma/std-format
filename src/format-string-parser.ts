@@ -158,9 +158,9 @@ export class FormatStringParser {
             totArrayDepth ??= getArrayDepth(arg);
             curArrayDepth ??= 0
 
-            let range = fs.getRangePresentation(curArrayDepth, totArrayDepth);
+            let ar = fs.getArrayPresentation(curArrayDepth, totArrayDepth);
 
-            argStr = range.leftBrace;
+            argStr = ar.leftBrace;
 
             for (let i = 0; i < arg.length; i++) {
                 if (i > 0) {
@@ -169,11 +169,11 @@ export class FormatStringParser {
                 argStr += this.formatArgument(arg[i], fs, curArrayDepth + 1, totArrayDepth);
             }
 
-            argStr += range.rightBrace;
+            argStr += ar.rightBrace;
 
-            fill = range.fill ?? " ";
-            align = range.align ?? "<";
-            width = range.width ?? 0;
+            fill = ar.fill ?? " ";
+            align = ar.align ?? "<";
+            width = ar.width ?? 0;
         }
         else {
             // Invalid argument type.
