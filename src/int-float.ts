@@ -136,13 +136,13 @@ export class FloatWrapper extends NumberWrapper {
 /**
  * @public
  */
-export function int(value?: unknown): IntWrapper {
+export function int(value?: unknown): unknown {
     return new IntWrapper(value === "" || value === undefined || value === null ? 0 : value);
 }
 
 /**
  * @public
  */
-export function float(value?: unknown): FloatWrapper {
+export function float(value?: unknown): unknown {
     return new FloatWrapper(value === "" || value === undefined || value === null ? 0.0 : value);
 }
