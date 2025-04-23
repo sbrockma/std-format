@@ -170,14 +170,20 @@ export class FormatStringParser {
             }
 
             argStr += ar.rightBrace;
-
-            fill = ar.fill ?? " ";
-            align = ar.align ?? "<";
-            width = ar.width ?? 0;
         }
         else {
             // Invalid argument type.
             ThrowFormatError.throwInvalidArgumentForType(this, arg, fs.type);
+        }
+
+        if (curArrayDepth !== undefined && totArrayDepth !== undefined && curArrayDepth < totArrayDepth) {
+            // Use array presentation's fill/align/width on elements too if cur array depth < tot array depth.
+            let ar = fs.getArrayPresentation(curArrayDepth, totArrayDepth);
+
+            // Set fill, align and width.
+            fill = ar.fill ?? " ";
+            align = ar.align ?? "<";
+            width = ar.width ?? 0;
         }
 
         // Next apply fill and alignment according to format specification.

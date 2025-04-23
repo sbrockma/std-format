@@ -914,6 +914,7 @@ describe("Testing std-format", () => {
         expect(() => format("{:*=20d::d}", [1, 2, 3])).toThrow(); // Invalid alignment '='
         expect(format("{:e<40b:x^10b:a>5::x}", [[[11], [7, 4]], [[13]]])).toEqual("{{aa[b], [7, 4]}, x{aa[d]}xx}eeeeeeeeeee");
         expect(format("{:#^7b::d}", [[1], [7], [3]])).toEqual("[##{1}##, ##{7}##, ##{3}##]");
+        expect(format("{:d:-^10b::d}", [0, [1, 2]])).toEqual("[----0-----, --{1, 2}--]");
     });
 
     it("deprecated stuff", () => {
