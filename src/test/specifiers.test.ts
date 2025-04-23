@@ -1,5 +1,5 @@
 import { format } from "../index";
-import { int } from "../int-float";
+import { float, int } from "../int-float";
 
 /**
  * Test allowed specifiers for each type.
@@ -52,7 +52,7 @@ describe("Testing std-format allowed specifier for", () => {
         expect(() => format("{:L}", true)).toThrow();
     });
 
-    it("'' (number)", () => {
+    it("'' (number|float)", () => {
         expect(() => format("{:}", 10)).not.toThrow();
         expect(() => format("{:*<8}", 10)).not.toThrow();
         expect(() => format("{:*^8}", 10)).not.toThrow();
@@ -69,9 +69,26 @@ describe("Testing std-format allowed specifier for", () => {
         expect(() => format("{:_}", 10)).not.toThrow();
         expect(() => format("{:.3}", 10)).not.toThrow();
         expect(() => format("{:L}", 10)).not.toThrow();
+
+        expect(() => format("{:}", float(10))).not.toThrow();
+        expect(() => format("{:*<8}", float(10))).not.toThrow();
+        expect(() => format("{:*^8}", float(10))).not.toThrow();
+        expect(() => format("{:*>8}", float(10))).not.toThrow();
+        expect(() => format("{:*=8}", float(10))).not.toThrow();
+        expect(() => format("{:-}", float(10))).not.toThrow();
+        expect(() => format("{:+}", float(10))).not.toThrow();
+        expect(() => format("{: }", float(10))).not.toThrow();
+        expect(() => format("{:z}", float(10))).not.toThrow(); // Allow 'z'
+        expect(() => format("{:#}", float(10))).toThrow();
+        expect(() => format("{:08}", float(10))).not.toThrow();
+        expect(() => format("{:5}", float(10))).not.toThrow();
+        expect(() => format("{:,}", float(10))).not.toThrow();
+        expect(() => format("{:_}", float(10))).not.toThrow();
+        expect(() => format("{:.3}", float(10))).not.toThrow();
+        expect(() => format("{:L}", float(10))).not.toThrow();
     });
 
-    it("'' (int)", () => {
+    it("'' (int|BigInt)", () => {
         expect(() => format("{:}", int(999))).not.toThrow();
         expect(() => format("{:*<8}", int(999))).not.toThrow();
         expect(() => format("{:*^8}", int(999))).not.toThrow();
