@@ -1,10 +1,10 @@
 {
     "name": "@sbrockma/std-format",
     "version": "1.4.2",
-    "author": "Stefan Brockmann",
+    "author": "Stefan Brockmann <stefanprogram@hotmail.com>",
     "private": false,
     "license": "zlib",
-    "description": "String formatting function for TS/JS.",
+    "description": "Simple string formatting library for TS/JS.",
     "homepage": "https://github.com/sbrockma/std-format#readme",
     "repository": "github:sbrockma/std-format",
     "main": "./dist/std-format.cjs.js",
