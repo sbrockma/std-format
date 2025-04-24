@@ -1,4 +1,7 @@
 # Changelog
+## [1.5.0] - 2025-04-24
+### Added
+- Some array formatting.
 
 ## [1.4.2] - 2025-04-21
 ### Fixed
