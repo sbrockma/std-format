@@ -71,23 +71,16 @@ export class FormatSpecification {
 
         specifiers = specifiers.substring(1);
 
-        let i = specifiers.lastIndexOf("::");
-        if (i >= 0) {
-            this.elemSpecifiers = specifiers.substring(i + 2);
-            this.arraySpecifiers = specifiers.substring(0, i).split(":");
-        }
-        else {
-            let colonId = specifiers.indexOf(":");
-            if (colonId < 0) {
-                this.elemSpecifiers = specifiers;
-                this.arraySpecifiers = [];
-            }
-            else {
-                this.elemSpecifiers = "";
-                this.arraySpecifiers = specifiers.split(":");
-            }
-        }
+        // Split specifiers to parts.
+        let parts = specifiers.split(":");
 
+        // Last part is always element's format specification.
+        this.elemSpecifiers = parts.pop() ?? "";
+
+        // Previous parts are array presentations.
+        this.arraySpecifiers = parts;
+
+        // Init parse string and position.
         this.parseStr = this.elemSpecifiers;
         this.parsePos = 0;
 
@@ -113,6 +106,7 @@ export class FormatSpecification {
         }
 
         this.arrayPresentations = this.arraySpecifiers.map(s => {
+            // Init parse string and position.
             this.parseStr = s;
             this.parsePos = 0;
 
@@ -131,6 +125,7 @@ export class FormatSpecification {
                 ThrowFormatError.throwInvalidFormatSpecifiers(this.parser);
             }
 
+            // Solve left and right braces.
             let leftBrace: "" | "[" | "{" = type === "n" || type === "s" ? "" : (type === "b" ? "{" : "[");
             let rightBrace: "" | "]" | "}" = type === "n" || type === "s" ? "" : (type === "b" ? "}" : "]");
 
