@@ -25,6 +25,10 @@ function isDigits(str: string): boolean {
     return str.length > 0 && DigitsRegex.test(str);
 }
 
+class PassToLeaf {
+    constructor(readonly str: string) { }
+}
+
 // This parsing context contains all necessary variables required in parsing.
 export class FormatStringParser {
     parseString: string;
@@ -54,10 +58,62 @@ export class FormatStringParser {
         }
     }
 
-    // Formats argument according to fs.
+    // Formats argument.
     private formatArgument(arg: unknown, fs: FormatSpecification, curArrayDepth?: number, totArrayDepth?: number): string {
+        // Validate format specification
+        fs.validate(arg); // FIXME: Here or There
+
+        // Is type specifier number compatible?
+        let isFsTypeNumberCompatible = fs.hasType("", "cdnbBoxXeEfF%gGaA");
+
+        if (typeof arg === "boolean") {
+            // Argument can be boolean.
+            if (fs.hasType("", "s")) {
+                // Convert boolean to string, if type is default '' or string 's'.
+                let b = fs.parser.getBooleanString(arg);
+                return this.formatKnownArgument(b, fs, curArrayDepth, totArrayDepth);
+            }
+            else if (isFsTypeNumberCompatible) {
+                // Convert boolean to number 0 or 1.
+                return this.formatKnownArgument(arg ? 1 : 0, fs, curArrayDepth, totArrayDepth);
+            }
+        }
+        else if (typeof arg === "number" || arg instanceof NumberWrapper) {
+            // Argument can be number or int.
+            if (isFsTypeNumberCompatible) {
+                // Use number argument as it is.
+                return this.formatKnownArgument(arg, fs, curArrayDepth, totArrayDepth);
+            }
+        }
+        else if (typeof arg === "string") {
+            // Argument can be string.
+            if (fs.hasType("cdnxXobB")) {
+                // For integer types get code point of arg if it contains single symbol.
+                let symbolInfo = getSymbolInfoAt(arg, 0);
+
+                // Does arg contain single symbol?
+                if (symbolInfo && arg === symbolInfo.chars) {
+                    return this.formatKnownArgument(symbolInfo.codePoint, fs, curArrayDepth, totArrayDepth);
+                }
+            }
+            else if (fs.hasType("", "s?")) {
+                // Else use string argument as it is.
+                return this.formatKnownArgument(arg, fs, curArrayDepth, totArrayDepth);
+            }
+        }
+        else if (isArray(arg)) {
+            // Format array.
+            return this.formatKnownArgument(arg, fs, curArrayDepth, totArrayDepth);
+        }
+
+        // Invalid argument type.
+        ThrowFormatError.throwInvalidArgumentForType(this, arg, fs.type);
+    }
+
+    // Formats known argument.
+    private formatKnownArgument(arg: unknown, fs: FormatSpecification, curArrayDepth?: number, totArrayDepth?: number): string {
         // Validate format specification.
-        fs.validate(arg);
+        fs.validate(arg); // FIXME: Here or There
 
         // Get align.
         let { align } = fs;
@@ -71,114 +127,66 @@ export class FormatStringParser {
         // Convert to valid argument: string or number.
         let argStr: string;
 
-        // Is type specifier number compatible?
-        let isFsTypeNumberCompatible = fs.hasType("", "cdnbBoxXeEfF%gGaA");
-
-        function formatNum(arg: number | NumberWrapper): string {
-            // Default align for number is right.
-            align ??= ">";
-
-            // Get width.
-            width = fs.width ?? 0;
-
-            // Get fill char.
+        if (typeof arg === "number" || arg instanceof NumberWrapper) {
+            // Set fill, align and width.
             fill = fs.fill ?? fs.zero ?? " ";
+            align ??= ">";
+            width = fs.width ?? 0;
 
             // Format number to string.
-            return formatNumber(arg, fs);
-        }
-
-        function formatStr(arg: string): string {
-            // Default align for string is left.
-            align ??= "<";
-
-            // Get width.
-            width = fs.width ?? 0;
-
-            // Get fill char.
-            fill = fs.fill ?? fs.zero ?? " ";
-
-            // Apply string formatting.
-            return formatString(arg, fs);
-        }
-
-        if (typeof arg === "boolean") {
-            // Argument can be boolean.
-            if (fs.hasType("", "s")) {
-                // Convert boolean to string, if type is default '' or string 's'.
-                let b = fs.parser.getBooleanString(arg);
-                argStr = formatStr(b);
-            }
-            else if (isFsTypeNumberCompatible) {
-                // Convert boolean to number 0 or 1.
-                argStr = formatNum(arg ? 1 : 0);
-            }
-            else {
-                // Invalid argument conversion from boolean.
-                ThrowFormatError.throwInvalidArgumentForType(this, arg, fs.type);
-            }
-        }
-        else if (typeof arg === "number" || arg instanceof NumberWrapper) {
-            // Argument can be number or int.
-            if (isFsTypeNumberCompatible) {
-                // Use number argument as it is.
-                argStr = formatNum(arg);
-            }
-            else {
-                // Invalid argument conversion from number.
-                ThrowFormatError.throwInvalidArgumentForType(this, arg, fs.type);
-            }
+            argStr = formatNumber(arg, fs);
         }
         else if (typeof arg === "string") {
-            // Argument can be string.
-            if (fs.hasType("cdnxXobB")) {
-                // For integer types get code point of arg if it contains single symbol.
-                let symbolInfo = getSymbolInfoAt(arg, 0);
+            // Set fill, align and width.
+            fill = fs.fill ?? fs.zero ?? " ";
+            align ??= "<";
+            width = fs.width ?? 0;
 
-                // Does arg contain single symbol?
-                if (symbolInfo && arg === symbolInfo.chars) {
-                    argStr = formatNum(symbolInfo.codePoint);
-                }
-                else {
-                    // Invalid argument conversion from string.
-                    ThrowFormatError.throwInvalidArgumentForType(this, arg, fs.type);
-                }
-            }
-            else if (fs.hasType("", "s?")) {
-                // Else use string argument as it is.
-                argStr = formatStr(arg);
-            }
-            else {
-                // Invalid argument conversion from string.
-                ThrowFormatError.throwInvalidArgumentForType(this, arg, fs.type);
-            }
+            // Apply string formatting.
+            argStr = formatString(arg, fs);
         }
         else if (isArray(arg)) {
             // Format array.
             totArrayDepth ??= getArrayDepth(arg);
             curArrayDepth ??= 0
 
-            let arrPr = fs.getArrayPresentation(curArrayDepth, totArrayDepth);
+            let ap = fs.getArrayPresentation(curArrayDepth, totArrayDepth);
 
-            argStr = arrPr.leftBrace;
+            argStr = ap.leftBrace;
 
             for (let i = 0; i < arg.length; i++) {
-                if (i > 0 && arrPr.type !== "s") {
+                if (i > 0 && ap.type !== "s") {
                     argStr += ", ";
                 }
                 argStr += this.formatArgument(arg[i], fs, curArrayDepth + 1, totArrayDepth);
             }
 
-            argStr += arrPr.rightBrace;
+            argStr += ap.rightBrace;
 
             // Set fill, align and width.
-            fill = arrPr.fill ?? " ";
-            align = arrPr.align ?? "<";
-            width = arrPr.width ?? 0;
+            fill = ap.fill ?? " ";
+            align = ap.align ?? "<";
+            width = ap.width ?? 0;
+        }
+        else if (arg instanceof PassToLeaf) {
+            argStr = arg.str;
         }
         else {
             // Invalid argument type.
             ThrowFormatError.throwInvalidArgumentForType(this, arg, fs.type);
+        }
+
+        // If arg not leaf node, then pass it forward to get correct fill, align and width.
+        if (!isArray(arg) && curArrayDepth !== undefined && totArrayDepth !== undefined && curArrayDepth < totArrayDepth) {
+            // Pass argStr forward until it reaches leaf total depth of array.
+            argStr = this.formatKnownArgument(new PassToLeaf(argStr), fs, curArrayDepth + 1, totArrayDepth);
+
+            let ap = fs.getArrayPresentation(curArrayDepth, totArrayDepth);
+
+            // Set fill, align and width.
+            fill = ap.fill ?? " ";
+            align = ap.align ?? "<";
+            width = ap.width ?? 0;
         }
 
         // Next apply fill and alignment according to format specification.
