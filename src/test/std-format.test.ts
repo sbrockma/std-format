@@ -907,8 +907,9 @@ describe("Testing std-format", () => {
         expect(format("{:d::b}", [3, -2])).toEqual("[11, -10]");
         expect(format("{:n::b}", [3, -2])).toEqual("11, -10");
         expect(format("{:b::b}", [3, -2])).toEqual("{11, -10}");
+        expect(format("{}", [[], []])).toEqual("[[], []]");
 
-        expect(format("|{:20d::d}|", [1, 2, 3])).toEqual("|[1, 2, 3]           |");  // Default alignment '<'
+        expect(format("|{:20d::d}|", [1, 2, 3])).toEqual("|[1, 2, 3]           |"); // Default alignment '<'
         expect(format("|{:*<20d::d}|", [1, 2, 3])).toEqual("|[1, 2, 3]***********|");
         expect(format("|{:*^20d::d}|", [1, 2, 3])).toEqual("|*****[1, 2, 3]******|");
         expect(format("|{:*>20d::.1f}|", [1, 2, 3])).toEqual("|*****[1.0, 2.0, 3.0]|");
@@ -916,7 +917,8 @@ describe("Testing std-format", () => {
 
         expect(format("{:e<40b:x^10b:a>5::x}", [[[11], [7, 4]], [[13]]])).toEqual("{{aa[b], [7, 4]}, x{aa[d]}xx}eeeeeeeeeee");
         expect(format("{:#^7b::d}", [[1], [7], [3]])).toEqual("[##{1}##, ##{7}##, ##{3}##]");
-        expect(format("{:d:-^10b::d}", [0, [1, 2]])).toEqual("[----0-----, --{1, 2}--]");
+        expect(format("{:d:-^10b::d}", [[0], [1, 2]])).toEqual("[---{0}----, --{1, 2}--]");
+        expect(format("{:d:-^10b::d}", [0, [1, 2]])).toEqual("[0, --{1, 2}--]");
 
         expect(format("{:d}", [12, 10, 15, 14])).toEqual("[12, 10, 15, 14]");
         expect(format("{:X}", [12, 10, 15, 14])).toEqual("[C, A, F, E]");

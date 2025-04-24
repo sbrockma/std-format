@@ -1,4 +1,4 @@
-import { assert, getArrayDepth, getSymbol, getSymbolInfoAt, isArray, isInteger, isKeyValue, isNegative, mapDigitToChar, repeatString, zeroArray } from "../internal";
+import { assert, getArrayDepth, getSymbol, getSymbolInfoAt, isArray, isInteger, isNegative, mapDigitToChar, repeatString, zeroArray } from "../internal";
 
 describe("Testing internal functions", () => {
 
@@ -124,17 +124,5 @@ describe("Testing internal functions", () => {
         expect(getArrayDepth([[[0], [1]], [2]])).toEqual(3);
         expect(getArrayDepth([0, [1, 2]])).toEqual(2);
         expect(getArrayDepth([[], "0"])).toEqual(2);
-    });
-
-    it("isKeyValue", () => {
-        expect(isKeyValue(undefined)).toEqual(false);
-        expect(isKeyValue(null)).toEqual(false);
-        expect(isKeyValue({})).toEqual(false);
-        expect(isKeyValue(0)).toEqual(false);
-        expect(isKeyValue("Key")).toEqual(false);
-        expect(isKeyValue({ key: "Hello" })).toEqual(false);
-        expect(isKeyValue({ key: 99, value: 1 })).toEqual(false);
-        expect(isKeyValue({ key: "A", value: 65 })).toEqual(true);
-        expect(isKeyValue({ key: "Hello", value: "World" })).toEqual(true);
     });
 });

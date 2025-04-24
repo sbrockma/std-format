@@ -158,34 +158,27 @@ export class FormatStringParser {
             totArrayDepth ??= getArrayDepth(arg);
             curArrayDepth ??= 0
 
-            let ar = fs.getArrayPresentation(curArrayDepth, totArrayDepth);
+            let arrPr = fs.getArrayPresentation(curArrayDepth, totArrayDepth);
 
-            let formatAsString = ar.type === "s";
-
-            argStr = formatAsString ? "" : ar.leftBrace;
+            argStr = arrPr.leftBrace;
 
             for (let i = 0; i < arg.length; i++) {
-                if (i > 0 && !formatAsString) {
+                if (i > 0 && arrPr.type !== "s") {
                     argStr += ", ";
                 }
                 argStr += this.formatArgument(arg[i], fs, curArrayDepth + 1, totArrayDepth);
             }
 
-            argStr += formatAsString ? "" : ar.rightBrace;
+            argStr += arrPr.rightBrace;
+
+            // Set fill, align and width.
+            fill = arrPr.fill ?? " ";
+            align = arrPr.align ?? "<";
+            width = arrPr.width ?? 0;
         }
         else {
             // Invalid argument type.
             ThrowFormatError.throwInvalidArgumentForType(this, arg, fs.type);
-        }
-
-        if (curArrayDepth !== undefined && totArrayDepth !== undefined && curArrayDepth < totArrayDepth) {
-            // Use array presentation's fill/align/width on elements too if cur array depth < tot array depth.
-            let ar = fs.getArrayPresentation(curArrayDepth, totArrayDepth);
-
-            // Set fill, align and width.
-            fill = ar.fill ?? " ";
-            align = ar.align ?? "<";
-            width = ar.width ?? 0;
         }
 
         // Next apply fill and alignment according to format specification.

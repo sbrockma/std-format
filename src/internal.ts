@@ -156,7 +156,13 @@ export function getArrayDepth<T>(item: unknown | T[]): number {
     }
 }
 
-// Is { key: string, value: unknown }
-export function isKeyValue(obj: any): obj is { key: string, value: unknown } {
-    return !!obj && typeof obj === "object" && obj.key !== undefined && obj.value !== undefined && typeof obj.key === "string";
+// Is array even?
+export function isUniformDepthArray(arr: unknown): boolean {
+    if (isArray(arr)) {
+        let depth = getArrayDepth(arr);
+        return arr.every(f => getArrayDepth(f) === depth - 1);
+    }
+    else {
+        return true;
+    }
 }

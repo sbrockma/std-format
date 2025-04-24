@@ -18,7 +18,7 @@ import { getSymbolInfoAt } from "internal";
  * type: '' (default), 'd' (default), 'n' (no braces), 'b' (curly braces), 's' (string), 'm' (map)
  */
 
-type ArrayPresentation = {
+export type ArrayPresentation = {
     fill?: string,
     align?: "<" | "^" | ">",
     width?: number,
@@ -131,8 +131,8 @@ export class FormatSpecification {
                 ThrowFormatError.throwInvalidFormatSpecifiers(this.parser);
             }
 
-            let leftBrace: "" | "[" | "{" = type === "n" ? "" : (type === "b" ? "{" : "[");
-            let rightBrace: "" | "]" | "}" = type === "n" ? "" : (type === "b" ? "}" : "]");
+            let leftBrace: "" | "[" | "{" = type === "n" || type === "s" ? "" : (type === "b" ? "{" : "[");
+            let rightBrace: "" | "]" | "}" = type === "n" || type === "s" ? "" : (type === "b" ? "}" : "]");
 
             return { fill, align, width, type, leftBrace, rightBrace }
         });
