@@ -1,8 +1,7 @@
-import { assert, getArrayDepth, getStringRealLength, getSymbolInfoAt, isArray, isInteger, repeatString } from "./internal";
+import { assert, getArrayDepth, getStringRealLength, getSymbolInfoAt, isArray, isInteger, repeatString, setStringRealLength } from "./internal";
 import { deprecatedFalseString, deprecatedOctalPrefix, deprecatedTrueString } from "./deprecated";
 import { FormatSpecification } from "./format-specification";
 import { formatNumber } from "./number-formatter";
-import { formatString } from "./string-formatter";
 import { ThrowFormatError } from "./format-error";
 import { IntWrapper, NumberWrapper } from "./int-float";
 
@@ -128,22 +127,33 @@ export class FormatStringParser {
         let argStr: string;
 
         if (typeof arg === "number" || arg instanceof NumberWrapper) {
+            // Format number to string.
+            argStr = formatNumber(arg, fs);
+
             // Set fill, align and width.
             fill = fs.fill ?? fs.zero ?? " ";
             align ??= ">";
             width = fs.width ?? 0;
-
-            // Format number to string.
-            argStr = formatNumber(arg, fs);
         }
         else if (typeof arg === "string") {
+            if (fs.hasType("?")) {
+                // Here should format escape sequence string.
+                ThrowFormatError.throwSpecifierIsNotImplemented(fs.parser, fs.type);
+            }
+
+            // For string presentation types precision field indicates the maximum
+            // field size - in other words, how many characters will be used from the field content.
+            if (fs.precision !== undefined && getStringRealLength(arg) > fs.precision) {
+                argStr = setStringRealLength(arg, fs.precision);
+            }
+            else {
+                argStr = arg;
+            }
+
             // Set fill, align and width.
             fill = fs.fill ?? fs.zero ?? " ";
             align ??= "<";
             width = fs.width ?? 0;
-
-            // Apply string formatting.
-            argStr = formatString(arg, fs);
         }
         else if (isArray(arg)) {
             // Format array.
