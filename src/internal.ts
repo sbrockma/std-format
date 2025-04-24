@@ -155,3 +155,8 @@ export function getArrayDepth<T>(item: unknown | T[]): number {
         return 0;
     }
 }
+
+// Is { key: string, value: unknown }
+export function isKeyValue(obj: any): obj is { key: string, value: unknown } {
+    return !!obj && typeof obj === "object" && obj.key !== undefined && obj.value !== undefined && typeof obj.key === "string";
+}
