@@ -160,16 +160,18 @@ export class FormatStringParser {
 
             let ar = fs.getArrayPresentation(curArrayDepth, totArrayDepth);
 
-            argStr = ar.leftBrace;
+            let formatAsString = ar.type === "s";
+
+            argStr = formatAsString ? "" : ar.leftBrace;
 
             for (let i = 0; i < arg.length; i++) {
-                if (i > 0) {
+                if (i > 0 && !formatAsString) {
                     argStr += ", ";
                 }
                 argStr += this.formatArgument(arg[i], fs, curArrayDepth + 1, totArrayDepth);
             }
 
-            argStr += ar.rightBrace;
+            argStr += formatAsString ? "" : ar.rightBrace;
         }
         else {
             // Invalid argument type.

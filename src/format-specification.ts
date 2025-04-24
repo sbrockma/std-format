@@ -15,14 +15,14 @@ import { getSymbolInfoAt } from "internal";
  * 
  * [[fill]align][width][type]
  * align: '<', '^', '>'
- * type: '' (default), 'd' (default), 'n' (no braces), 'b' (curly braces)
+ * type: '' (default), 'd' (default), 'n' (no braces), 'b' (curly braces), 's' (string), 'm' (map)
  */
 
 type ArrayPresentation = {
     fill?: string,
     align?: "<" | "^" | ">",
     width?: number,
-    type: "" | "d" | "n" | "b",
+    type: "" | "d" | "n" | "b" | "s" | "m",
     leftBrace: "" | "[" | "{",
     rightBrace: "" | "]" | "}"
 }
@@ -119,7 +119,12 @@ export class FormatSpecification {
             // Get fill, align, width and type
             let { fill, align } = this.parseFillAndAlign("<", "^", ">") as { fill: string, align: "<" | "^" | ">" };
             let width = this.parseWidthOrPrecision("width");
-            let type = (this.parseSpecifier("d", "n", "b") as "d" | "n" | "b") ?? "";
+            let type = this.parseSpecifier("d", "n", "b", "s", "m") as "d" | "n" | "b" | "s" | "m" ?? "";
+
+            // Not implemented
+            if (type === "m") {
+                ThrowFormatError.throwSpecifierIsNotImplemented(this.parser, type);
+            }
 
             // Parse position should have reached end of parse str.
             if (this.parsePos !== this.parseStr.length) {
