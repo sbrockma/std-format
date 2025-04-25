@@ -56,8 +56,8 @@ export class FormatSpecification {
     private parseStr: string = "";
     private parsePos: number = 0;
 
-    constructor(readonly parser: FormatStringParser, parts: string[]) {
-        if (parts.length === 0 || parts.length === 1 && parts[0] === "") {
+    constructor(readonly parser: FormatStringParser, fsParts: string[]) {
+        if (fsParts.length === 0 || fsParts.length === 1 && fsParts[0] === "") {
             this.elemSpecifiers = "";
             this.arraySpecifiers = [];
             this.arrayPresentations = [];
@@ -66,10 +66,10 @@ export class FormatSpecification {
         }
 
         // Last part is always element's format specification.
-        this.elemSpecifiers = parts.pop() ?? "";
+        this.elemSpecifiers = fsParts.pop() ?? "";
 
         // Previous parts are array presentations.
-        this.arraySpecifiers = parts;
+        this.arraySpecifiers = fsParts;
 
         // Init parse string and position.
         this.parseStr = this.elemSpecifiers;

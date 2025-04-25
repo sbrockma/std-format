@@ -339,10 +339,10 @@ export class FormatStringParser {
             let match = m[0];
 
             // Remove edges '{' and '}' and split to parts by ':'.
-            let parts = match.substring(1, match.length - 1).split(":");
+            let replFieldParts = match.substring(1, match.length - 1).split(":");
 
             // First part is field number.
-            let fieldNumber = parts.shift() ?? "";
+            let fieldNumber = replFieldParts.shift() ?? "";
 
             // Set error string.
             this.errorString = match;
@@ -351,7 +351,7 @@ export class FormatStringParser {
             let arg = this.getArgument(fieldNumber);
 
             // Create format specification.
-            let fs = new FormatSpecification(this, parts);
+            let fs = new FormatSpecification(this, replFieldParts);
 
             // Format argument and add it to result string.
             this.resultString += this.formatArgument(arg, fs);
