@@ -48,13 +48,6 @@ export class FormatStringParser {
         this.automaticFieldNumber = 0;
         this.hasAutomaticFieldNumbering = false;
         this.hasManualFieldSpecification = false;
-
-        // Convert BigInts to BigIntWrappers.
-        for (let i = 0; i < this.formatArgs.length; i++) {
-            if (typeof this.formatArgs[i] === "bigint") {
-                this.formatArgs[i] = new IntWrapper(this.formatArgs[i]);
-            }
-        }
     }
 
     // Formats argument.
@@ -83,6 +76,10 @@ export class FormatStringParser {
                 // Use number argument as it is.
                 return this.formatKnownArgument(arg, fs, curArrayDepth, totArrayDepth);
             }
+        }
+        else if (typeof arg === "bigint") {
+            // Convert BigInt to IntWrapper.
+            return this.formatKnownArgument(new IntWrapper(arg), fs, curArrayDepth, totArrayDepth);
         }
         else if (typeof arg === "string") {
             // Argument can be string.
