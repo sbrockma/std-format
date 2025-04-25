@@ -73,6 +73,7 @@ This is the main formatting function.
     
     // Manual field numbering
     let str = Fmt.format("{1}{0}", "A", "B");
+    let str = Fmt.format("{name} {age:d}", { name: "Tim", age: 95 });
 
     // Fill, align and width
     let str = Fmt.format("{: ^10}", "Banana");

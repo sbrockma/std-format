@@ -1,4 +1,4 @@
-import { assert, getArrayDepth, getStringRealLength, getSymbolInfoAt, hasGoodProperty, isArray, isInteger, isMap, isRecord, isSet, mapToRecord, repeatString, setStringRealLength, setToArray } from "./internal";
+import { assert, getArrayDepth, getStringRealLength, getSymbolInfoAt, hasOwnOkProperty, isArray, isInteger, isMap, isRecord, isSet, mapToRecord, repeatString, setStringRealLength, setToArray } from "./internal";
 import { deprecatedFalseString, deprecatedOctalPrefix, deprecatedTrueString } from "./deprecated";
 import { FormatSpecification } from "./format-specification";
 import { formatNumber } from "./number-formatter";
@@ -194,7 +194,7 @@ export class FormatStringParser {
             let i = 0;
 
             for (let key in arg) {
-                if (hasGoodProperty(arg, key)) {
+                if (hasOwnOkProperty(arg, key)) {
                     if (i++ > 0) {
                         argStr += ap.type === "s" ? "" : ", ";
                     }
@@ -269,29 +269,18 @@ export class FormatStringParser {
     }
 
     // Function to get argument from formatArgs[fieldNumber].
-    getArgument(fieldNumberStr: string): unknown {
-        // Get field number
-        let fieldNumber: number;
-
+    getArgument(fieldId: string): unknown {
         // Is field number string empty?
-        if (fieldNumberStr.length > 0) {
+        if (fieldId.length > 0) {
             // Use manual field specification.
             this.hasManualFieldSpecification = true;
-
-            // Throw exception if field number string is not one or more digits.
-            if (!isDigits(fieldNumberStr)) {
-                ThrowFormatError.throwInvalidFieldNumber(this, fieldNumberStr);
-            }
-
-            // Convert field number string to number
-            fieldNumber = +fieldNumberStr;
         }
         else {
             // Use automatic field numbering.
             this.hasAutomaticFieldNumbering = true;
 
             // Get ascending field number
-            fieldNumber = this.automaticFieldNumber++;
+            fieldId = String(this.automaticFieldNumber++);
         }
 
         // Throw exception switching between automatic and manual field numbering.
@@ -299,13 +288,28 @@ export class FormatStringParser {
             ThrowFormatError.throwSwitchBetweenAutoAndManualFieldNumbering(this);
         }
 
-        // Throw exception if field number is out of bounds of arguments array.
-        if (fieldNumber < 0 || fieldNumber >= this.formatArgs.length) {
-            ThrowFormatError.throwInvalidFieldNumber(this, "" + fieldNumber);
-        }
+        if (isDigits(fieldId)) {
+            let fieldNumber = +fieldId;
 
-        // Return argument.
-        return this.formatArgs[fieldNumber];
+            // Throw exception if field number is out of bounds of arguments array.
+            if (fieldNumber < 0 || fieldNumber >= this.formatArgs.length) {
+                ThrowFormatError.throwInvalidFieldId(this, String(fieldNumber));
+            }
+
+            // Return argument.
+            return this.formatArgs[fieldNumber];
+        }
+        else {
+            // Argument 0 might be record that contains named args [name: value].
+            let argsObj = this.formatArgs[0];
+
+            if (isRecord(argsObj) && fieldId in argsObj) {
+                return argsObj[fieldId];
+            }
+            else {
+                ThrowFormatError.throwInvalidFieldId(this, fieldId);
+            }
+        }
     }
 
     // Function to get nested argument integer. Width and precision in format specification can be
@@ -338,13 +342,13 @@ export class FormatStringParser {
             let replFieldParts = match.substring(1, match.length - 1).split(":");
 
             // First part is field number.
-            let fieldNumber = replFieldParts.shift() ?? "";
+            let fieldId = replFieldParts.shift() ?? "";
 
             // Set error string.
             this.errorString = match;
 
             // Get argument.
-            let arg = this.getArgument(fieldNumber);
+            let arg = this.getArgument(fieldId);
 
             // Create format specification.
             let fs = new FormatSpecification(this, replFieldParts);

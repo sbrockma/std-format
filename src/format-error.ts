@@ -64,8 +64,8 @@ export namespace ThrowFormatError {
     }
 
     // Throw invalid field number error.
-    export function throwInvalidFieldNumber(p: FormatStringParser, fieldNumber: string): never {
-        throw new FormatError(p.getErrorMessage("Invalid field number '" + fieldNumber + "'"));
+    export function throwInvalidFieldId(p: FormatStringParser, fieldId: string): never {
+        throw new FormatError(p.getErrorMessage("Invalid field id '" + fieldId + "'"));
     }
 
     // Throw switch between auto/manual field numbering error.

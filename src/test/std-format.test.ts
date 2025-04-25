@@ -58,13 +58,12 @@ describe("Testing std-format", () => {
         // Cannot switch between manual and automatic field numbering
         expect(() => format("{}{1}", 0, 1)).toThrow();
         expect(() => format("{0}{}", 0, 1)).toThrow();
+        expect(() => format("{id}{}", { id: 0 })).toThrow();
         expect(() => format("{2:!^{}.{}f}", 123.45, 8, 1)).toThrow();
         expect(() => format("{:!^{1}.{0}f}", 123.45, 8, 1)).toThrow();
 
-        // Field number not a number
-        expect(() => format("{a}")).toThrow();
-        expect(() => format("{b:}")).toThrow();
-        expect(() => format("{c:d}")).toThrow();
+        // Named args
+        expect(format("Name is {name}, age is {age:d}.", { name: "Tim", age: 95 })).toEqual("Name is Tim, age is 95.");
     });
 
     it("grouping specifier ,", () => {

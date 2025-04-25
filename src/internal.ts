@@ -137,7 +137,7 @@ export function setStringRealLength(str: string, newLen: number): string {
 
 // Is array?
 export function isArray<T>(arg: unknown | T[]): arg is T[] {
-    return Object.prototype.toString.call(arg) === "[object Array]";
+    return !!arg && Object.prototype.toString.call(arg) === "[object Array]";
 }
 
 // Is map?
@@ -162,6 +162,10 @@ export function isRecord(arg: unknown): arg is Record<string, unknown> {
             arg instanceof RegExp ||
             arg instanceof Error
         );
+}
+
+export function isPlainObject(arg: unknown): arg is Record<string, unknown> {
+    return !!arg && Object.prototype.toString.call(arg) === "[object Object]";
 }
 
 // Get record from Map..
@@ -192,8 +196,8 @@ export function setToArray(arg: unknown): Array<unknown> {
     }
 }
 
-// Does object have a good, formattable property?
-export function hasGoodProperty(obj: { [key: string]: unknown }, prop: string): boolean {
+// Does object have own, ok property?
+export function hasOwnOkProperty(obj: { [key: string]: unknown }, prop: string): boolean {
     return obj.hasOwnProperty(prop) && typeof obj[prop] !== "function";
 }
 
@@ -212,7 +216,7 @@ export function getArrayDepth<T>(arg: unknown | T[]): number {
         let depth = 1;
 
         for (let key in arg) {
-            if (hasGoodProperty(arg, key)) {
+            if (hasOwnOkProperty(arg, key)) {
                 depth = Math.max(depth, getArrayDepth(arg[key]) + 1);
             }
         }
