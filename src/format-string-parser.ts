@@ -6,12 +6,8 @@ import { ThrowFormatError } from "./format-error";
 import { IntWrapper, NumberWrapper } from "./int-float";
 
 // Regex to test if string loosely matches of replacement field.
-const LooseMatchReplacementFieldRegEx = new RegExp(
-    "^\{" +
-    "([0-9]+)?" +
-    "(:([^{}]*" + "\{[^{}]*\}" + "){0,2}[^{}]*)?" +
-    "\}"
-);
+// Starts with '{', solves nested braces '{d}', until finally matched closing brace '}'.
+const LooseMatchReplacementFieldRegEx = new RegExp("^\{([^{}]*(\{[0-9]*\})?)*[^{}]*\}");
 
 // Regex to get index of next curly bracet.
 const CurlyBracesRegEx = /[{}]/;
