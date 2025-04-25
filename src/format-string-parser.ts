@@ -1,4 +1,4 @@
-import { assert, getArrayDepth, getStringRealLength, getSymbolInfoAt, isArray, isInteger, isMap, isRecord, isSet, mapToRecord, repeatString, setStringRealLength, setToArray } from "./internal";
+import { assert, getArrayDepth, getStringRealLength, getSymbolInfoAt, hasGoodProperty, isArray, isInteger, isMap, isRecord, isSet, mapToRecord, repeatString, setStringRealLength, setToArray } from "./internal";
 import { deprecatedFalseString, deprecatedOctalPrefix, deprecatedTrueString } from "./deprecated";
 import { FormatSpecification } from "./format-specification";
 import { formatNumber } from "./number-formatter";
@@ -201,7 +201,7 @@ export class FormatStringParser {
             let i = 0;
 
             for (let key in arg) {
-                if (arg.hasOwnProperty(key)) {
+                if (hasGoodProperty(arg, key)) {
                     if (i++ > 0) {
                         argStr += ap.type === "s" ? "" : ", ";
                     }

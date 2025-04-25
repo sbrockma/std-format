@@ -192,6 +192,11 @@ export function setToArray(arg: unknown): Array<unknown> {
     }
 }
 
+// Does object have a good, formattable property?
+export function hasGoodProperty(obj: { [key: string]: unknown }, prop: string): boolean {
+    return obj.hasOwnProperty(prop) && typeof obj[prop] !== "function";
+}
+
 // Get depth of (nested) array.
 export function getArrayDepth<T>(arg: unknown | T[]): number {
     if (isArray(arg)) {
@@ -207,7 +212,7 @@ export function getArrayDepth<T>(arg: unknown | T[]): number {
         let depth = 1;
 
         for (let key in arg) {
-            if (arg.hasOwnProperty(key)) {
+            if (hasGoodProperty(arg, key)) {
                 depth = Math.max(depth, getArrayDepth(arg[key]) + 1);
             }
         }
