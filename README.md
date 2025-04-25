@@ -80,8 +80,9 @@ This is the main formatting function.
     // Floating point, precision
     let str = Fmt.format("{:.2e}", 1);
 
-    // Array
+    // Array, Record
     let str = Fmt.format("{:d}", [1, 2, 3]);
+    let str = Fmt.format("{:m:}", { x: 1, y: -1});
 
     // etc.
 
@@ -124,4 +125,4 @@ Element's format specification:
 
 Array presentations:
 
-    [[fill]<^>][width][dnbs]
+    [[fill]<^>][width][dbnms]

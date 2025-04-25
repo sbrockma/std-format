@@ -805,8 +805,13 @@ describe("Testing std-format", () => {
         expect(format("{:s} {:s} {:c} {:d} {:d} {:g} {:g}", true, "string", "c", 10, int(999), -5, float(-5))).
             toEqual("true string c 10 999 -5 -5");
 
-        // Invalid argument.
-        expect(() => format("{}", {})).toThrow();
+        // array, set
+        expect(format("{:d}", [65, 66])).toEqual("[65, 66]");
+        expect(format("{:d}", new Set([65, 66, 65]))).toEqual("[65, 66]");
+
+        // record, map
+        expect(format("{:d}", { "A": 65, "B": 66 })).toEqual("[[A, 65], [B, 66]]");
+        expect(format("{:d}", new Map([["A", 65], ["B", 66]]))).toEqual("[[A, 65], [B, 66]]");
     });
 
     it("int()", () => {
@@ -926,6 +931,39 @@ describe("Testing std-format", () => {
         expect(format("{:n:_^4d}", [12, 10, 15, 14])).toEqual("_12_, _10_, _15_, _14_");
         expect(format("{::s}", ["S", "T", "A", "R"])).toEqual("[S, T, A, R]");
         expect(format("{:s:s}", ["S", "T", "A", "R"])).toEqual("STAR");
+
+        // Format Set like an array
+        expect(format("({:n:d})", new Set([0, 1, 2, 2, 3]))).toEqual("(0, 1, 2, 3)");
+    });
+
+    it("record and map formatting", () => {
+        expect(format("{:d}", { A: 65, B: 66 })).toEqual("[[A, 65], [B, 66]]");
+        expect(format("{:d}", new Map([["A", 65], ["B", 66]]))).toEqual("[[A, 65], [B, 66]]");
+
+        expect(format("{:b:d}", { A: 65, B: 66 })).toEqual("{{A, 65}, {B, 66}}");
+        expect(format("{:b:d}", new Map([["A", 65], ["B", 66]]))).toEqual("{{A, 65}, {B, 66}}");
+
+        expect(format("{:n:d}", { A: 65, B: 66 })).toEqual("A: 65, B: 66");
+        expect(format("{:n:d}", new Map([["A", 65], ["B", 66]]))).toEqual("A: 65, B: 66");
+
+        expect(format("{:m:d}", { A: 65, B: 66 })).toEqual("[A: 65, B: 66]");
+        expect(format("{:m:d}", new Map([["A", 65], ["B", 66]]))).toEqual("[A: 65, B: 66]");
+
+        expect(format("{:s:d}", { A: 65, B: 66 })).toEqual("A65B66");
+        expect(format("{:s:d}", new Map([["A", 65], ["B", 66]]))).toEqual("A65B66");
+
+        expect(format("{:!^30:*^6:d}", { A: 65, B: [66] })).toEqual("!![[A, **65**], [B, *[66]*]]!!");
+        expect(format("{:!^30:*^11:d}", [65, { B: 66 }])).toEqual("!![****65*****, *[[B, 66]]*]!!");
+
+        expect(format("{:*<24:d}", { A: 65, B: 66 })).toEqual("[[A, 65], [B, 66]]******");
+        expect(format("{:*^24:d}", { A: 65, B: 66 })).toEqual("***[[A, 65], [B, 66]]***");
+        expect(format("{:*>24:d}", { A: 65, B: 66 })).toEqual("******[[A, 65], [B, 66]]");
+
+        expect(format("{:m:}", { x: 1, y: -1 })).toEqual("[x: 1.0, y: -1.0]");
+
+        class TestClass { a = 0; b = 1; }
+        expect(format("{:d}", new TestClass())).toEqual("[[a, 0], [b, 1]]");
+
     });
 
     it("deprecated stuff", () => {

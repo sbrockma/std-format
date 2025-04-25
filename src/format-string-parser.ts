@@ -1,4 +1,4 @@
-import { assert, getArrayDepth, getStringRealLength, getSymbolInfoAt, isArray, isInteger, repeatString, setStringRealLength } from "./internal";
+import { assert, getArrayDepth, getStringRealLength, getSymbolInfoAt, isArray, isInteger, isMap, isRecord, isSet, mapToRecord, repeatString, setStringRealLength, setToArray } from "./internal";
 import { deprecatedFalseString, deprecatedOctalPrefix, deprecatedTrueString } from "./deprecated";
 import { FormatSpecification } from "./format-specification";
 import { formatNumber } from "./number-formatter";
@@ -100,9 +100,17 @@ export class FormatStringParser {
                 return this.formatKnownArgument(arg, fs, curArrayDepth, totArrayDepth);
             }
         }
-        else if (isArray(arg)) {
-            // Format array.
+        else if (isArray(arg) || isRecord(arg)) {
+            // Format array or record.
             return this.formatKnownArgument(arg, fs, curArrayDepth, totArrayDepth);
+        }
+        else if (isMap(arg)) {
+            // Format Map as record.
+            return this.formatKnownArgument(mapToRecord(arg), fs, curArrayDepth, totArrayDepth);
+        }
+        else if (isSet(arg)) {
+            // Format Set as array.
+            return this.formatKnownArgument(setToArray(arg), fs, curArrayDepth, totArrayDepth);
         }
 
         // Invalid argument type.
@@ -155,6 +163,9 @@ export class FormatStringParser {
             align ??= "<";
             width = fs.width ?? 0;
         }
+        else if (arg instanceof PassToLeaf) {
+            argStr = arg.str;
+        }
         else if (isArray(arg)) {
             // Format array.
             totArrayDepth ??= getArrayDepth(arg);
@@ -178,8 +189,43 @@ export class FormatStringParser {
             align = ap.align ?? "<";
             width = ap.width ?? 0;
         }
-        else if (arg instanceof PassToLeaf) {
-            argStr = arg.str;
+        else if (isRecord(arg)) {
+            // Format array.
+            totArrayDepth ??= getArrayDepth(arg);
+            curArrayDepth ??= 0
+
+            let ap = fs.getArrayPresentation(curArrayDepth, totArrayDepth);
+
+            argStr = ap.leftBrace;
+
+            let i = 0;
+
+            for (let key in arg) {
+                if (arg.hasOwnProperty(key)) {
+                    if (i++ > 0) {
+                        argStr += ap.type === "s" ? "" : ", ";
+                    }
+
+                    let value = this.formatArgument(arg[key], fs, curArrayDepth + 1, totArrayDepth)
+
+                    if (ap.type === "n" || ap.type === "m") {
+                        argStr += key + ": " + value;
+                    }
+                    else if (ap.type === "s") {
+                        argStr += key + value;
+                    }
+                    else {
+                        argStr += ap.leftBrace + key + ", " + value + ap.rightBrace;
+                    }
+                }
+            }
+
+            argStr += ap.rightBrace;
+
+            // Set fill, align and width.
+            fill = ap.fill ?? " ";
+            align = ap.align ?? "<";
+            width = ap.width ?? 0;
         }
         else {
             // Invalid argument type.

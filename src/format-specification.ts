@@ -115,11 +115,6 @@ export class FormatSpecification {
             let width = this.parseWidthOrPrecision("width");
             let type = this.parseSpecifier("d", "n", "b", "s", "m") as "d" | "n" | "b" | "s" | "m" ?? "";
 
-            // Not implemented
-            if (type === "m") {
-                ThrowFormatError.throwSpecifierIsNotImplemented(this.parser, type);
-            }
-
             // Parse position should have reached end of parse str.
             if (this.parsePos !== this.parseStr.length) {
                 ThrowFormatError.throwInvalidFormatSpecifiers(this.parser);
