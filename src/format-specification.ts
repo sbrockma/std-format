@@ -56,23 +56,14 @@ export class FormatSpecification {
     private parseStr: string = "";
     private parsePos: number = 0;
 
-    constructor(readonly parser: FormatStringParser, specifiers: string) {
-        if (!specifiers || specifiers[0] !== ":") {
+    constructor(readonly parser: FormatStringParser, parts: string[]) {
+        if (parts.length === 0 || parts.length === 1 && parts[0] === "") {
             this.elemSpecifiers = "";
             this.arraySpecifiers = [];
             this.arrayPresentations = [];
             this.type = "";
             return;
         }
-
-        if (specifiers[0] !== ":") {
-            ThrowFormatError.throwInvalidFormatSpecifiers(parser);
-        }
-
-        specifiers = specifiers.substring(1);
-
-        // Split specifiers to parts.
-        let parts = specifiers.split(":");
 
         // Last part is always element's format specification.
         this.elemSpecifiers = parts.pop() ?? "";
