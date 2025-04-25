@@ -106,3 +106,22 @@ Default locale is detected. Locale affects decimal and grouping separators when 
             console.error(e);
         }
     }
+
+## Formatting Info
+
+Replacement field is enclosed in braces '{}' and consists of parts separated by ':'.
+
+    {field_num:arr_1:arr_2:arr_N:elem}
+
+- First part (field_num) is field number.
+- Last part (elem) is element format specification.
+- Parts between (arr_1...arr_N) are array presentations.
+- Any part can be empty string.
+
+Element's format specification:
+
+    [[fill]<^>=][+- ][z][#][0][width][,_][.precision][L][scdnbBoxXeEfF%gGaA]
+
+Array presentations:
+
+    [[fill]<^>][width][dnbs]
