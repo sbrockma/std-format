@@ -428,10 +428,10 @@ export class FormatStringParser {
     // Get error message.
     getErrorMessage(msg: string) {
         if (this.errorString === this.formatString) {
-            return msg + ", in \"" + this.errorString + "\"";
+            return msg + ", \"" + this.errorString + "\".";
         }
         else {
-            return msg + ", in \"" + this.formatString + "\" (col " + this.parsePosition + " = \"" + this.errorString + "\")";
+            return msg + ", \"" + this.errorString + "\" in \"" + this.formatString + "\".";
         }
     }
 
