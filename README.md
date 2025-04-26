@@ -68,24 +68,7 @@ This is the main formatting function.
 
     import Fmt from "@sbrockma/std-format";
 
-    // Automatic field numbering
-    let str = Fmt.format("{}{}", "A", "B");
-    
-    // Manual field numbering
-    let str = Fmt.format("{1}{0}", "A", "B");
-    let str = Fmt.format("{name} {age:d}", { name: "Tim", age: 95 });
-
-    // Fill, align and width
-    let str = Fmt.format("{: ^10}", "Banana");
-
-    // Floating point, precision
-    let str = Fmt.format("{:.2e}", 1);
-
-    // Array, Record
-    let str = Fmt.format("{:d}", [1, 2, 3]);
-    let str = Fmt.format("{:m:}", { x: 1, y: -1});
-
-    // etc.
+    let str = Fmt.format("{} {}!", "Hello", "World");
 
 ### Function setLocale(locale)
 
@@ -127,3 +110,38 @@ Element's format specification:
 Array presentations:
 
     [[fill]<^>][width][dbnms]
+
+### Examples
+
+    // Using auto field numbering
+    let str = Fmt.format("{}{}", "A", "B"); // "AB"
+    
+    // Using manual field numbering
+    let str = Fmt.format("{1}{0}", "A", "B"); // "BA"
+
+    // Using named fields
+    let str = Fmt.format("{name} {age:d}", { name: "Tim", age: 95 }); // "Tim 95"
+
+    // Fill, align and width
+    let str = Fmt.format("{:0<8d}", 777);  // "77700000"
+    let str = Fmt.format("{:0^8d}", 777);  // "00777000"
+    let str = Fmt.format("{:0>8d}", -777); // "0000-777"
+    let str = Fmt.format("{:0=8d}", -777); // "-0000777"
+
+    // Precision
+    let str = Fmt.format("{:.2f}", 1); // "1.00"
+
+    // String width
+    let str = Fmt.format("{:10.4s}", "Alligator"); // "Alli      "
+
+    // Array
+    let str = Fmt.format("{:d}", [1, 2, 3]); // "[1, 2, 3]"
+
+    // Set
+    let str = Fmt.format("{:d}", new Set([1, 2, 3, 2])); // "[1, 2, 3]"
+
+    // Map
+    let str = Fmt.format("{:m:}", new Map([["x", 1], ["y", -1]])); // "[x: 1.0, y: -1.0]"
+
+    // Object
+    let str = Fmt.format("{{{:n:}}}", { x: 1, y: -1}); // "{x: 1.0, y: -1.0}"
