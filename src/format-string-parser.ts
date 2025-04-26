@@ -5,9 +5,13 @@ import { formatNumber } from "./number-formatter";
 import { ThrowFormatError } from "./format-error";
 import { IntWrapper, NumberWrapper } from "./int-float";
 
-// Regex to test if string loosely matches of replacement field.
-// Starts with '{', solves nested braces '{d}', until finally matched closing brace '}'.
-const LooseMatchReplacementFieldRegEx = new RegExp("^\{([^{}]*(\{[0-9]*\})?)*[^{}]*\}");
+// Replacement field regex arr. Try simple first, if fails try with nested braces.
+const ReplacementFieldRegExs: RegExp[] = [
+    // Simple match, just any chars between braces '{...}'.
+    new RegExp("^\{[^{}]*\}"),
+    // Match that works for nested braces '{...{d}...{d}...}'.
+    new RegExp("^\{([^{}]*(\{[0-9]*\})?)*[^{}]*\}")
+];
 
 // Regex to get index of next curly bracet.
 const CurlyBracesRegEx = /[{}]/;
@@ -332,12 +336,15 @@ export class FormatStringParser {
     private parseReplacementField(): void {
         assert(this.parseString[0] === "{");
 
-        // Get replacement field match.
-        let m = LooseMatchReplacementFieldRegEx.exec(this.parseString);
+        // Get replacement field match string.
+        let match: string | undefined = undefined;
 
-        if (m && m[0]) {
-            let match = m[0];
+        for (let i = 0; match === undefined && i < ReplacementFieldRegExs.length; i++) {
+            let m = ReplacementFieldRegExs[i].exec(this.parseString);
+            match = !!m && !!m[0] ? m[0] : undefined;
+        }
 
+        if (match) {
             // Remove edges '{' and '}' and split to parts by ':'.
             let replFieldParts = match.substring(1, match.length - 1).split(":");
 
