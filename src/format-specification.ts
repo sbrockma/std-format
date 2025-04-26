@@ -166,10 +166,12 @@ export class FormatSpecification {
         if (this.parseStr[this.parsePos] === "{") {
             // Get nested arg value.
             this.parsePos++;
-            let digits = this.parseDigits();
-            if (this.parseStr[this.parsePos] === "}") {
-                this.parsePos++;
-                return this.parser.getNestedArgumentInt(digits);
+            let nextLeftBraceId = this.parseStr.indexOf("{", this.parsePos);
+            let nextRightBraceId = this.parseStr.indexOf("}", this.parsePos);
+            if (nextRightBraceId >= 0 && (nextLeftBraceId < 0 || (nextLeftBraceId >= 0 && nextRightBraceId < nextLeftBraceId))) {
+                let fieldId = this.parseStr.substring(this.parsePos, nextRightBraceId);
+                this.parsePos = nextRightBraceId + 1;
+                return this.parser.getNestedArgumentInt(fieldId);
             }
             else {
                 ThrowFormatError.throwInvalidFormatSpecifiers(this.parser);
