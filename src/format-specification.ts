@@ -71,6 +71,28 @@ export class FormatSpecification {
         // Previous parts are array presentations.
         this.arraySpecifiers = fsParts;
 
+        this.arrayPresentations = this.arraySpecifiers.map(s => {
+            // Init parse string and position.
+            this.parseStr = s;
+            this.parsePos = 0;
+
+            // Get fill, align, width and type
+            let { fill, align } = this.parseFillAndAlign("<", "^", ">") as { fill: string, align: "<" | "^" | ">" };
+            let width = this.parseWidthOrPrecision("width");
+            let type = this.parseSpecifier("d", "n", "b", "s", "m") as "d" | "n" | "b" | "s" | "m" ?? "";
+
+            // Parse position should have reached end of parse str.
+            if (this.parsePos !== this.parseStr.length) {
+                ThrowFormatError.throwInvalidFormatSpecifiers(this.parser);
+            }
+
+            // Solve left and right braces.
+            let leftBrace: "" | "[" | "{" = type === "n" || type === "s" ? "" : (type === "b" ? "{" : "[");
+            let rightBrace: "" | "]" | "}" = type === "n" || type === "s" ? "" : (type === "b" ? "}" : "]");
+
+            return { fill, align, width, type, leftBrace, rightBrace }
+        });
+
         // Init parse string and position.
         this.parseStr = this.elemSpecifiers;
         this.parsePos = 0;
@@ -95,28 +117,6 @@ export class FormatSpecification {
         if (this.parsePos !== this.parseStr.length) {
             ThrowFormatError.throwInvalidFormatSpecifiers(this.parser);
         }
-
-        this.arrayPresentations = this.arraySpecifiers.map(s => {
-            // Init parse string and position.
-            this.parseStr = s;
-            this.parsePos = 0;
-
-            // Get fill, align, width and type
-            let { fill, align } = this.parseFillAndAlign("<", "^", ">") as { fill: string, align: "<" | "^" | ">" };
-            let width = this.parseWidthOrPrecision("width");
-            let type = this.parseSpecifier("d", "n", "b", "s", "m") as "d" | "n" | "b" | "s" | "m" ?? "";
-
-            // Parse position should have reached end of parse str.
-            if (this.parsePos !== this.parseStr.length) {
-                ThrowFormatError.throwInvalidFormatSpecifiers(this.parser);
-            }
-
-            // Solve left and right braces.
-            let leftBrace: "" | "[" | "{" = type === "n" || type === "s" ? "" : (type === "b" ? "{" : "[");
-            let rightBrace: "" | "]" | "}" = type === "n" || type === "s" ? "" : (type === "b" ? "}" : "]");
-
-            return { fill, align, width, type, leftBrace, rightBrace }
-        });
     }
 
     getArrayPresentation(curArrayDepth: number, totArrayDepth: number): ArrayPresentation {

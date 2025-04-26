@@ -54,6 +54,8 @@ describe("Testing std-format", () => {
         expect(format("{:!^{}.{}f}", 123.45, 8, 1)).toEqual("!123.5!!");
         expect(format("{2:!^{1}.{0}f}", 1, 8, 123.45)).toEqual("!123.5!!");
         expect(format("{:0{}d}", 1, 4)).toEqual("0001");
+        expect(format("{0:*<{1}:0>{2}d}", [12, 13], 15, 4)).toEqual("[0012, 0013]***");
+        expect(format("{:*<{}:0>{}d}", [12, 13], 15, 4)).toEqual("[0012, 0013]***"); // Correct order
 
         // Cannot switch between manual and automatic field numbering
         expect(() => format("{}{1}", 0, 1)).toThrow();
