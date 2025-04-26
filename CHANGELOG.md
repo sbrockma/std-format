@@ -1,4 +1,9 @@
 # Changelog
+## [1.6.0] - 2025-04-26
+### Added
+- Format Set, Map, Object/record.
+- Named field identifiers: format("{name}", { name: "My Name" }).
+
 ## [1.5.1] - 2025-04-25
 ### Fixed
 - Fixed array formatting.
