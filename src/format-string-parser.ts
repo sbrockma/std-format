@@ -52,9 +52,6 @@ export class FormatStringParser {
 
     // Formats argument.
     private formatArgument(arg: unknown, fs: FormatSpecification, curArrayDepth?: number, totArrayDepth?: number): string {
-        // Validate format specification
-        fs.validate(arg); // FIXME: Here or There
-
         // Is type specifier number compatible?
         let isFsTypeNumberCompatible = fs.hasType("", "cdnbBoxXeEfF%gGaA");
 
@@ -117,7 +114,7 @@ export class FormatStringParser {
     // Formats known argument.
     private formatKnownArgument(arg: unknown, fs: FormatSpecification, curArrayDepth?: number, totArrayDepth?: number): string {
         // Validate format specification.
-        fs.validate(arg); // FIXME: Here or There
+        fs.validate(arg);
 
         // Get align.
         let { align } = fs;
