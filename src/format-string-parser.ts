@@ -10,7 +10,7 @@ const ReplacementFieldRegExs: RegExp[] = [
     // Simple match, just any chars between braces '{...}'.
     new RegExp("^\{[^{}]*\}"),
     // Match that works for nested braces '{...{d}...{d}...}'.
-    new RegExp("^\{([^{}]*(\{[0-9]*\})?)*[^{}]*\}")
+    new RegExp("^\{([^{}]*(\{[^{}]*\})?)*[^{}]*\}")
 ];
 
 // Regex to get index of next curly bracet.

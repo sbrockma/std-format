@@ -64,6 +64,8 @@ describe("Testing std-format", () => {
 
         // Named args
         expect(format("Name is {name}, age is {age:d}.", { name: "Tim", age: 95 })).toEqual("Name is Tim, age is 95.");
+        expect(format("{0:0>{1}d}", 45, 4)).toEqual("0045");
+        expect(format("{id:0>{width}d}", { id: 45, width: 4 })).toEqual("0045");
     });
 
     it("grouping specifier ,", () => {
