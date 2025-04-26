@@ -2,15 +2,21 @@
 
 This is a simple string formatting library for TS/JS.
 
-This is a non-professional hobby project. Learning how to create and publish an npm package. 
-
-Still going through some changes. Has many bugs, hoping to fix them.
-
-Trying to follow standard format specification, for example:
+Trying to follow standard format specifications like these:
 [C++20](https://en.cppreference.com/w/cpp/utility/format/spec) and
 [Python](https://docs.python.org/3/library/string.html#formatspec).
 
-Note! Legacy JavaScript has only *number* type, not separate *int* and *float*.
+## Disclaimer!
+
+This is a non-professional, hobby project. 
+I'm building it for fun and learning, but I'm giving it my best effort! 
+So please keep that in mind when using it!
+
+Still going through some changes. Has many bugs, hoping to fix them.
+
+## Note!
+
+Legacy JavaScript has only *number* type, not separate *int* and *float*.
 
     // By default format number as float.
     Fmt.format("{}", 5);   // "5.0"
