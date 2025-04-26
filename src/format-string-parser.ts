@@ -52,24 +52,30 @@ export class FormatStringParser {
 
     // Formats argument.
     private formatArgument(arg: unknown, fs: FormatSpecification, curArrayDepth?: number, totArrayDepth?: number): string {
-        // Is type specifier number compatible?
-        let isFsTypeNumberCompatible = fs.hasType("", "cdnbBoxXeEfF%gGaA");
+        let isNumberCompatibleType = fs.hasType("", "cdnbBoxXeEfF%gGaA");
+        let isStringCompatibleType = fs.hasType("", "s?");
 
-        if (typeof arg === "boolean") {
+        if (arg === undefined || arg === null) {
+            // undefined and null can be stringified.
+            if (isStringCompatibleType) {
+                return this.formatKnownArgument(String(arg), fs, curArrayDepth, totArrayDepth);
+            }
+        }
+        else if (typeof arg === "boolean") {
             // Argument can be boolean.
-            if (fs.hasType("", "s")) {
-                // Convert boolean to string, if type is default '' or string 's'.
+            if (isStringCompatibleType) {
+                // Boolean can be stringified.
                 let b = fs.parser.getBooleanString(arg);
                 return this.formatKnownArgument(b, fs, curArrayDepth, totArrayDepth);
             }
-            else if (isFsTypeNumberCompatible) {
-                // Convert boolean to number 0 or 1.
+            else if (isNumberCompatibleType) {
+                // Boolean can be converted to number 0 or 1.
                 return this.formatKnownArgument(arg ? 1 : 0, fs, curArrayDepth, totArrayDepth);
             }
         }
         else if (typeof arg === "number" || arg instanceof NumberWrapper) {
             // Argument can be number or int.
-            if (isFsTypeNumberCompatible) {
+            if (isNumberCompatibleType) {
                 // Use number argument as it is.
                 return this.formatKnownArgument(arg, fs, curArrayDepth, totArrayDepth);
             }
@@ -89,7 +95,7 @@ export class FormatStringParser {
                     return this.formatKnownArgument(symbolInfo.codePoint, fs, curArrayDepth, totArrayDepth);
                 }
             }
-            else if (fs.hasType("", "s?")) {
+            else if (isStringCompatibleType) {
                 // Else use string argument as it is.
                 return this.formatKnownArgument(arg, fs, curArrayDepth, totArrayDepth);
             }
@@ -108,7 +114,7 @@ export class FormatStringParser {
         }
 
         // Invalid argument type.
-        ThrowFormatError.throwInvalidArgumentForType(this, arg, fs.type);
+        ThrowFormatError.throwCannotFormatArgumentAsType(this, arg, fs.type);
     }
 
     // Formats known argument.
@@ -223,7 +229,7 @@ export class FormatStringParser {
         }
         else {
             // Invalid argument type.
-            ThrowFormatError.throwInvalidArgumentForType(this, arg, fs.type);
+            ThrowFormatError.throwCannotFormatArgumentAsType(this, arg, fs.type);
         }
 
         // If arg not leaf node, then pass it forward to get correct fill, align and width.

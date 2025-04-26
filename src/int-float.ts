@@ -33,7 +33,7 @@ export class IntWrapper extends NumberWrapper {
             this.bigInt = JSBI.BigInt(value);
         }
         else if (typeof value === "string") {
-            this.bigInt = JSBI.BigInt(value);
+            this.bigInt = JSBI.BigInt(value || "0");
         }
         else if (typeof value === "bigint") {
             this.bigInt = JSBI.BigInt(value.toString());
@@ -90,7 +90,7 @@ export class FloatWrapper extends NumberWrapper {
             this.num = value;
         }
         else if (typeof value === "string") {
-            this.num = Number(value);
+            this.num = Number(value || "0");
         }
         else if (typeof value === "bigint") {
             this.num = Number(value.toString());
@@ -137,12 +137,12 @@ export class FloatWrapper extends NumberWrapper {
  * @public
  */
 export function int(value?: unknown): unknown {
-    return new IntWrapper(value === "" || value === undefined || value === null ? 0 : value);
+    return value === undefined || value === null ? value : new IntWrapper(value);
 }
 
 /**
  * @public
  */
 export function float(value?: unknown): unknown {
-    return new FloatWrapper(value === "" || value === undefined || value === null ? 0.0 : value);
+    return value === undefined || value === null ? value : new FloatWrapper(value);
 }

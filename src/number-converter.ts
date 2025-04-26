@@ -26,7 +26,7 @@ export class NumberConverter {
     constructor(value: number, readonly fs: FormatSpecification) {
         // Is valid?
         if (!isFinite(value) || !fs.hasType("", "eEfF%gGaA")) {
-            ThrowFormatError.throwInvalidArgumentForType(fs.parser, value, fs.type);
+            ThrowFormatError.throwCannotFormatArgumentAsType(fs.parser, value, fs.type);
         }
 
         // Set base
@@ -262,7 +262,7 @@ export class NumberConverter {
             this.toScientific(p);
         }
         else {
-            ThrowFormatError.throwInvalidArgumentForType(this.parser, value, fs.type);
+            ThrowFormatError.throwCannotFormatArgumentAsType(this.parser, value, fs.type);
         }
 
         if (fs.zeta === "z") {

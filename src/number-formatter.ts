@@ -52,7 +52,7 @@ function toValidCodePoint(value: number | NumberWrapper, fs: FormatSpecification
         return codePoint;
     }
     catch (e) {
-        ThrowFormatError.throwInvalidArgumentForType(fs.parser, value, fs.type);
+        ThrowFormatError.throwCannotFormatArgumentAsType(fs.parser, value, fs.type);
     }
 }
 
@@ -201,7 +201,7 @@ export function formatNumber(value: number | NumberWrapper, fs: FormatSpecificat
     }
     else {
         // Invalid argument for type
-        ThrowFormatError.throwInvalidArgumentForType(fs.parser, value, fs.type);
+        ThrowFormatError.throwCannotFormatArgumentAsType(fs.parser, value, fs.type);
     }
 
     // Omit octal prefix "0" if digits is "0".

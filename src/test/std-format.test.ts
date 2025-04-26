@@ -817,12 +817,25 @@ describe("Testing std-format", () => {
         expect(format("{:d}", new Map([["A", 65], ["B", 66]]))).toEqual("[[A, 65], [B, 66]]");
     });
 
+    it("undefined and null", () => {
+        expect(format("{}", undefined)).toEqual("undefined");
+        expect(format("{:s}", undefined)).toEqual("undefined");
+        expect(() => format("{:x}", undefined)).toThrow();
+
+        expect(format("{}", null)).toEqual("null");
+        expect(format("{:s}", null)).toEqual("null");
+        expect(() => format("{:x}", null)).toThrow();
+
+        expect(format("{}", [undefined, null])).toEqual("[undefined, null]");
+        expect(format("{}", { a: undefined, b: null })).toEqual("[[a, undefined], [b, null]]");
+    });
+
     it("int()", () => {
         // int(0)
+        expect(format("{}", int())).toEqual("undefined");
+        expect(format("{}", int(undefined))).toEqual("undefined");
+        expect(format("{}", int(null))).toEqual("null");
         expect(format("{}", int(""))).toEqual("0");
-        expect(format("{}", int())).toEqual("0");
-        expect(format("{}", int(undefined))).toEqual("0");
-        expect(format("{}", int(null))).toEqual("0");
         expect(format("{}", int(0))).toEqual("0");
 
         // Not int
@@ -865,10 +878,10 @@ describe("Testing std-format", () => {
 
     it("float()", () => {
         // float(0)
+        expect(format("{}", float())).toEqual("undefined");
+        expect(format("{}", float(undefined))).toEqual("undefined");
+        expect(format("{}", float(null))).toEqual("null");
         expect(format("{}", float(""))).toEqual("0.0");
-        expect(format("{}", float())).toEqual("0.0");
-        expect(format("{}", float(undefined))).toEqual("0.0");
-        expect(format("{}", float(null))).toEqual("0.0");
         expect(format("{}", float(0))).toEqual("0.0");
 
         // More float
