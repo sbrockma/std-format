@@ -134,6 +134,9 @@ Array presentations:
     // String width
     let str = Fmt.format("{:10.4s}", "Alligator"); // "Alli      "
 
+    // With nested arguments
+    let str = Fmt.format("{:{}.{}s}", "Alligator", 10, 4); // "Alli      "
+
     // Array
     let str = Fmt.format("{:d}", [1, 2, 3]); // "[1, 2, 3]"
 
