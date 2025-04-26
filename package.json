@@ -1,6 +1,6 @@
 {
     "name": "@sbrockma/std-format",
-    "version": "1.5.1",
+    "version": "1.6.0",
     "author": "Stefan Brockmann <stefanprogram@hotmail.com>",
     "private": false,
     "license": "zlib",
