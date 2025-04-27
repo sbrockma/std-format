@@ -171,7 +171,7 @@ export function isPlainObject(arg: unknown): arg is Record<string, unknown> {
 // Get record from Map..
 export function mapToRecord(arg: unknown): Record<string, unknown> {
     if (isMap(arg)) {
-        let r: Record<string, unknown> = {};
+        let r: Record<string, unknown> = Object.create(null);
 
         arg.forEach((value, key) => r[String(key)] = value);
 
@@ -196,9 +196,13 @@ export function setToArray(arg: unknown): Array<unknown> {
     }
 }
 
-// Does object have own, ok property?
-export function hasOwnOkProperty(obj: { [key: string]: unknown }, prop: string): boolean {
-    return obj.hasOwnProperty(prop) && typeof obj[prop] !== "function";
+// Does object have ok property?
+export function hasOkProperty(obj: { [key: string]: unknown }, prop: string): boolean {
+    if (!(prop in obj)) {
+        return false;
+    }
+    const type = typeof obj[prop];
+    return type !== "function" && type !== "symbol";
 }
 
 // Get depth of (nested) array.
@@ -216,7 +220,7 @@ export function getArrayDepth<T>(arg: unknown | T[]): number {
         let depth = 1;
 
         for (let key in arg) {
-            if (hasOwnOkProperty(arg, key)) {
+            if (hasOkProperty(arg, key)) {
                 depth = Math.max(depth, getArrayDepth(arg[key]) + 1);
             }
         }
