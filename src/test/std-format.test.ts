@@ -14,6 +14,9 @@ describe("Testing std-format", () => {
 
     it("test default export", () => {
         expect(DefaultExport.format("The answer is {}.", int(42))).toEqual("The answer is 42.");
+
+        // Test empty format string.
+        expect(DefaultExport.format("")).toEqual("");
     });
 
     it("using curly braces", () => {

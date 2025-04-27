@@ -1,5 +1,4 @@
 import { assert } from "./internal";
-
 import { LRUCache } from "./LRU-cache";
 
 // Grouping info class.

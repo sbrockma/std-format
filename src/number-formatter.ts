@@ -1,40 +1,41 @@
 import { assert, getSymbol, isInteger, isValidCodePoint, mapDigitToChar, repeatString } from "./internal";
-import { FormatSpecification } from "./format-specification";
+import { ElementPresentation } from "./replacement-field";
 import { ThrowFormatError } from "./format-error";
 import { NumberConverter } from "./number-converter";
 import { getLocaleGroupingInfo } from "./set-locale";
 import { GroupingInfo } from "./grouping-info";
 import { NumberWrapper } from "./int-float";
+import { FormatStringParser } from "format-string-parser";
 
 // Get number prefix.
-function getNumberPrefix(fs: FormatSpecification) {
-    return fs.sharp === "#" ? (
-        fs.hasType("xX") ? "0x" : fs.hasType("bB") ? "0b" : fs.hasType("o") ? fs.parser.getOctalPrefix() : ""
+function getNumberPrefix(p: FormatStringParser, ep: ElementPresentation) {
+    return ep.sharp === "#" ? (
+        ep.hasType("xX") ? "0x" : ep.hasType("bB") ? "0b" : ep.hasType("o") ? p.getOctalPrefix() : ""
     ) : "";
 }
 
 // Get grouping info
-function getGroupingInfo(fs: FormatSpecification): GroupingInfo {
-    if (fs.grouping === ",") {
+function getGroupingInfo(ep: ElementPresentation): GroupingInfo {
+    if (ep.grouping === ",") {
         // Use comma with 3 digits gropuing.
         return GroupingInfo.comma3;
     }
-    else if (fs.grouping === "_") {
-        if (fs.hasType("deEfF%gG")) {
+    else if (ep.grouping === "_") {
+        if (ep.hasType("deEfF%gG")) {
             // Use underscore with 3 digits gropuing.
             return GroupingInfo.underscore3;
         }
-        else if (fs.hasType("bBoxX")) {
+        else if (ep.hasType("bBoxX")) {
             // Use underscore with 4 digits gropuing.
             return GroupingInfo.underscore4;
         }
     }
-    else if (fs.locale) {
+    else if (ep.locale) {
         // The L option causes the locale-specific form to be used.
         // Use locale's grouping.
         return getLocaleGroupingInfo();
     }
-    else if (fs.hasType("n")) {
+    else if (ep.hasType("n")) {
         // Use locale's grouping.
         return getLocaleGroupingInfo();
     }
@@ -44,7 +45,7 @@ function getGroupingInfo(fs: FormatSpecification): GroupingInfo {
 }
 
 // Get valid code point
-function toValidCodePoint(value: number | NumberWrapper, fs: FormatSpecification): number {
+function toValidCodePoint(value: number | NumberWrapper, p: FormatStringParser, ep: ElementPresentation): number {
     try {
         // Is code point valid integer and in range?
         let codePoint = value instanceof NumberWrapper ? value.toSafeNumber() : value;
@@ -52,13 +53,13 @@ function toValidCodePoint(value: number | NumberWrapper, fs: FormatSpecification
         return codePoint;
     }
     catch (e) {
-        ThrowFormatError.throwCannotFormatArgumentAsType(fs.parser, value, fs.type);
+        ThrowFormatError.throwCannotFormatArgumentAsType(p, value, ep.type);
     }
 }
 
-function applyGrouping(fs: FormatSpecification, intDigits: string) {
+function applyGrouping(ep: ElementPresentation, intDigits: string) {
     // Get grouping props.
-    let groupingInfo = getGroupingInfo(fs);
+    let groupingInfo = getGroupingInfo(ep);
 
     if (groupingInfo.hasGrouping()) {
         // Has grouping.
@@ -86,7 +87,7 @@ function applyGrouping(fs: FormatSpecification, intDigits: string) {
 }
 
 // Convert this number to string.
-export function formatNumber(value: number | NumberWrapper, fs: FormatSpecification): string {
+export function formatNumber(value: number | NumberWrapper, p: FormatStringParser, ep: ElementPresentation): string {
     // Set sign. "-", "+", " " or "".
     let sign: string;
 
@@ -100,11 +101,11 @@ export function formatNumber(value: number | NumberWrapper, fs: FormatSpecificat
     let exp: string;
 
     // Postfix string. "%" for percentage types, or "".
-    let postfix: string = fs.hasType("%") ? "%" : "";
+    let postfix: string = ep.hasType("%") ? "%" : "";
 
-    if (fs.hasType("c") && (typeof value === "number" || NumberWrapper.isIntType(value))) {
+    if (ep.hasType("c") && (typeof value === "number" || NumberWrapper.isIntType(value))) {
         // Set digits string to contain single symbol.
-        digits = getSymbol(toValidCodePoint(value, fs));
+        digits = getSymbol(toValidCodePoint(value, p, ep));
 
         // Other props empty.
         sign = exp = prefix = "";
@@ -112,20 +113,20 @@ export function formatNumber(value: number | NumberWrapper, fs: FormatSpecificat
     else if (typeof value === "number" && isNaN(value) || value instanceof NumberWrapper && value.isNaN()) {
         // Is nan?
         prefix = "";
-        sign = fs.getSignChar(value instanceof NumberWrapper ? value.isNegative() : value < 0);
+        sign = ep.getSignChar(value instanceof NumberWrapper ? value.isNegative() : value < 0);
         digits = "nan";
         exp = "";
     }
     else if (typeof value === "number" && Math.abs(value) === Infinity || value instanceof NumberWrapper && value.isInfinity()) {
         // Is inf?
         prefix = "";
-        sign = fs.getSignChar(value instanceof NumberWrapper ? value.isNegative() : value < 0);
+        sign = ep.getSignChar(value instanceof NumberWrapper ? value.isNegative() : value < 0);
         digits = "inf";
         exp = "";
     }
-    else if (fs.hasType("") && NumberWrapper.isIntType(value) || fs.hasType("dnbBoxX") && (NumberWrapper.isIntType(value) || isInteger(value))) {
+    else if (ep.hasType("") && NumberWrapper.isIntType(value) || ep.hasType("dnbBoxX") && (NumberWrapper.isIntType(value) || isInteger(value))) {
         // Get target base
-        let base = fs.hasType("bB") ? 2 : fs.hasType("o") ? 8 : fs.hasType("xX") ? 16 : 10;
+        let base = ep.hasType("bB") ? 2 : ep.hasType("o") ? 8 : ep.hasType("xX") ? 16 : 10;
 
         // Convert value to string.
         let valueStr = value.toString(base);
@@ -136,27 +137,27 @@ export function formatNumber(value: number | NumberWrapper, fs: FormatSpecificat
         }
 
         // Get sign.
-        sign = fs.getSignChar(value instanceof NumberWrapper ? value.isNegative() : value < 0);
+        sign = ep.getSignChar(value instanceof NumberWrapper ? value.isNegative() : value < 0);
 
         // Apply grouping.
-        digits = applyGrouping(fs, valueStr);
+        digits = applyGrouping(ep, valueStr);
 
         // No exponent.
         exp = "";
 
         // Get prefix.
-        prefix = getNumberPrefix(fs);
+        prefix = getNumberPrefix(p, ep);
     }
-    else if (fs.hasType("", "eEfF%gGaA") && (typeof value === "number" || NumberWrapper.isFloatType(value))) {
-        let n = new NumberConverter(value instanceof NumberWrapper ? value.toSafeNumber() : value, fs);
+    else if (ep.hasType("", "eEfF%gGaA") && (typeof value === "number" || NumberWrapper.isFloatType(value))) {
+        let n = new NumberConverter(value instanceof NumberWrapper ? value.toSafeNumber() : value, p, ep);
 
-        sign = fs.getSignChar(n.sign < 0);
+        sign = ep.getSignChar(n.sign < 0);
 
         // Some type specifiers do not show zero exponent.
-        let omitZeroExp = !fs.hasType("eEaA");
+        let omitZeroExp = !ep.hasType("eEaA");
 
         // Some type specifiers add zero prefix to single digit exponent.
-        let needTwoDigitExp = fs.hasType("", "eEgG");
+        let needTwoDigitExp = ep.hasType("", "eEgG");
 
         if (n.exp === 0 && omitZeroExp) {
             // No zero exponent.
@@ -181,27 +182,27 @@ export function formatNumber(value: number | NumberWrapper, fs: FormatSpecificat
         let fracDigits = n.digits.slice(n.dotPos).map(mapDigitToChar).join("");
 
         // Apply grouping to int part.
-        digits = applyGrouping(fs, intDigits);
+        digits = applyGrouping(ep, intDigits);
 
         // Get grouping info.
-        let groupingInfo = getGroupingInfo(fs);
+        let groupingInfo = getGroupingInfo(ep);
 
         // Is there fraction digits?
         if (fracDigits.length > 0) {
             // Add decimal separator and fraction digits.
             digits += groupingInfo.getDecimalSeparator() + fracDigits;
         }
-        else if (n.dotPos === n.digits.length && fs.sharp === "#") {
+        else if (n.dotPos === n.digits.length && ep.sharp === "#") {
             // Add decimal separator after last digit if sharp specifier is '#'.
             digits += groupingInfo.getDecimalSeparator();
         }
 
         // Get prefix.
-        prefix = getNumberPrefix(fs);
+        prefix = getNumberPrefix(p, ep);
     }
     else {
         // Invalid argument for type
-        ThrowFormatError.throwCannotFormatArgumentAsType(fs.parser, value, fs.type);
+        ThrowFormatError.throwCannotFormatArgumentAsType(p, value, ep.type);
     }
 
     // Omit octal prefix "0" if digits is "0".
@@ -210,7 +211,7 @@ export function formatNumber(value: number | NumberWrapper, fs: FormatSpecificat
     }
 
     // Get formatting width for number related filling.
-    let width = fs.width ?? 0;
+    let width = ep.width ?? 0;
 
     // Get count of fill characters.
     // It is width minus sign, prefix, digits, exponent, and postfix.
@@ -221,11 +222,11 @@ export function formatNumber(value: number | NumberWrapper, fs: FormatSpecificat
 
     // Here we only add filling that occurs between sign (or prefix) and digits.
     // That means if align is '=' or if align is not defined and '0' is specified.
-    if (fs.align === "=") {
-        fillChar = fs.fill ?? fs.zero ?? " ";
+    if (ep.align === "=") {
+        fillChar = ep.fill ?? ep.zero ?? " ";
     }
-    else if (fs.align === undefined && fs.zero !== undefined) {
-        fillChar = fs.zero;
+    else if (ep.align === undefined && ep.zero !== undefined) {
+        fillChar = ep.zero;
     }
     else {
         fillChar = "";
@@ -235,6 +236,6 @@ export function formatNumber(value: number | NumberWrapper, fs: FormatSpecificat
     // Form final string representation by adding all components and fill.
     let str = sign + prefix + repeatString(fillChar, fillCount) + digits + exp + postfix;
 
-    // Convert to uppercase if specified by format specification.
-    return fs.hasType("BXEFGA") ? str.toUpperCase() : str;
+    // Convert to uppercase if specified by element presentation.
+    return ep.hasType("BXEFGA") ? str.toUpperCase() : str;
 }

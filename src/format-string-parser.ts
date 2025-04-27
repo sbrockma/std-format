@@ -1,9 +1,10 @@
 import { assert, getArrayDepth, getStringRealLength, getSymbolInfoAt, hasOkProperty, isArray, isInteger, isMap, isRecord, isSet, mapToRecord, repeatString, setStringRealLength, setToArray } from "./internal";
 import { deprecatedFalseString, deprecatedOctalPrefix, deprecatedTrueString } from "./deprecated";
-import { FormatSpecification } from "./format-specification";
+import { ReplacementField } from "./replacement-field";
 import { formatNumber } from "./number-formatter";
 import { ThrowFormatError } from "./format-error";
 import { IntWrapper, NumberWrapper } from "./int-float";
+import { LRUCache } from "./LRU-cache";
 
 // Replacement field regex arr. Try simple first, if fails try with nested braces.
 const ReplacementFieldRegExs: RegExp[] = [
@@ -38,6 +39,9 @@ export class FormatStringParser {
     hasAutomaticFieldNumbering: boolean;
     hasManualFieldSpecification: boolean;
 
+    static replacementFieldCache = new LRUCache<string, ReplacementField>(250);
+    static formatStringCache = new LRUCache<string, ReadonlyArray<string | ReplacementField>>(250);
+
     private constructor(readonly formatString: string, readonly formatArgs: unknown[], readonly usingDeprecatedStdFormat: boolean) {
         assert(typeof this.formatString === "string", "Invalid format string!");
 
@@ -51,79 +55,83 @@ export class FormatStringParser {
     }
 
     // Formats argument.
-    private formatArgument(arg: unknown, fs: FormatSpecification, curArrayDepth?: number, totArrayDepth?: number): string {
-        let isNumberCompatibleType = fs.hasType("", "cdnbBoxXeEfF%gGaA");
-        let isStringCompatibleType = fs.hasType("", "s?");
+    formatArgument(arg: unknown, rf: ReplacementField, curArrayDepth?: number, totArrayDepth?: number): string {
+        let ep = rf.getElementPresentation();
+
+        let isNumberCompatibleType = ep.hasType("", "cdnbBoxXeEfF%gGaA");
+        let isStringCompatibleType = ep.hasType("", "s?");
 
         if (arg === undefined || arg === null) {
             // undefined and null can be stringified.
             if (isStringCompatibleType) {
-                return this.formatKnownArgument(String(arg), fs, curArrayDepth, totArrayDepth);
+                return this.formatKnownArgument(String(arg), rf, curArrayDepth, totArrayDepth);
             }
         }
         else if (typeof arg === "boolean") {
             // Argument can be boolean.
             if (isStringCompatibleType) {
                 // Boolean can be stringified.
-                let b = fs.parser.getBooleanString(arg);
-                return this.formatKnownArgument(b, fs, curArrayDepth, totArrayDepth);
+                let b = this.getBooleanString(arg);
+                return this.formatKnownArgument(b, rf, curArrayDepth, totArrayDepth);
             }
             else if (isNumberCompatibleType) {
                 // Boolean can be converted to number 0 or 1.
-                return this.formatKnownArgument(arg ? 1 : 0, fs, curArrayDepth, totArrayDepth);
+                return this.formatKnownArgument(arg ? 1 : 0, rf, curArrayDepth, totArrayDepth);
             }
         }
         else if (typeof arg === "number" || arg instanceof NumberWrapper) {
             // Argument can be number or int.
             if (isNumberCompatibleType) {
                 // Use number argument as it is.
-                return this.formatKnownArgument(arg, fs, curArrayDepth, totArrayDepth);
+                return this.formatKnownArgument(arg, rf, curArrayDepth, totArrayDepth);
             }
         }
         else if (typeof arg === "bigint") {
             // Convert BigInt to IntWrapper.
-            return this.formatKnownArgument(new IntWrapper(arg), fs, curArrayDepth, totArrayDepth);
+            return this.formatKnownArgument(new IntWrapper(arg), rf, curArrayDepth, totArrayDepth);
         }
         else if (typeof arg === "string") {
             // Argument can be string.
-            if (fs.hasType("cdnxXobB")) {
+            if (ep.hasType("cdnxXobB")) {
                 // For integer types get code point of arg if it contains single symbol.
                 let symbolInfo = getSymbolInfoAt(arg, 0);
 
                 // Does arg contain single symbol?
                 if (symbolInfo && arg === symbolInfo.chars) {
-                    return this.formatKnownArgument(symbolInfo.codePoint, fs, curArrayDepth, totArrayDepth);
+                    return this.formatKnownArgument(symbolInfo.codePoint, rf, curArrayDepth, totArrayDepth);
                 }
             }
             else if (isStringCompatibleType) {
                 // Else use string argument as it is.
-                return this.formatKnownArgument(arg, fs, curArrayDepth, totArrayDepth);
+                return this.formatKnownArgument(arg, rf, curArrayDepth, totArrayDepth);
             }
         }
         else if (isArray(arg) || isRecord(arg)) {
             // Format array or record.
-            return this.formatKnownArgument(arg, fs, curArrayDepth, totArrayDepth);
+            return this.formatKnownArgument(arg, rf, curArrayDepth, totArrayDepth);
         }
         else if (isMap(arg)) {
             // Format Map as record.
-            return this.formatKnownArgument(mapToRecord(arg), fs, curArrayDepth, totArrayDepth);
+            return this.formatKnownArgument(mapToRecord(arg), rf, curArrayDepth, totArrayDepth);
         }
         else if (isSet(arg)) {
             // Format Set as array.
-            return this.formatKnownArgument(setToArray(arg), fs, curArrayDepth, totArrayDepth);
+            return this.formatKnownArgument(setToArray(arg), rf, curArrayDepth, totArrayDepth);
         }
 
         // Invalid argument type.
-        ThrowFormatError.throwCannotFormatArgumentAsType(this, arg, fs.type);
+        ThrowFormatError.throwCannotFormatArgumentAsType(this, arg, ep.type);
     }
 
     // Formats known argument.
-    private formatKnownArgument(arg: unknown, fs: FormatSpecification, curArrayDepth?: number, totArrayDepth?: number): string {
-        // Validate format specification.
-        fs.validate(arg);
+    private formatKnownArgument(arg: unknown, rf: ReplacementField, curArrayDepth?: number, totArrayDepth?: number): string {
+        let ep = rf.getElementPresentation();
+
+        // Validate element presentation.
+        ep.validate(this, arg);
 
         // Get align.
-        let { align } = fs;
+        let { align } = ep;
 
         // Width of field or 0 if not given.
         let width = 0;
@@ -136,32 +144,32 @@ export class FormatStringParser {
 
         if (typeof arg === "number" || arg instanceof NumberWrapper) {
             // Format number to string.
-            argStr = formatNumber(arg, fs);
+            argStr = formatNumber(arg, this, ep);
 
             // Set fill, align and width.
-            fill = fs.fill ?? fs.zero ?? " ";
+            fill = ep.fill ?? ep.zero ?? " ";
             align ??= ">";
-            width = fs.width ?? 0;
+            width = ep.width ?? 0;
         }
         else if (typeof arg === "string") {
-            if (fs.hasType("?")) {
+            if (ep.hasType("?")) {
                 // Here should format escape sequence string.
-                ThrowFormatError.throwSpecifierIsNotImplemented(fs.parser, fs.type);
+                ThrowFormatError.throwSpecifierIsNotImplemented(this, ep.type);
             }
 
             // For string presentation types precision field indicates the maximum
             // field size - in other words, how many characters will be used from the field content.
-            if (fs.precision !== undefined && getStringRealLength(arg) > fs.precision) {
-                argStr = setStringRealLength(arg, fs.precision);
+            if (ep.precision !== undefined && getStringRealLength(arg) > ep.precision) {
+                argStr = setStringRealLength(arg, ep.precision);
             }
             else {
                 argStr = arg;
             }
 
             // Set fill, align and width.
-            fill = fs.fill ?? fs.zero ?? " ";
+            fill = ep.fill ?? ep.zero ?? " ";
             align ??= "<";
-            width = fs.width ?? 0;
+            width = ep.width ?? 0;
         }
         else if (arg instanceof PassToLeaf) {
             argStr = arg.str;
@@ -171,7 +179,7 @@ export class FormatStringParser {
             totArrayDepth ??= getArrayDepth(arg);
             curArrayDepth ??= 0
 
-            let ap = fs.getArrayPresentation(curArrayDepth, totArrayDepth);
+            let ap = rf.getArrayPresentation(curArrayDepth, totArrayDepth);
 
             argStr = ap.leftBrace;
 
@@ -179,7 +187,7 @@ export class FormatStringParser {
                 if (i > 0 && ap.type !== "s") {
                     argStr += ", ";
                 }
-                argStr += this.formatArgument(arg[i], fs, curArrayDepth + 1, totArrayDepth);
+                argStr += this.formatArgument(arg[i], rf, curArrayDepth + 1, totArrayDepth);
             }
 
             argStr += ap.rightBrace;
@@ -194,7 +202,7 @@ export class FormatStringParser {
             totArrayDepth ??= getArrayDepth(arg);
             curArrayDepth ??= 0
 
-            let ap = fs.getArrayPresentation(curArrayDepth, totArrayDepth);
+            let ap = rf.getArrayPresentation(curArrayDepth, totArrayDepth);
 
             argStr = ap.leftBrace;
 
@@ -206,7 +214,7 @@ export class FormatStringParser {
                         argStr += ap.type === "s" ? "" : ", ";
                     }
 
-                    let value = this.formatArgument(arg[key], fs, curArrayDepth + 1, totArrayDepth)
+                    let value = this.formatArgument(arg[key], rf, curArrayDepth + 1, totArrayDepth)
 
                     if (ap.type === "n" || ap.type === "m") {
                         argStr += key + ": " + value;
@@ -229,15 +237,15 @@ export class FormatStringParser {
         }
         else {
             // Invalid argument type.
-            ThrowFormatError.throwCannotFormatArgumentAsType(this, arg, fs.type);
+            ThrowFormatError.throwCannotFormatArgumentAsType(this, arg, ep.type);
         }
 
         // If arg not leaf node, then pass it forward to get correct fill, align and width.
         if (!isArray(arg) && curArrayDepth !== undefined && totArrayDepth !== undefined && curArrayDepth < totArrayDepth) {
             // Pass argStr forward until it reaches leaf total depth of array.
-            argStr = this.formatKnownArgument(new PassToLeaf(argStr), fs, curArrayDepth + 1, totArrayDepth);
+            argStr = this.formatKnownArgument(new PassToLeaf(argStr), rf, curArrayDepth + 1, totArrayDepth);
 
-            let ap = fs.getArrayPresentation(curArrayDepth, totArrayDepth);
+            let ap = rf.getArrayPresentation(curArrayDepth, totArrayDepth);
 
             // Set fill, align and width.
             fill = ap.fill ?? " ";
@@ -245,7 +253,7 @@ export class FormatStringParser {
             width = ap.width ?? 0;
         }
 
-        // Next apply fill and alignment according to format specification.
+        // Next apply fill, align and width.
 
         // Calculate fillCount
         let fillCount = Math.max(0, width - getStringRealLength(argStr));
@@ -319,8 +327,8 @@ export class FormatStringParser {
         }
     }
 
-    // Function to get nested argument integer. Width and precision in format specification can be
-    // in form of nested curly braces {:{width field number}.{precision field number}}
+    // Function to get nested argument integer. Width and precision in element/array 
+    // presentations can be in nested curly braces.
     getNestedArgumentInt(fieldNumberStr: string): number {
         // Get the argument
         let arg = this.getArgument(fieldNumberStr);
@@ -336,7 +344,7 @@ export class FormatStringParser {
     }
 
     // Function to parse replacement field.
-    private parseReplacementField(): void {
+    private parseReplacementField(): ReplacementField {
         assert(this.parseString[0] === "{");
 
         // Get replacement field match string.
@@ -348,27 +356,19 @@ export class FormatStringParser {
         }
 
         if (match) {
-            // Remove edges '{' and '}' and split to parts by ':'.
-            let replFieldParts = match.substring(1, match.length - 1).split(":");
+            // Get replacement field.
+            let rf = FormatStringParser.replacementFieldCache.get(match);
 
-            // First part is field number.
-            let fieldId = replFieldParts.shift() ?? "";
-
-            // Set error string.
-            this.errorString = match;
-
-            // Get argument.
-            let arg = this.getArgument(fieldId);
-
-            // Create format specification.
-            let fs = new FormatSpecification(this, replFieldParts);
-
-            // Format argument and add it to result string.
-            this.resultString += this.formatArgument(arg, fs);
+            if (!rf) {
+                rf = new ReplacementField(this, match);
+                FormatStringParser.replacementFieldCache.set(match, rf);
+            }
 
             // Jump over matched replacement field in parsing string.
             this.parseString = this.parseString.substring(match.length);
             this.parsePosition += match.length;
+
+            return rf;
         }
         else {
             // Ecountered single '{' followed by random stuff.
@@ -385,49 +385,75 @@ export class FormatStringParser {
 
     // Function to parse format string.
     private parseFormatString() {
-        // Loop until terminated by break.
-        while (true) {
-            // Jump to next curly brace "{" or "}" or end of parsing string.
-            let i = this.getNextCurlyBraceIndex();
+        this.resultString = "";
 
-            // Add ordinary string to result string.
-            this.resultString += this.parseString.substring(0, i);
+        // Get segment string.
+        const getSegmentString = (seg: string | ReplacementField) => {
+            return typeof seg === "string" ? seg : seg.format(this);
+        }
 
-            // Jump over non-formatting part in parsing.
-            this.parseString = this.parseString.substring(i);
-            this.parsePosition += i;
+        // Get chached segments if any.
+        let cachedSegments = FormatStringParser.formatStringCache.get(this.formatString);
 
-            // Now parsing string starts with "{", "}", or is empty.
+        if (cachedSegments !== undefined) {
+            // Add cached segments to result string.
+            cachedSegments.forEach(seg => this.resultString += getSegmentString(seg));
+        }
+        else {
+            let segments: Array<string | ReplacementField> = [];
 
-            if (this.parseString[0] === "{" && this.parseString[1] === "{" || this.parseString[0] === "}" && this.parseString[1] === "}") {
-                // If parsing string starts with double curly braces
-                // Then add single curly brace to result string.
-                this.resultString += this.parseString[0];
-
-                // Jump over double curly braces on parsing string.
-                this.parseString = this.parseString.substring(2);
-                this.parsePosition += 2;
-
-                // Continue parsing on next loop.
-                continue;
+            // Add segment, and add it to result string.
+            const addSegment = (seg: string | ReplacementField) => {
+                this.resultString += getSegmentString(seg);
+                segments.push(seg);
             }
-            else if (this.parseString[0] === "}") {
-                // Encountered single '}' ff parsing string starts with '}'.
-                this.errorString = "}";
-                ThrowFormatError.throwEncounteredSingleCurlyBrace(this);
-            }
-            else if (this.parseString[0] === "{") {
-                // If parsing string starts with '{' then parse replacement field.
-                this.parseReplacementField();
 
-                // Continue parsing on next loop.
-                continue;
+            // Loop until terminated by break.
+            while (true) {
+                // Jump to next curly brace "{" or "}" or end of parsing string.
+                let i = this.getNextCurlyBraceIndex();
+
+                // Get ordinary text.
+                let text = this.parseString.substring(0, i);
+
+                if (text.length > 0) {
+                    // Add ordinary string.
+                    addSegment(text);
+
+                    // Jump over non-formatting part in parsing.
+                    this.parseString = this.parseString.substring(text.length);
+                    this.parsePosition += text.length;
+                }
+
+                // Now parse string starts with "{", "}", or is empty.
+
+                if (this.parseString[0] === "{" && this.parseString[1] === "{" || this.parseString[0] === "}" && this.parseString[1] === "}") {
+                    // If parsing string starts with double curly braces
+                    // Then add single curly brace.
+                    addSegment(this.parseString[0]);
+
+                    // Jump over double curly braces on parsing string.
+                    this.parseString = this.parseString.substring(2);
+                    this.parsePosition += 2;
+                }
+                else if (this.parseString[0] === "}") {
+                    // Encountered single '}' ff parsing string starts with '}'.
+                    this.errorString = "}";
+                    ThrowFormatError.throwEncounteredSingleCurlyBrace(this);
+                }
+                else if (this.parseString[0] === "{") {
+                    // If parsing string starts with '{' then add replacement field.
+                    addSegment(this.parseReplacementField());
+                }
+                else {
+                    // Did not find any curly braces. Parsing was executed to end of string.
+                    // Break out of while loop.
+                    break;
+                }
             }
-            else {
-                // Did not find any curly braces. Parsing was executed to end of string.
-                // Break out of while loop.
-                break;
-            }
+
+            // Save format string to cache.
+            FormatStringParser.formatStringCache.set(this.formatString, segments);
         }
     }
 

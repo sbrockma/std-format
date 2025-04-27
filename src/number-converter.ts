@@ -1,6 +1,7 @@
 import { assert, isInteger, isNegative, zeroArray } from "./internal";
 import { ThrowFormatError } from "./format-error";
-import { FormatSpecification } from "./format-specification";
+import { ElementPresentation } from "./replacement-field";
+import { FormatStringParser } from "format-string-parser";
 
 // Class is for converting finite numbers.
 export class NumberConverter {
@@ -23,14 +24,14 @@ export class NumberConverter {
     exp: number;
 
     // Constructor
-    constructor(value: number, readonly fs: FormatSpecification) {
+    constructor(value: number, p: FormatStringParser, ep: ElementPresentation) {
         // Is valid?
-        if (!isFinite(value) || !fs.hasType("", "eEfF%gGaA")) {
-            ThrowFormatError.throwCannotFormatArgumentAsType(fs.parser, value, fs.type);
+        if (!isFinite(value) || !ep.hasType("", "eEfF%gGaA")) {
+            ThrowFormatError.throwCannotFormatArgumentAsType(p, value, ep.type);
         }
 
         // Set base
-        this.base = fs.hasType("aA") ? 16 : 10;
+        this.base = ep.hasType("aA") ? 16 : 10;
 
         // Initialize sign, digits, dot position and exponent to initial values.
         this.sign = isNegative(value) ? -1 : +1;
@@ -166,7 +167,7 @@ export class NumberConverter {
         }
 
         // If format specifier is "%" then convert value to percents.
-        if (!this.isZero() && fs.hasType("%")) {
+        if (!this.isZero() && ep.hasType("%")) {
             // Multiply by 100 by moving exponent right two digits (base = 10).
             this.exp += 2;
         }
@@ -176,15 +177,15 @@ export class NumberConverter {
         this.dotPos = 1;
 
         //////////////////////////////////////////////////////////////////////////
-        // Convert this number to notation specified by format specification.
+        // Convert this number to notation according to element presentation.
 
-        if (fs.hasType("")) {
+        if (ep.hasType("")) {
             // If type is default ''.
             // Then handle as float.
 
             // This is almost like the 'g'. Use p = as large as needed to represent
             // the given value faithfully, if not given. Treat p = 0 as p = 1.
-            let p = Math.max(1, fs.precision ?? 17); // FIXME!
+            let p = Math.max(1, ep.precision ?? 17); // FIXME!
 
             // Save number value. Possibly needs to be restored later.
             let saved = this.save();
@@ -209,25 +210,25 @@ export class NumberConverter {
                 this.removeInsignificantTrailingZeroes();
             }
         }
-        else if (fs.hasType("eE")) {
+        else if (ep.hasType("eE")) {
             // Get precision. If not given, default is 6.
-            let p = fs.precision ?? 6;
+            let p = ep.precision ?? 6;
 
             // Convert to scientific notation
             this.toScientific(p);
         }
-        else if (fs.hasType("fF%")) {
+        else if (ep.hasType("fF%")) {
             // Get precision. If not given, default is 6.
-            let p = fs.precision ?? 6;
+            let p = ep.precision ?? 6;
 
             // Convert to fixed notation.
             this.toFixed(p);
         }
-        else if (fs.hasType("gG")) {
+        else if (ep.hasType("gG")) {
             // Convert to general notation.
 
             // Get precision. Treat p = 0 as p = 1. If not given, default is 6.
-            let p = Math.max(1, fs.precision ?? 6);
+            let p = Math.max(1, ep.precision ?? 6);
 
             // Save number value. Possibly needs to be restored later.
             let saved = this.save();
@@ -245,27 +246,27 @@ export class NumberConverter {
             }
 
             // Was sharp specifier '#' was given for 'g' and 'G'?
-            if (fs.sharp !== "#") {
+            if (ep.sharp !== "#") {
                 // Remove insignificant trailing zeroes.
                 this.removeInsignificantTrailingZeroes();
             }
         }
-        else if (fs.hasType("aA")) {
+        else if (ep.hasType("aA")) {
             // Convert to normalised hexadecimal exponential notation.
             this.toNormalisedHexadecimalExponential();
 
             // If precision not given use as big precision as possible.
-            let p = fs.precision ?? (this.digits.length - 1);
+            let p = ep.precision ?? (this.digits.length - 1);
 
             // Convert to scientific notation. Normalised hexadecimal exponential notation
             // already is in scientific notation but this sets precision and does rounding. 
             this.toScientific(p);
         }
         else {
-            ThrowFormatError.throwCannotFormatArgumentAsType(this.parser, value, fs.type);
+            ThrowFormatError.throwCannotFormatArgumentAsType(p, value, ep.type);
         }
 
-        if (fs.zeta === "z") {
+        if (ep.zeta === "z") {
             // The 'z' option coerces negative zero floating-point values to
             // positive zero after rounding to the format precision.
             // Change -0 to 0.
@@ -276,11 +277,6 @@ export class NumberConverter {
 
         // Validate internal state.
         this.validateInternalState();
-    }
-
-    // Get parsing context
-    get parser() {
-        return this.fs.parser;
     }
 
     // Is this number zero?

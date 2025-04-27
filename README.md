@@ -130,8 +130,8 @@ Replacement field is enclosed in braces '{}' and consists of parts separated by 
     {field_num:arr_1:arr_2:arr_N:elem}
 
 - First part (field_num) is field number.
-- Last part (elem) is format specification for element.
-- Parts between (arr_1...arr_N) are format specifications for arrays.
+- Last part (elem) is element presentation.
+- Parts between (arr_1...arr_N) are array presentations.
 - Any part can be empty string.
 
 Format specification for element:
