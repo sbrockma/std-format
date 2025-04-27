@@ -24,6 +24,10 @@ Legacy JavaScript has only *number* type, not separate *int* and *float*.
     // To format number as integer, use type "d".
     Fmt.format("{:d}", 5); // "5"
 
+    // Now you can also use int() and float() wrappers. See more below.
+    Fmt.format("{}", Fmt.int(5));   // "5"
+    Fmt.format("{}", Fmt.float(5)); // "5.0"
+
 ## Install
 
     npm i @sbrockma/std-format
@@ -76,6 +80,27 @@ This is the main formatting function.
 
     let str = Fmt.format("{} {}!", "Hello", "World");
 
+### Functions int() and float()
+
+int() and float() are wrapper functions that can be used to force *number* to int or float.
+
+    format("{}", int(5));   // "5"
+    format("{}", float(5)); // "5.0"
+
+Note! Formatting rules are strict.
+
+    format("{:.2e}", int(5)); // Throws, cannot format int as float.
+    format("{:d}", float(5)); // Throws, cannot format float as int.
+
+While float() just wraps a *number*, int() wraps a JSBI.BigInt and formats big integers nicely.
+
+    format("{:d}", int("111111111111111111111111111111"));
+
+You can also pass BigInt to format(), it will be safely wrapped to int().
+
+    format("{:d}", BigInt("111111111111111111111111111111"));
+
+
 ### Function setLocale(locale)
 
 Default locale is detected. Locale affects decimal and grouping separators when using specifiers "n" or "L".
@@ -98,26 +123,26 @@ Default locale is detected. Locale affects decimal and grouping separators when 
         }
     }
 
-## Formatting Info
+## String Formatting
 
 Replacement field is enclosed in braces '{}' and consists of parts separated by ':'.
 
     {field_num:arr_1:arr_2:arr_N:elem}
 
 - First part (field_num) is field number.
-- Last part (elem) is element format specification.
-- Parts between (arr_1...arr_N) are array presentations.
+- Last part (elem) is format specification for element.
+- Parts between (arr_1...arr_N) are format specifications for arrays.
 - Any part can be empty string.
 
-Element's format specification:
+Format specification for element:
 
     [[fill]<^>=][+- ][z][#][0][width][,_][.precision][L][scdnbBoxXeEfF%gGaA]
 
-Array presentations:
+Format specification for array (and set, map, object):
 
     [[fill]<^>][width][dbnms]
 
-### Examples
+## Examples
 
     // Using auto field numbering
     let str = Fmt.format("{}{}", "A", "B"); // "AB"
