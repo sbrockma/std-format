@@ -1,4 +1,9 @@
 # Changelog
+## [1.7.0] - 2025-04-26
+### Added
+- Stringify undefined and null with string compatible types.
+- Functions int() and float().
+
 ## [1.6.0] - 2025-04-26
 ### Added
 - Format Set, Map, Object/record.
