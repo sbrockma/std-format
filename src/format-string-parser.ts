@@ -1,4 +1,4 @@
-import { assert, getArrayDepth, getStringRealLength, getSymbolInfoAt, hasOkProperty, isArray, isInteger, isMap, isRecord, isSet, mapToRecord, repeatString, setStringRealLength, setToArray } from "./internal";
+import { assert, getArrayDepth, getStringRealLength, getSymbolInfoAt, hasFormattableProperty, isArray, isInteger, isMap, isRecord, isSet, convertMapToRecord, repeatString, setStringRealLength, convertSetToArray } from "./internal";
 import { deprecatedFalseString, deprecatedOctalPrefix, deprecatedTrueString } from "./deprecated";
 import { ReplacementField } from "./replacement-field";
 import { formatNumber } from "./number-formatter";
@@ -112,11 +112,11 @@ export class FormatStringParser {
         }
         else if (isMap(arg)) {
             // Format Map as record.
-            return this.formatKnownArgument(mapToRecord(arg), rf, curArrayDepth, totArrayDepth);
+            return this.formatKnownArgument(convertMapToRecord(arg), rf, curArrayDepth, totArrayDepth);
         }
         else if (isSet(arg)) {
             // Format Set as array.
-            return this.formatKnownArgument(setToArray(arg), rf, curArrayDepth, totArrayDepth);
+            return this.formatKnownArgument(convertSetToArray(arg), rf, curArrayDepth, totArrayDepth);
         }
 
         // Invalid argument type.
@@ -209,7 +209,7 @@ export class FormatStringParser {
             let i = 0;
 
             for (let key in arg) {
-                if (hasOkProperty(arg, key)) {
+                if (hasFormattableProperty(arg, key)) {
                     if (i++ > 0) {
                         argStr += ap.type === "s" ? "" : ", ";
                     }

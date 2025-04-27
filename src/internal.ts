@@ -168,8 +168,8 @@ export function isPlainObject(arg: unknown): arg is Record<string, unknown> {
     return !!arg && Object.prototype.toString.call(arg) === "[object Object]";
 }
 
-// Get record from Map..
-export function mapToRecord(arg: unknown): Record<string, unknown> {
+// Convert Map to Record.
+export function convertMapToRecord(arg: unknown): Record<string, unknown> {
     if (isMap(arg)) {
         let r: Record<string, unknown> = Object.create(null);
 
@@ -182,8 +182,8 @@ export function mapToRecord(arg: unknown): Record<string, unknown> {
     }
 }
 
-// Get record from Map..
-export function setToArray(arg: unknown): Array<unknown> {
+// Convert Set to Array.
+export function convertSetToArray(arg: unknown): Array<unknown> {
     if (isSet(arg)) {
         let arr: Array<unknown> = [];
 
@@ -196,8 +196,8 @@ export function setToArray(arg: unknown): Array<unknown> {
     }
 }
 
-// Does object have ok property?
-export function hasOkProperty(obj: { [key: string]: unknown }, prop: string): boolean {
+// Does object have formattable property?
+export function hasFormattableProperty(obj: { [key: string]: unknown }, prop: string): boolean {
     if (!(prop in obj)) {
         return false;
     }
@@ -220,7 +220,7 @@ export function getArrayDepth<T>(arg: unknown | T[]): number {
         let depth = 1;
 
         for (let key in arg) {
-            if (hasOkProperty(arg, key)) {
+            if (hasFormattableProperty(arg, key)) {
                 depth = Math.max(depth, getArrayDepth(arg[key]) + 1);
             }
         }
