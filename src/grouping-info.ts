@@ -1,5 +1,7 @@
 import { assert } from "./internal";
 
+import { LRUCache } from "./LRU-cache";
+
 // Grouping info class.
 export class GroupingInfo {
     // Grouping info constructor.
@@ -18,14 +20,15 @@ export class GroupingInfo {
     static readonly noGrouping = new GroupingInfo(".", "", []);
 
     // Locale, grouping info cache.
-    static cache: { [locale: string]: GroupingInfo } = {};
+    static cache = new LRUCache<string, GroupingInfo>(100);
 
     // Get grouping info based on locale.
     static getFromLocale(locale: string): GroupingInfo {
         try {
             // Is grouping info for this locale in cache?
-            if (this.cache[locale] !== undefined) {
-                return this.cache[locale];
+            let gi = this.cache.get(locale);
+            if (gi) {
+                return gi;
             }
 
             // Get number format parts of test value.
@@ -57,8 +60,14 @@ export class GroupingInfo {
                 groupSizes.splice(2);
             }
 
-            // Create grouping info, save it into cache and return it.
-            return this.cache[locale] = new GroupingInfo(decimalSeparator, groupingSeparator, groupSizes);
+            // Create grouping info.
+            gi = new GroupingInfo(decimalSeparator, groupingSeparator, groupSizes);
+
+            // Save it into cache.
+            this.cache.set(locale, gi);
+
+            // And return it.
+            return gi;
         }
         catch (e) {
             console.log("Locale '" + locale + "' error.");
