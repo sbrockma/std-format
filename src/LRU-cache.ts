@@ -11,8 +11,9 @@ export class LRUCache<K extends string, V> {
     private tail: K | null;        // The most recently used key (newest)
     private capacity: number;      // Maximum number of items allowed
     private size: number;          // Current number of items
+    private maxKeyLength: number;  // Maximum key length.
 
-    constructor(maxSize: number) {
+    constructor(maxSize: number, maxKeyLength: number = Infinity) {
         this.cache = Object.create(null);
         this.next = Object.create(null);
         this.prev = Object.create(null);
@@ -20,10 +21,13 @@ export class LRUCache<K extends string, V> {
         this.tail = null;
         this.capacity = maxSize;
         this.size = 0;
+        this.maxKeyLength = maxKeyLength;
     }
 
     // Retrieves a value from the cache
     get(key: K): V | undefined {
+        if (key.length > this.maxKeyLength) return undefined;
+
         if (this.cache[key] !== undefined) {
             this.touch(key); // Mark as recently used
             return this.cache[key];
@@ -31,10 +35,14 @@ export class LRUCache<K extends string, V> {
         return undefined; // Key not found
     }
 
-    // Inserts a new key-value pair or updates an existing one
     set(key: K, value: V): void {
+        if (key.length > this.maxKeyLength) {
+            // Skip caching for keys that are too large
+            return;
+        }
+
         if (this.cache[key] !== undefined) {
-            // Key exists: update the value and move to the end (most recent)
+            // Update value and mark as recently used
             this.cache[key] = value;
             this.touch(key);
             return;

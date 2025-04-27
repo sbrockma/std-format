@@ -39,8 +39,8 @@ export class FormatStringParser {
     hasAutomaticFieldNumbering: boolean;
     hasManualFieldSpecification: boolean;
 
-    static replacementFieldCache = new LRUCache<string, ReplacementField>(250);
-    static formatStringCache = new LRUCache<string, ReadonlyArray<string | ReplacementField>>(250);
+    static replacementFieldCache = new LRUCache<string, ReplacementField>(250, 100);
+    static formatStringCache = new LRUCache<string, ReadonlyArray<string | ReplacementField>>(250, 1000);
 
     private constructor(readonly formatString: string, readonly formatArgs: unknown[], readonly usingDeprecatedStdFormat: boolean) {
         assert(typeof this.formatString === "string", "Invalid format string!");
