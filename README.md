@@ -178,3 +178,12 @@ Format specification for array (and set, map, object):
 
     // Object
     let str = Fmt.format("{{{:n:}}}", { x: 1, y: -1}); // "{x: 1.0, y: -1.0}"
+
+## License
+
+This project is licensed under the [zlib License](./LICENSE).
+
+It also bundles the [JSBI](https://github.com/GoogleChromeLabs/jsbi) library,  
+which is licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+
+Please see the [LICENSE](./LICENSE) file for full details.

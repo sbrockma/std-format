@@ -52,7 +52,18 @@ const makeConfig = ({ env, argv, format, filename, libraryType, bundleJsbi }) =>
             ]
         },
         plugins: [
-            new webpack.DefinePlugin({ __LIB_VERSION__: JSON.stringify(packageJson.version) })
+            new webpack.DefinePlugin({
+                __LIB_VERSION__: JSON.stringify(packageJson.version)
+            }),
+            new webpack.BannerPlugin({
+                banner: 
+`StdFormat v${packageJson.version}
+(c) 2025 Stefan Brockmann
+Licensed under the zlib License
+Includes JSBI (Apache License 2.0)`
+                    .trim(),
+                raw: false, // if false, it will automatically wrap inside /* ... */
+            }),
         ]
     }
 
@@ -65,7 +76,7 @@ const makeConfig = ({ env, argv, format, filename, libraryType, bundleJsbi }) =>
     if (argv.mode == 'production') {
         config.optimization = {
             minimize: true,
-            minimizer: [new TerserPlugin()],
+            minimizer: [new TerserPlugin({ extractComments: false })]
         }
     }
     else {
