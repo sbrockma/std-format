@@ -7,7 +7,6 @@
     "description": "Simple string formatting library for TS/JS.",
     "homepage": "https://github.com/sbrockma/std-format#readme",
     "repository": "github:sbrockma/std-format",
-    "type": "module",
     "main": "./dist/std-format.cjs.js",
     "module": "./dist/std-format.esm.mjs",
     "browser": "./dist/std-format.umd.js",
@@ -65,7 +64,7 @@
         "build:prod": "rimraf dist && webpack --mode production && api-extractor run --local && rimraf dist/temp-types",
         "watch": "npm-watch build:dev",
         "test": "karma start",
-        "benchmark": "npm run build:prod && node benchmarks/benchmark.js"
+        "benchmark": "npm run build:prod && node benchmarks/benchmark.mjs"
     },
     "browserslist": [
         "defaults"

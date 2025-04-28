@@ -11,6 +11,7 @@ module.exports = function (config) {
             devtool: "source-map",
             module: webpackConfig.module,
             resolve: webpackConfig.resolve,
+            plugins: webpackConfig.plugins
         },
         basePath: "",
         frameworks: ["jasmine"],

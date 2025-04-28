@@ -2,9 +2,8 @@
 
 This is a simple string formatting library for TS/JS.
 
-Trying to follow standard format specifications like these:
-[C++20](https://en.cppreference.com/w/cpp/utility/format/spec) and
-[Python](https://docs.python.org/3/library/string.html#formatspec).
+Inspired by [C++20 std::format](https://en.cppreference.com/w/cpp/utility/format/spec) and
+[Python format](https://docs.python.org/3/library/string.html#formatspec).
 
 ## Disclaimer!
 

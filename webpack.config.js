@@ -1,6 +1,7 @@
-
-const path = require('path');
-const TerserPlugin = require('terser-webpack-plugin');
+const path = require("path");
+const webpack = require("webpack");
+const TerserPlugin = require("terser-webpack-plugin");
+const packageJson = require("./package.json");
 
 const makeConfig = ({ env, argv, format, filename, libraryType, bundleJsbi }) => {
 
@@ -31,7 +32,6 @@ const makeConfig = ({ env, argv, format, filename, libraryType, bundleJsbi }) =>
             outputModule: libraryType === "module"
         },
         resolve: {
-            // mainFields: ['exports', 'module', 'main'],
             extensions: [".ts", ".js"],
             modules: [
                 path.resolve(__dirname, "./src"),
@@ -50,7 +50,10 @@ const makeConfig = ({ env, argv, format, filename, libraryType, bundleJsbi }) =>
                     use: [babel_loader, "ts-loader"],
                 }
             ]
-        }
+        },
+        plugins: [
+            new webpack.DefinePlugin({ __LIB_VERSION__: JSON.stringify(packageJson.version) })
+        ]
     }
 
     if (!bundleJsbi) {
