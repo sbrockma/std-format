@@ -7,11 +7,11 @@
     "description": "Simple string formatting library for TS/JS.",
     "homepage": "https://github.com/sbrockma/std-format#readme",
     "repository": "github:sbrockma/std-format",
-    "main": "./dist/std-format.cjs.js",
-    "module": "./dist/std-format.esm.mjs",
-    "browser": "./dist/std-format.umd.js",
-    "unpkg": "./dist/std-format.umd.js",
-    "types": "./dist/std-format.d.ts",
+    "main": "dist/std-format.cjs.js",
+    "module": "dist/std-format.esm.mjs",
+    "browser": "dist/std-format.umd.js",
+    "unpkg": "dist/std-format.umd.js",
+    "types": "dist/std-format.d.ts",
     "exports": {
         ".": {
             "require": "./dist/std-format.cjs.js",
