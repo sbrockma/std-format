@@ -1,4 +1,8 @@
 # Changelog
+## [1.7.2] - 2025-04-28
+### Changed
+- Got unpkg CDN to work.
+
 ## [1.7.1] - 2025-04-28
 ### Changed
 - Log [StdFormat] Loaded version to console.

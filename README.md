@@ -61,9 +61,9 @@ Transpiling
     let str = Fmt.format("...");
 
 ### UMD (browser)
-This version is bundled with dependencies so it can be used standalone in browser.
+This version is bundled with dependencies so it can be used standalone in browser. Works now from unpkg CDN.
 
-    <script src="std-format.umd.js></script>
+    <script src="https://unpkg.com/@sbrockma/std-format"></script>
     
     <script>
         let str = StdFormat.format("...");
