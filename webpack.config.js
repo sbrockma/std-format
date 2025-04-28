@@ -56,12 +56,7 @@ const makeConfig = ({ env, argv, format, filename, libraryType, bundleJsbi }) =>
                 __LIB_VERSION__: JSON.stringify(packageJson.version)
             }),
             new webpack.BannerPlugin({
-                banner: 
-`StdFormat v${packageJson.version}
-(c) 2025 Stefan Brockmann
-Licensed under the zlib License
-Includes JSBI (Apache License 2.0)`
-                    .trim(),
+                banner: `StdFormat v${packageJson.version} | (c) 2025 Stefan Brockmann | Licensed under the zlib License | Includes JSBI (Apache License 2.0)`,
                 raw: false, // if false, it will automatically wrap inside /* ... */
             }),
         ]
