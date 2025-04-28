@@ -1,7 +1,20 @@
 import { FormatStringParser } from "format-string-parser";
 import { FormatError } from "./format-error";
 import { setLocale } from "./set-locale";
-import { assert } from "internal";
+import { assert } from "./internal";
+import { LRUCache } from "./LRU-cache";
+
+// Use cache as warned message set.
+const warnedMessages = new LRUCache<string, boolean>(10);
+
+// Warn message to console once.
+function warnOnce(msg: string) {
+    if(warnedMessages.get(msg) === true) {
+        return;
+    }
+    console.warn(msg);
+    warnedMessages.set(msg, true);
+}
 
 /**
  * @deprecated This is alias to FormatError.
@@ -9,19 +22,12 @@ import { assert } from "internal";
  */
 export const StdFormatError = FormatError;
 
-let stdFormatWarned = false;
-let stdSpecificationHintWarned = false;
-let stdLocaleHintWarned = false;
-
 /**
  * @deprecated Use format() instead.
  * @public
  */
 export function stdFormat(formatString: string, ...formatArgs: unknown[]): string {
-    if (!stdFormatWarned) {
-        console.warn("std-format: function stdFormat() is deprecated. Use function format() instead.");
-        stdFormatWarned = true;
-    }
+    warnOnce("std-format: function stdFormat() is deprecated. Use function format() instead.");
 
     return FormatStringParser.exec(formatString, formatArgs, true);
 }
@@ -31,10 +37,7 @@ export function stdFormat(formatString: string, ...formatArgs: unknown[]): strin
  * @public
  */
 export function stdLocaleHint(locale?: string | undefined) {
-    if (!stdLocaleHintWarned) {
-        console.warn("std-format: function stdLocaleHint() is deprecated. Use function setLocale() instead.");
-        stdLocaleHintWarned = true;
-    }
+    warnOnce("std-format: function stdLocaleHint() is deprecated. Use function setLocale() instead.");
 
     setLocale(locale);
 }
@@ -49,10 +52,7 @@ export let deprecatedFalseString: "false" | "False" = "False";
  * @public
  */
 export function stdSpecificationHint(specHint: "cpp" | "python" | "js") {
-    if (!stdSpecificationHintWarned) {
-        console.warn("std-format: function stdSpecificationHint() is deprecated.");
-        stdSpecificationHintWarned = true;
-    }
+    warnOnce("std-format: function stdSpecificationHint() is deprecated. There is no replacement.");
 
     assert(specHint === "cpp" || specHint === "python" || specHint === "js", "Invalid specification hint '" + specHint + "'");
 
