@@ -1,4 +1,11 @@
 # Changelog
+## [1.7.1] - 2025-04-28
+### Changed
+- Log [StdFormat] Loaded version to console.
+- Cache replacement fields and format strings.
+### Fixed
+- Added "unpkg": "std-format.umd.js" to package.json.
+
 ## [1.7.0] - 2025-04-26
 ### Added
 - Stringify undefined and null with string compatible types.
