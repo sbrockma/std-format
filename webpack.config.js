@@ -26,6 +26,7 @@ const makeConfig = ({ env, argv, format, filename, libraryType, bundleJsbi }) =>
             },
             module: libraryType === "module",
             environment: { module: libraryType === "module" },
+            chunkFormat: libraryType === "module" ? "module" : undefined,
             globalObject: "this"
         },
         experiments: {
