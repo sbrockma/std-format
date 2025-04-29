@@ -23,4 +23,4 @@ export {
 
 // Log lib loaded to console.
 declare const __LIB_VERSION__: string;
-console.log("[StdFormat] Loaded version " + __LIB_VERSION__);
+console.log("[std-format] Loaded version " + __LIB_VERSION__);
