@@ -4,13 +4,11 @@ const TerserPlugin = require("terser-webpack-plugin");
 const packageJson = require("./package.json");
 
 const makeConfig = ({ env, argv, format, filename, libraryType, bundleJsbi }) => {
+    const isDevelopment = argv.mode === "development";
+    const isMinified = filename.includes(".min.");
+    const isModule = libraryType === "module";
 
-    const babel_loader = {
-        loader: "babel-loader",
-        options: { envName: format }
-    }
-
-    const config = {
+    return {
         mode: argv.mode,
         entry: path.resolve(__dirname, "src/index.ts"),
         output: {
@@ -22,33 +20,41 @@ const makeConfig = ({ env, argv, format, filename, libraryType, bundleJsbi }) =>
                 name: libraryType === "umd" ? "StdFormat" : undefined,
                 type: libraryType,
                 // Importing default export on esm failed if "exports" was set to "default".
-                export: libraryType === "module" ? undefined : "default",
+                export: isModule ? undefined : "default",
             },
-            module: libraryType === "module",
-            environment: { module: libraryType === "module" },
-            chunkFormat: libraryType === "module" ? "module" : undefined,
+            module: isModule,
+            environment: { module: isModule },
+            chunkFormat: isModule ? "module" : undefined,
             globalObject: "this"
         },
         experiments: {
-            outputModule: libraryType === "module"
+            outputModule: isModule
         },
         resolve: {
             extensions: [".ts", ".js"],
             modules: [
                 path.resolve(__dirname, "./src"),
                 "node_modules"
-            ],
-            fallback: { "crypto": false }
+            ]
         },
         module: {
             rules: [
                 {
                     test: /\.js$/i,
-                    use: [babel_loader],
+                    use: [{
+                        loader: "babel-loader",
+                        options: { envName: format }
+                    }],
                 },
                 {
                     test: /\.ts$/i,
-                    use: [babel_loader, "ts-loader"],
+                    use: [
+                        {
+                            loader: "babel-loader",
+                            options: { envName: format }
+                        },
+                        "ts-loader"
+                    ],
                 }
             ]
         },
@@ -57,35 +63,26 @@ const makeConfig = ({ env, argv, format, filename, libraryType, bundleJsbi }) =>
                 __LIB_VERSION__: JSON.stringify(packageJson.version)
             }),
             new webpack.BannerPlugin({
-                banner: `StdFormat v${packageJson.version} | (c) 2025 Stefan Brockmann | Licensed under the zlib License | Includes JSBI (Apache License 2.0)`,
-                raw: false, // if false, it will automatically wrap inside /* ... */
+                banner: `std-format v${packageJson.version} | (c) 2025 Stefan Brockmann | Licensed under the zlib License | Includes JSBI (Apache License 2.0)`
             }),
-        ]
-    }
-
-    if (!bundleJsbi) {
-        config.externals = {
+        ],
+        externals: bundleJsbi ? undefined : {
             jsbi: "jsbi"
-        }
+        },
+        optimization: {
+            minimize: isMinified,
+            minimizer: isMinified ? [new TerserPlugin({ extractComments: false })] : undefined,
+        },
+        devtool: isDevelopment ? "source-map" : false,
+        performance: { hints: false },
+        stats: "errors-only"
     }
-
-    if (argv.mode == 'production') {
-        config.optimization = {
-            minimize: true,
-            minimizer: [new TerserPlugin({ extractComments: false })]
-        }
-    }
-    else {
-        config.devtool = 'source-map';
-    }
-
-    return config;
 }
 
 module.exports = (env, argv) => {
     return [
-        makeConfig({ env, argv, format: "esm", filename: "std-format.esm.mjs", libraryType: "module" }),
-        makeConfig({ env, argv, format: "cjs", filename: "std-format.cjs.js", libraryType: "commonjs2" }),
-        makeConfig({ env, argv, format: "umd", filename: "std-format.umd.js", libraryType: "umd", bundleJsbi: true })
+        makeConfig({ env, argv, format: "esm", filename: "index.esm.mjs", libraryType: "module" }),
+        makeConfig({ env, argv, format: "cjs", filename: "index.cjs.js", libraryType: "commonjs2" }),
+        makeConfig({ env, argv, format: "umd", filename: "index.umd.min.js", libraryType: "umd", bundleJsbi: true })
     ]
 };

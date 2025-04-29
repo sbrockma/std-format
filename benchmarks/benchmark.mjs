@@ -1,5 +1,5 @@
 import Benchmark from "benchmark";
-import { format } from "../dist/std-format.esm.mjs";
+import { format } from "../dist/index.esm.mjs";
 
 const suite = new Benchmark.Suite();
 

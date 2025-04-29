@@ -2,7 +2,7 @@
     "mainEntryPointFilePath": "./dist/temp-types/index.d.ts",
     "dtsRollup": {
         "enabled": true,
-        "untrimmedFilePath": "./dist/std-format.d.ts"
+        "untrimmedFilePath": "./dist/index.d.ts"
     },
     "tsdocMetadata": {
         "enabled": false
