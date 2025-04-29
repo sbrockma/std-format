@@ -11,7 +11,7 @@ This is a non-professional, hobby project.
 I'm building it for fun and learning, but I'm giving it my best effort! 
 So please keep that in mind when using it!
 
-Still going through some changes. Has many bugs, hoping to fix them.
+This library feels now feature complete. Transitioning into maintenance and bug fixing.
 
 ## Note!
 
@@ -183,7 +183,7 @@ Format specification for array (and set, map, object):
 
 This project is licensed under the [zlib License](./LICENSE).
 
-It also bundles the [JSBI](https://github.com/GoogleChromeLabs/jsbi) library,  
+It also bundles the [JSBI](https://github.com/GoogleChromeLabs/jsbi) library,
 which is licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 
 Please see the [LICENSE](./LICENSE) file for full details.
