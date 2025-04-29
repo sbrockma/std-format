@@ -1,4 +1,8 @@
 # Changelog
+## [1.7.3] - 2025-04-29
+## Fixed
+- Added required license information.
+
 ## [1.7.2] - 2025-04-28
 ### Changed
 - Got unpkg CDN to work.
