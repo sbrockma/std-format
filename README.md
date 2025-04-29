@@ -48,17 +48,17 @@ Transpiling
     // Import default export
     import Fmt from "@sbrockma/std-format";
 
-    let str = Fmt.format("...");
+    Fmt.format("...");
 
     // Or import named exports
     import { format } from "@sbrockma/std-format";
 
-    let str = format("...");
+    format("...");
 
 ### CJS
     const Fmt = require("@sbrockma/std-format");
     
-    let str = Fmt.format("...");
+    Fmt.format("...");
 
 ### UMD (browser)
 This version is bundled with dependencies so it can be used standalone in browser. Works now from unpkg CDN.
@@ -66,7 +66,7 @@ This version is bundled with dependencies so it can be used standalone in browse
     <script src="https://unpkg.com/@sbrockma/std-format"></script>
     
     <script>
-        let str = StdFormat.format("...");
+        StdFormat.format("...");
     </script>
 
 ## Declarations
@@ -77,7 +77,7 @@ This is the main formatting function.
 
     import Fmt from "@sbrockma/std-format";
 
-    let str = Fmt.format("{} {}!", "Hello", "World");
+    Fmt.format("{} {}!", "Hello", "World");
 
 ### Functions int() and float()
 
@@ -114,7 +114,7 @@ Default locale is detected. Locale affects decimal and grouping separators when 
     import Fmt from "@sbrockma/std-format";
 
     try {
-        let str = Fmt.format("{:s}", 42));
+        Fmt.format("{:s}", 42));
     } 
     catch(e) {
         if(e instanceof Fmt.FormatError) {
@@ -144,40 +144,47 @@ Format specification for array (and set, map, object):
 ## Examples
 
     // Using auto field numbering
-    let str = Fmt.format("{}{}", "A", "B"); // "AB"
+    Fmt.format("{}{}", "A", "B"); // "AB"
     
     // Using manual field numbering
-    let str = Fmt.format("{1}{0}", "A", "B"); // "BA"
+    Fmt.format("{1}{0}", "A", "B"); // "BA"
 
     // Using named fields
-    let str = Fmt.format("{name} {age:d}", { name: "Tim", age: 95 }); // "Tim 95"
+    Fmt.format("{name} {age:d}", { name: "Tim", age: 95 }); // "Tim 95"
 
     // Fill, align and width
-    let str = Fmt.format("{:0<8d}", 777);  // "77700000"
-    let str = Fmt.format("{:0^8d}", 777);  // "00777000"
-    let str = Fmt.format("{:0>8d}", -777); // "0000-777"
-    let str = Fmt.format("{:0=8d}", -777); // "-0000777"
+    Fmt.format("{:0<8d}", 777);  // "77700000"
+    Fmt.format("{:0^8d}", 777);  // "00777000"
+    Fmt.format("{:0>8d}", -777); // "0000-777"
+    Fmt.format("{:0=8d}", -777); // "-0000777"
 
     // Precision
-    let str = Fmt.format("{:.2f}", 1); // "1.00"
+    Fmt.format("{:.2f}", 1); // "1.00"
 
     // String width
-    let str = Fmt.format("{:10.4s}", "Alligator"); // "Alli      "
+    Fmt.format("{:10.4s}", "Alligator"); // "Alli      "
 
     // With nested arguments
-    let str = Fmt.format("{:{}.{}s}", "Alligator", 10, 4); // "Alli      "
+    Fmt.format("{:{}.{}s}", "Alligator", 10, 4); // "Alli      "
 
     // Array
-    let str = Fmt.format("{:d}", [1, 2, 3]); // "[1, 2, 3]"
+    Fmt.format("{:d}", [1, 2, 3]); // "[1, 2, 3]"
 
     // Set
-    let str = Fmt.format("{:d}", new Set([1, 2, 3, 2])); // "[1, 2, 3]"
+    Fmt.format("{:d}", new Set([1, 2, 3, 2])); // "[1, 2, 3]"
 
     // Map
-    let str = Fmt.format("{:m:}", new Map([["x", 1], ["y", -1]])); // "[x: 1.0, y: -1.0]"
+    Fmt.format("{:m:}", new Map([["x", 1], ["y", -1]])); // "[x: 1.0, y: -1.0]"
 
     // Object
-    let str = Fmt.format("{{{:n:}}}", { x: 1, y: -1}); // "{x: 1.0, y: -1.0}"
+    Fmt.format("{{{:n:}}}", { x: 1, y: -1}); // "{x: 1.0, y: -1.0}"
+
+    // Floating point types
+    Fmt.format("{0:.3e} {0:.3f} {0:.3%} {0:.3g} {0:.3a}", Math.PI); // "3.142e+00 3.142 314.159% 3.14 1.922p+1"
+
+    // Integer types
+    Fmt.format("{0:#b} {0:#o} {0:#d} {0:#x}", 65); // "0b1000001 0o101 65 0x41"
+
 
 ## License
 
