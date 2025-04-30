@@ -1,4 +1,12 @@
 # Changelog
+## [1.7.4] - 2025-04-29
+### Added
+- Added bug report and feature request templates to github.
+- Added bug report and feature request section to readme.
+### Changed
+- Renamed bundle and types files to index.*.
+- Only minify UMD version for browser, unpkg.
+
 ## [1.7.3] - 2025-04-29
 ## Fixed
 - Added required license information.
