@@ -63,7 +63,7 @@ Transpiling
 ### UMD (browser)
 This version is bundled with dependencies so it can be used standalone in browser. Works now from unpkg CDN.
 
-    <script src="https://unpkg.com/@sbrockma/std-format"></script>
+    <script src="https://unpkg.com/@sbrockma/std-format@1"></script>
     
     <script>
         StdFormat.format("...");
