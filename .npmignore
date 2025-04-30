@@ -3,6 +3,7 @@
 /docs
 /benchmarks
 /.vscode
+/.github
 /.git
 .gitignore
 .gitattributes
