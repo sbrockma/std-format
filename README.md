@@ -185,6 +185,10 @@ Format specification for array (and set, map, object):
     // Integer types
     Fmt.format("{0:#b} {0:#o} {0:#d} {0:#x}", 65); // "0b1000001 0o101 65 0x41"
 
+## Found a bug or want to request a feature?
+
+Please [open an issue](https://github.com/sbrockma/std-format/issues) with a simple
+input/output example — it really helps make the project better!
 
 ## License
 
