@@ -1,5 +1,4 @@
-import { format, setLocale, stdFormat, stdLocaleHint, stdSpecificationHint } from "../index";
-import { int, float } from "../int-float";
+import { format, int, float, setLocale } from "../index";
 import DefaultExport from "../index";
 
 describe("Testing std-format", () => {
@@ -557,6 +556,11 @@ describe("Testing std-format", () => {
 
         // Precision for integer not allowed.
         expect(() => format("{:.4d}", 32)).toThrow();
+
+        // Test octal. 
+        expect(format("{:#o}", 834)).toEqual("0o1502");
+        expect(format("{:#o}", -834)).toEqual("-0o1502");
+        expect(format("{:#o}", 0)).toEqual("0o0");
     });
 
     it("type specifier x and X", () => {
@@ -983,47 +987,5 @@ describe("Testing std-format", () => {
         class TestClass { a = 0; b = 1; }
         expect(format("{:d}", new TestClass())).toEqual("[[a, 0], [b, 1]]");
 
-    });
-
-    it("deprecated stuff", () => {
-        function stdFormatSpec(spec: "cpp" | "python" | "js", fmt: string, ...args: unknown[]) {
-            stdSpecificationHint(spec);
-            return stdFormat(fmt, ...args);
-        }
-
-        function stdFormatLocale(locale: string, fmt: string, ...args: unknown[]) {
-            stdLocaleHint(locale);
-            return stdFormat(fmt, ...args);
-        }
-
-        // Test boolean strings.
-        expect(stdFormatSpec("python", "{} {}", true, false)).toEqual("True False");
-        expect(stdFormatSpec("cpp", "{} {}", true, false)).toEqual("true false");
-        expect(stdFormatSpec("js", "{} {}", true, false)).toEqual("true false");
-        expect(format("{} {}", true, false)).toEqual("true false");
-
-        // Test octal in "cpp"
-        expect(stdFormatSpec("cpp", "{:#o}", 834)).toEqual("01502");
-        expect(stdFormatSpec("cpp", "{:#o}", -834)).toEqual("-01502");
-        expect(stdFormatSpec("cpp", "{:#o}", 0)).toEqual("0");
-
-        // Test octal in "python"
-        expect(stdFormatSpec("python", "{:#o}", 834)).toEqual("0o1502");
-        expect(stdFormatSpec("python", "{:#o}", -834)).toEqual("-0o1502");
-        expect(stdFormatSpec("python", "{:#o}", 0)).toEqual("0o0");
-
-        // Test octal in "js"
-        expect(stdFormatSpec("js", "{:#o}", 834)).toEqual("0o1502");
-        expect(stdFormatSpec("js", "{:#o}", -834)).toEqual("-0o1502");
-        expect(stdFormatSpec("js", "{:#o}", 0)).toEqual("0o0");
-
-        // Test octal new default/JS way. 
-        expect(format("{:#o}", 834)).toEqual("0o1502");
-        expect(format("{:#o}", -834)).toEqual("-0o1502");
-        expect(format("{:#o}", 0)).toEqual("0o0");
-
-        expect(stdFormatLocale("en-UK", "{:Ld}", 55555555)).toEqual("55,555,555");
-        expect(stdFormatLocale("en-UK", "{:.2f}", 5555.5555)).toEqual("5555.56");
-        expect(stdFormatLocale("en-UK", "{:.2Lf}", 5555.5555)).toEqual("5,555.56");
     });
 });

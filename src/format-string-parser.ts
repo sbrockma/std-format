@@ -1,5 +1,4 @@
 import { assert, getArrayDepth, getStringRealLength, getSymbolInfoAt, hasFormattableProperty, isArray, isInteger, isMap, isRecord, isSet, convertMapToRecord, repeatString, setStringRealLength, convertSetToArray } from "./internal";
-import { deprecatedFalseString, deprecatedOctalPrefix, deprecatedTrueString } from "./deprecated";
 import { ReplacementField } from "./replacement-field";
 import { formatNumber } from "./number-formatter";
 import { ThrowFormatError } from "./format-error";
@@ -42,7 +41,7 @@ export class FormatStringParser {
     static replacementFieldCache = new LRUCache<string, ReplacementField>(250, 100);
     static formatStringCache = new LRUCache<string, ReadonlyArray<string | ReplacementField>>(250, 1000);
 
-    private constructor(readonly formatString: string, readonly formatArgs: unknown[], readonly usingDeprecatedStdFormat: boolean) {
+    private constructor(readonly formatString: string, readonly formatArgs: unknown[]) {
         assert(typeof this.formatString === "string", "Invalid format string!");
 
         this.parseString = this.formatString;
@@ -71,8 +70,7 @@ export class FormatStringParser {
             // Argument can be boolean.
             if (isStringCompatibleType) {
                 // Boolean can be stringified.
-                let b = this.getBooleanString(arg);
-                return this.formatKnownArgument(b, rf, curArrayDepth, totArrayDepth);
+                return this.formatKnownArgument(arg ? "true" : "false", rf, curArrayDepth, totArrayDepth);
             }
             else if (isNumberCompatibleType) {
                 // Boolean can be converted to number 0 or 1.
@@ -457,14 +455,6 @@ export class FormatStringParser {
         }
     }
 
-    getOctalPrefix() {
-        return this.usingDeprecatedStdFormat ? deprecatedOctalPrefix : "0o";
-    }
-
-    getBooleanString(b: boolean) {
-        return this.usingDeprecatedStdFormat ? (b ? deprecatedTrueString : deprecatedFalseString) : (b ? "true" : "false");
-    }
-
     // Get error message.
     getErrorMessage(msg: string) {
         if (this.errorString === this.formatString) {
@@ -475,9 +465,9 @@ export class FormatStringParser {
         }
     }
 
-    static exec(formatString: string, formatArgs: unknown[], usingDeprecatedStdFormat: boolean): string {
+    static exec(formatString: string, formatArgs: unknown[]): string {
         // Init parser.
-        let parser = new FormatStringParser(formatString, formatArgs, usingDeprecatedStdFormat);
+        let parser = new FormatStringParser(formatString, formatArgs);
 
         // Parse format string.
         parser.parseFormatString();

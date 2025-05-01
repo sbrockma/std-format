@@ -8,9 +8,9 @@ import { NumberWrapper } from "./int-float";
 import { FormatStringParser } from "format-string-parser";
 
 // Get number prefix.
-function getNumberPrefix(p: FormatStringParser, ep: ElementPresentation) {
+function getNumberPrefix(ep: ElementPresentation) {
     return ep.sharp === "#" ? (
-        ep.hasType("xX") ? "0x" : ep.hasType("bB") ? "0b" : ep.hasType("o") ? p.getOctalPrefix() : ""
+        ep.hasType("xX") ? "0x" : ep.hasType("bB") ? "0b" : ep.hasType("o") ? "0o" : ""
     ) : "";
 }
 
@@ -146,7 +146,7 @@ export function formatNumber(value: number | NumberWrapper, p: FormatStringParse
         exp = "";
 
         // Get prefix.
-        prefix = getNumberPrefix(p, ep);
+        prefix = getNumberPrefix(ep);
     }
     else if (ep.hasType("", "eEfF%gGaA") && (typeof value === "number" || NumberWrapper.isFloatType(value))) {
         let n = new NumberConverter(value instanceof NumberWrapper ? value.toSafeNumber() : value, p, ep);
@@ -198,16 +198,11 @@ export function formatNumber(value: number | NumberWrapper, p: FormatStringParse
         }
 
         // Get prefix.
-        prefix = getNumberPrefix(p, ep);
+        prefix = getNumberPrefix(ep);
     }
     else {
         // Invalid argument for type
         ThrowFormatError.throwCannotFormatArgumentAsType(p, value, ep.type);
-    }
-
-    // Omit octal prefix "0" if digits is "0".
-    if (prefix === "0" && digits === "0") {
-        prefix = "";
     }
 
     // Get formatting width for number related filling.

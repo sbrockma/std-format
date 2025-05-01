@@ -5,5 +5,5 @@ import { FormatStringParser } from "./format-string-parser";
  * @public
  **/
 export function format(formatString: string, ...formatArgs: unknown[]): string {
-    return FormatStringParser.exec(formatString, formatArgs, false);
+    return FormatStringParser.exec(formatString, formatArgs);
 }
