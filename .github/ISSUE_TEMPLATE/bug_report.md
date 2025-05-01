@@ -27,5 +27,8 @@ What actually happened:
 // Actual output
 ```
 
+## Package version
+What version of `std-format` are you using? (You can find this in your `package.json`)
+
 ## Additional context
 Add any other information, screenshots, or notes that might help us fix the issue.
