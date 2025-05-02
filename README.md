@@ -63,9 +63,9 @@ tested against specific Node.js or browser versions.
 ### UMD (browser)
 This version is bundled with dependencies so it can be used standalone in browser.
 
-Now available via the unpkg CDN. Use version number @1 or @1.7.4.
+Now available via the unpkg CDN. Use with version @1, @2 or exact version (e.g. @1.7.4 for last 1.x).
 
-    <script src="https://unpkg.com/@sbrockma/std-format@1"></script>
+    <script src="https://unpkg.com/@sbrockma/std-format@2"></script>
     
     <script>
         StdFormat.format("...");
