@@ -1,21 +1,19 @@
 # std-format
 
-This is a simple string formatting library for TS/JS.
-
-Inspired by [C++20 std::format](https://en.cppreference.com/w/cpp/utility/format/spec) and
+A TypeScript/JavaScript library for string formatting, inspired by
+[C++20 std::format](https://en.cppreference.com/w/cpp/utility/format/spec) and
 [Python format](https://docs.python.org/3/library/string.html#formatspec).
 
 ## Disclaimer!
 
 This is a non-professional, hobby project. 
 I'm building it for fun and learning, but I'm giving it my best effort! 
+There might still be weird bugs or unexpected issues.
 So please keep that in mind when using it!
-
-This library feels now feature complete. Transitioning into maintenance and bug fixing.
 
 ## Note!
 
-Legacy JavaScript has only *number* type, not separate *int* and *float*.
+Legacy JavaScript has only a single *number* type, not separate *int* and *float*.
 
     // By default format number as float.
     Fmt.format("{}", 5);   // "5.0"
@@ -31,16 +29,18 @@ Legacy JavaScript has only *number* type, not separate *int* and *float*.
 
     npm i @sbrockma/std-format
 
-## Bundling
+## Compatibility
 
-This library is bundled with webpack to ESM, CJS and UMD bundles.
+This library is written in TypeScript and includes type declarations.
+It is bundled with Webpack into ESM, CJS, and UMD formats.
 
-- Does not do polyfills.
-- But! Trying to use legacy JS functions only.
+* Only ES5-compatible JavaScript functions are used.
+* No polyfills are included.
+* CJS and UMD bundles are transpiled with Babel for ES5/IE11 compatibility.
+* ESM bundle targets modern environments (ES6+).
 
-Transpiling
-- Compiled from TypeScript to JavaScript with ES6 target.
-- CJS and UMD bundles transpiled with babel targets ie 11.
+While designed for compatibility in mind, the library has not been explicitly
+tested against specific Node.js or browser versions.
 
 ## Usage
 
@@ -61,7 +61,9 @@ Transpiling
     Fmt.format("...");
 
 ### UMD (browser)
-This version is bundled with dependencies so it can be used standalone in browser. Works now from unpkg CDN.
+This version is bundled with dependencies so it can be used standalone in browser.
+
+Now available via the unpkg CDN. Use version number @1 or @1.7.4.
 
     <script src="https://unpkg.com/@sbrockma/std-format@1"></script>
     
@@ -86,12 +88,12 @@ int() and float() are wrapper functions that can be used to force *number* to in
     format("{}", int(5));   // "5"
     format("{}", float(5)); // "5.0"
 
-Note! Formatting rules are strict.
+Note: Formatting rules are strict.
 
     format("{:.2e}", int(5)); // Throws, cannot format int as float.
     format("{:d}", float(5)); // Throws, cannot format float as int.
 
-While float() just wraps a *number*, int() wraps a JSBI.BigInt and formats big integers nicely.
+float() simply wraps a *number*, while int() wraps a JSBI.BigInt, enabling support for large integers.
 
     format("{:d}", int("111111111111111111111111111111"));
 
@@ -102,7 +104,8 @@ You can also pass BigInt to format(), it will be safely wrapped to int().
 
 ### Function setLocale(locale)
 
-Default locale is detected. Locale affects decimal and grouping separators when using specifiers "n" or "L".
+Default locale is automatically detected.
+Locale affects decimal and grouping separators when using the "n" or "L" specifiers.
 
     import Fmt from "@sbrockma/std-format";
     
@@ -114,7 +117,7 @@ Default locale is detected. Locale affects decimal and grouping separators when 
     import Fmt from "@sbrockma/std-format";
 
     try {
-        Fmt.format("{:s}", 42));
+        Fmt.format("{:s}", 42);
     } 
     catch(e) {
         if(e instanceof Fmt.FormatError) {
@@ -183,15 +186,22 @@ Format specification for array (and set, map, object):
     Fmt.format("{0:.3e} {0:.3f} {0:.3%} {0:.3g} {0:.3a}", Math.PI); // "3.142e+00 3.142 314.159% 3.14 1.922p+1"
 
     // Integer types
-    Fmt.format("{0:#b} {0:#o} {0:#d} {0:#x}", 65); // "0b1000001 0o101 65 0x41"
-
-    // Char, string
-    Fmt.format("{0:c} {1:c} {2:*^10.5s}", 65, "B", "Hello World!"); // "A B **Hello***"
+    Fmt.format("{0:#b} {0:#o} {0:#d} {0:#x} {0:c}", 65); // "0b1000001 0o101 65 0x41 A"
 
 ## Found a bug or want to request a feature?
 
 Please [open an issue](https://github.com/sbrockma/std-format/issues) with a simple
 input/output example — it really helps make the project better!
+
+## v2.0.0 Notice
+
+Removed deprecated:
+- `stdFormat()`, `stdSpecificationHint()`, `stdLocaleHint()`, `StdFormatError`
+
+Use instead:
+- `format()`, `setLocale()`, `FormatError`
+
+Use version `1.7.4` if you need legacy support.
 
 ## License
 

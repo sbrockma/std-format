@@ -1,4 +1,9 @@
 # Changelog
+## [2.0.0] - 2025-05-02
+### Changed
+- **Breaking**: Removed deprecated: `stdFormat()`, `stdSpecificationHint()`, `stdLocaleHint()`, `StdFormatError`.
+- Use instead: `format()`, `setLocale()`, `FormatError`
+
 ## [1.7.4] - 2025-04-29
 ### Added
 - Added bug report and feature request templates to github.
