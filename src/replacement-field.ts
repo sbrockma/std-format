@@ -1,7 +1,7 @@
 import { NumberWrapper } from "./int-float";
 import { ThrowFormatError } from "./format-error";
 import { FormatStringParser } from "./format-string-parser";
-import { getSymbolInfoAt } from "internal";
+import { getValidFillCharAt } from "./char-coding";
 
 /**
  * https://en.cppreference.com/w/cpp/utility/format/spec
@@ -28,10 +28,10 @@ abstract class PresentationParser {
 
     // Parse fill and align
     protected parseFillAndAlign(p: FormatStringParser, ...alignChars: string[]): { fill: string | undefined, align: string | undefined } {
-        let fill = getSymbolInfoAt(this.parseStr, this.parsePos);
-        if (fill && this.parseStr.length >= this.parsePos + fill.chars.length + 1 && alignChars.indexOf(this.parseStr[this.parsePos + fill.chars.length]) >= 0) {
-            this.parsePos += fill.chars.length;
-            return { fill: fill.chars, align: this.parseStr[this.parsePos++] }
+        let fill = getValidFillCharAt(this.parseStr, this.parsePos);
+        if (fill && this.parseStr.length >= this.parsePos + fill.length + 1 && alignChars.indexOf(this.parseStr[this.parsePos + fill.length]) >= 0) {
+            this.parsePos += fill.length;
+            return { fill, align: this.parseStr[this.parsePos++] }
         }
         else if (this.parseStr.length >= this.parsePos + 1 && alignChars.indexOf(this.parseStr[this.parsePos]) >= 0) {
             return { fill: undefined, align: this.parseStr[this.parsePos++] }

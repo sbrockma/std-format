@@ -1,4 +1,4 @@
-import { assert } from "internal";
+import { assert } from "./internal";
 import { GroupingInfo } from "./grouping-info";
 
 // Get user/system locale

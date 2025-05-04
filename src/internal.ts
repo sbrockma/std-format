@@ -1,4 +1,4 @@
-import { FormatError, ThrowFormatError } from "./format-error";
+import { FormatError } from "./format-error";
 
 // Assertion error class.
 export class AssertionError extends FormatError {
@@ -40,99 +40,6 @@ export function isInteger(n: unknown): n is number {
 // Is number negative. For number -0 is negative and +0 is positive.
 export function isNegative(n: number): boolean {
     return n < 0 || 1.0 / n === -Infinity;
-}
-
-// Get symbol info (code point and symbol chars) at pos.
-export function getSymbolInfoAt(str: string, pos: number): { codePoint: number, chars: string } | undefined {
-    if (pos < 0 || pos >= str.length) {
-        return undefined;
-    }
-
-    // Get first 16-bit UTF-16 code unit
-    const first = str.charCodeAt(pos);
-
-    // Check if first is a high surrogate.
-    if (first >= 0xD800 && first <= 0xDBFF && pos + 1 < str.length) {
-        // Get second 16-bit UTF-16 code unit.
-        let second = str.charCodeAt(pos + 1);
-        if (second >= 0xDC00 && second <= 0xDFFF) {
-            // Combine the surrogate pair.
-            return {
-                codePoint: ((first - 0xD800) << 10) + (second - 0xDC00) + 0x10000,
-                chars: str[pos] + str[pos + 1]
-            }
-        }
-    }
-
-    // Not a surrogate pair.
-    return {
-        codePoint: first,
-        chars: str[pos]
-    }
-}
-
-// Is valid code point value?
-export function isValidCodePoint(codePoint: number): boolean {
-    return isInteger(codePoint) && codePoint >= 0 && codePoint <= 0x10FFFF;
-}
-
-// Get symbol from code point.
-export function getSymbol(codePoint: number): string {
-    if (!isValidCodePoint(codePoint)) {
-        ThrowFormatError.throwInvalidCodePoint(codePoint);
-    }
-
-    if (codePoint <= 0xFFFF) {
-        return String.fromCharCode(codePoint);
-    }
-    else {
-        // Encode surrogate pair.
-        codePoint -= 0x10000;
-
-        const highSurrogate = 0xD800 + (codePoint >> 10);
-        const lowSurrogate = 0xDC00 + (codePoint & 0x3FF);
-
-        return String.fromCharCode(highSurrogate, lowSurrogate);
-    }
-}
-
-// Get string real length
-export function getStringRealLength(str: string): number {
-    let curLen = 0;
-    let charPos = 0;
-
-    while (charPos < str.length) {
-        let symbolInfo = getSymbolInfoAt(str, charPos);
-        if (symbolInfo) {
-            curLen++;
-            charPos += symbolInfo.chars.length;
-        }
-        else {
-            charPos++;
-        }
-    }
-
-    return curLen;
-}
-
-// Set string real length.
-export function setStringRealLength(str: string, newLen: number): string {
-    let curLen = 0;
-    let charPos = 0;
-
-    while (charPos < str.length && curLen < newLen) {
-        let symbolInfo = getSymbolInfoAt(str, charPos);
-        if (symbolInfo) {
-            curLen++;
-            charPos += symbolInfo.chars.length;
-        }
-        else {
-            charPos++;
-        }
-    }
-
-    // Did not reach length, return full string.
-    return str.substring(0, charPos);
 }
 
 // Is array?

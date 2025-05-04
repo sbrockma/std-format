@@ -1,11 +1,6 @@
-import { assert, getArrayDepth, getSymbol, getSymbolInfoAt, isArray, isInteger, isMap, isNegative, isRecord, mapDigitToChar, repeatString, zeroArray } from "../internal";
+import { getArrayDepth, isArray, isInteger, isMap, isNegative, isRecord, mapDigitToChar, repeatString, zeroArray } from "../internal";
 
 describe("Testing internal functions", () => {
-
-    it("assert", () => {
-        expect(() => assert(true)).not.toThrow();
-        expect(() => assert(false)).toThrow();
-    });
 
     it("repetString", () => {
         expect(repeatString("Aa", 0)).toEqual("");
@@ -64,39 +59,6 @@ describe("Testing internal functions", () => {
         expect(isNegative(NaN)).toEqual(false);
         expect(isNegative(Infinity)).toEqual(false);
         expect(isNegative(-Infinity)).toEqual(true);
-    });
-
-    it("getCodePoint", () => {
-        expect(getSymbolInfoAt("", 0)).toEqual(undefined);
-        expect(getSymbolInfoAt("A", -1)).toEqual(undefined);
-        expect(getSymbolInfoAt("A", 0)).toEqual({ codePoint: 65, chars: "A" });
-        expect(getSymbolInfoAt("A", 1)).toEqual(undefined);
-        expect(getSymbolInfoAt("Ω", 0)).toEqual({ codePoint: 0x03A9, chars: "Ω" });
-        expect(getSymbolInfoAt("𐍈", 0)).toEqual({ codePoint: 0x10348, chars: "\uD800\uDF48" }); // 𐍈
-        expect(getSymbolInfoAt("\uD800\uDF48", 0)).toEqual({ codePoint: 0x10348, chars: "𐍈" }); // 𐍈
-        expect(getSymbolInfoAt("𝄞", 0)).toEqual({ codePoint: 0x1D11E, chars: "\uD834\uDD1E" }); // 𝄞
-        expect(getSymbolInfoAt("\uD834\uDD1E", 0)).toEqual({ codePoint: 0x1D11E, chars: "𝄞" }); // 𝄞
-        expect(getSymbolInfoAt("𐍈𝄞𐍈", 2)).toEqual({ codePoint: 0x1D11E, chars: "𝄞" });
-
-        // Get second char of symbol "𝄞", ok?
-        expect(getSymbolInfoAt("\uD834\uDD1E", 1)).toEqual({ codePoint: 0xDD1E, chars: "\uDD1E" });
-    });
-
-    it("getSymbol", () => {
-        expect(getSymbol(65)).toEqual("A");
-        expect(getSymbol(0x03A9)).toEqual("Ω");
-        expect(getSymbol(0x10348)).toEqual("𐍈");
-        expect(getSymbol(0x10348)).toEqual("\uD800\uDF48"); // 𐍈
-        expect(getSymbol(119070)).toEqual("𝄞");
-        expect(getSymbol(119070)).toEqual("\uD834\uDD1E"); // 𝄞
-
-        // Invalid code points.
-        expect(() => getSymbol(-1)).toThrow();
-        expect(() => getSymbol(0x10FFFF + 1)).toThrow();
-        expect(() => getSymbol(100.1)).toThrow();
-        expect(() => getSymbol(NaN)).toThrow();
-        expect(() => getSymbol(Infinity)).toThrow();
-        expect(() => getSymbol(-Infinity)).toThrow();
     });
 
     it("isArray", () => {

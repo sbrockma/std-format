@@ -1,4 +1,5 @@
-import { assert, getSymbol, isInteger, isValidCodePoint, mapDigitToChar, repeatString } from "./internal";
+import { assert, isInteger, mapDigitToChar, repeatString } from "./internal";
+import { getSymbol, isValidCodePoint } from "./char-coding";
 import { ElementPresentation } from "./replacement-field";
 import { ThrowFormatError } from "./format-error";
 import { NumberConverter } from "./number-converter";

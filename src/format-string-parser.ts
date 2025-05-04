@@ -1,4 +1,5 @@
-import { assert, getArrayDepth, getStringRealLength, getSymbolInfoAt, hasFormattableProperty, isArray, isInteger, isMap, isRecord, isSet, convertMapToRecord, repeatString, setStringRealLength, convertSetToArray } from "./internal";
+import { assert, getArrayDepth, hasFormattableProperty, isArray, isInteger, isMap, isRecord, isSet, convertMapToRecord, repeatString, convertSetToArray } from "./internal";
+import { getStringRealLength, setStringRealLength, getSymbol, getCodePointAt } from "./char-coding";
 import { ReplacementField } from "./replacement-field";
 import { formatNumber } from "./number-formatter";
 import { ThrowFormatError } from "./format-error";
@@ -92,11 +93,11 @@ export class FormatStringParser {
             // Argument can be string.
             if (ep.hasType("cdnxXobB")) {
                 // For integer types get code point of arg if it contains single symbol.
-                let symbolInfo = getSymbolInfoAt(arg, 0);
+                let codePoint = getCodePointAt(arg, 0);
 
                 // Does arg contain single symbol?
-                if (symbolInfo && arg === symbolInfo.chars) {
-                    return this.formatKnownArgument(symbolInfo.codePoint, rf, curArrayDepth, totArrayDepth);
+                if (codePoint && arg === getSymbol(codePoint)) {
+                    return this.formatKnownArgument(codePoint, rf, curArrayDepth, totArrayDepth);
                 }
             }
             else if (isStringCompatibleType) {
