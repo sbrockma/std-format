@@ -7,7 +7,7 @@ import { float, int } from "../int-float";
  * Types are: 's?cdnbBoxXaAeEfF%gG'
  */
 
-describe("Testing std-format allowed specifier for", () => {
+describe("Testing allowed specifier for", () => {
     it("grouping and locale together", () => {
         expect(() => format("{:,Ld}", 0)).toThrow();
         expect(() => format("{:_Ld}", 0)).toThrow();
