@@ -1,4 +1,4 @@
-# Instructions for std-format
+# Instructions for TypeScript/JavaScript String Formatter
 
 ## Tasks
 

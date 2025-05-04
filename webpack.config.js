@@ -60,7 +60,7 @@ const makeConfig = ({ env, argv, format, filename, libraryType, bundleJsbi }) =>
         },
         plugins: [
             new webpack.BannerPlugin({
-                banner: `std-format v${packageJson.version} | (c) 2025 Stefan Brockmann | Licensed under the zlib License | Includes JSBI (Apache License 2.0)`
+                banner: `TypeScript/JavaScript String Formatter v${packageJson.version} | (c) 2025 Stefan Brockmann | Licensed under the zlib License | Includes JSBI (Apache License 2.0)`
             }),
         ],
         externals: bundleJsbi ? undefined : {
