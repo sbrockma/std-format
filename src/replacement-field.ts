@@ -195,25 +195,25 @@ export class ElementPresentation extends PresentationParser {
 
         const rejectSpecifiers = (rejectedSpecifiers: string, arg?: unknown) => {
             if (this.align !== undefined && rejectedSpecifiers.indexOf(this.align) >= 0) {
-                p.throwInvalidFormatSpecifiers();
+                p.throwInvalidFormatSpecifiers(this.align, this.type);
             }
             else if (this.sign !== undefined && rejectedSpecifiers.indexOf(this.sign) >= 0) {
-                p.throwInvalidFormatSpecifiers();
+                p.throwInvalidFormatSpecifiers(this.sign, this.type);
             }
             else if (this.zeta !== undefined && rejectedSpecifiers.indexOf(this.zeta) >= 0) {
-                p.throwInvalidFormatSpecifiers();
+                p.throwInvalidFormatSpecifiers(this.zeta, this.type);
             }
             else if (this.sharp !== undefined && rejectedSpecifiers.indexOf(this.sharp) >= 0) {
-                p.throwInvalidFormatSpecifiers();
+                p.throwInvalidFormatSpecifiers(this.sharp, this.type);
             }
             else if (this.zero !== undefined && rejectedSpecifiers.indexOf(this.zero) >= 0) {
-                p.throwInvalidFormatSpecifiers();
+                p.throwInvalidFormatSpecifiers(this.zero, this.type);
             }
             else if (this.grouping !== undefined && rejectedSpecifiers.indexOf(this.grouping) >= 0) {
-                p.throwInvalidFormatSpecifiers();
+                p.throwInvalidFormatSpecifiers(this.grouping, this.type);
             }
             else if (this.locale !== undefined && rejectedSpecifiers.indexOf(this.locale) >= 0) {
-                p.throwInvalidFormatSpecifiers();
+                p.throwInvalidFormatSpecifiers(this.locale, this.type);
             }
         }
 
@@ -279,7 +279,7 @@ export class ElementPresentation extends PresentationParser {
 
         // Grouping not allowed with locale.
         if (this.grouping !== undefined && this.locale !== undefined) {
-            p.throwInvalidFormatSpecifiers();
+            p.throwInvalidFormatSpecifiers(this.grouping, this.locale);
         }
     }
 

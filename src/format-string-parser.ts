@@ -104,8 +104,8 @@ export class FormatStringParser {
     }
 
     // Throw invalid replacement field error.
-    throwInvalidFormatSpecifiers(): never {
-        throw new FormatError(this.getErrorMessage("Invalid format specifiers"));
+    throwInvalidFormatSpecifiers(...specifiers: string[]): never {
+        throw new FormatError(this.getErrorMessage("Invalid format specifiers " + specifiers.map(s => "'" + s + "'").join(" with ")));
     }
 
     // Throw precision not allowed error.
