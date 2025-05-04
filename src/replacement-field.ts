@@ -75,7 +75,7 @@ abstract class PresentationParser {
                 return { fieldId };
             }
             else {
-                p.throwInvalidFormatSpecifiers();
+                p.throwInvalidFormatSpecifiers(type);
             }
         }
         else {
@@ -84,7 +84,7 @@ abstract class PresentationParser {
             if (digits.length > 0) {
                 let value = +digits;
                 if (type === "width" && value === 0) {
-                    p.throwInvalidFormatSpecifiers();
+                    p.throwInvalidFormatSpecifiers(type);
                 }
                 return { value };
             }
@@ -122,7 +122,7 @@ export class ArrayPresentation extends PresentationParser {
 
         // Parse position should have reached end of parse str.
         if (this.parsePos !== this.parseStr.length) {
-            p.throwInvalidFormatSpecifiers();
+            p.throwInvalidFormatSpecifiers(this.parseStr.substring(this.parsePos));
         }
 
         // Solve left and right braces.
@@ -177,7 +177,7 @@ export class ElementPresentation extends PresentationParser {
 
         // Parse position should have reached end of parse str.
         if (this.parsePos !== this.parseStr.length) {
-            p.throwInvalidFormatSpecifiers();
+            p.throwInvalidFormatSpecifiers(this.parseStr.substring(this.parsePos));
         }
     }
 
