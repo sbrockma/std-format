@@ -13,7 +13,3 @@ export default DefaultExport;
 
 // Named exports.
 export { format, int, float, setLocale, FormatError }
-
-// Log lib loaded to console.
-declare const __LIB_VERSION__: string;
-console.log("[std-format] Loaded version " + __LIB_VERSION__);

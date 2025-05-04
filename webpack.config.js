@@ -59,9 +59,6 @@ const makeConfig = ({ env, argv, format, filename, libraryType, bundleJsbi }) =>
             ]
         },
         plugins: [
-            new webpack.DefinePlugin({
-                __LIB_VERSION__: JSON.stringify(packageJson.version)
-            }),
             new webpack.BannerPlugin({
                 banner: `std-format v${packageJson.version} | (c) 2025 Stefan Brockmann | Licensed under the zlib License | Includes JSBI (Apache License 2.0)`
             }),
