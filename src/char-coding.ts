@@ -1,5 +1,5 @@
+import { FormatError } from "./format-error";
 import { isInteger } from "./internal";
-import { ThrowFormatError } from "./format-error";
 
 // Get symbol info (code point and symbol chars) at pos.
 export function getCodePointAt(str: string, pos: number): number | undefined {
@@ -118,7 +118,7 @@ export function getValidFillCharAt(str: string, pos: number): string | undefined
 // Get symbol from code point.
 export function getSymbol(codePoint: number): string {
     if (!isValidCodePoint(codePoint)) {
-        ThrowFormatError.throwInvalidCodePoint(codePoint);
+        throw new FormatError("Invalid code point " + codePoint);
     }
 
     if (codePoint <= 0xFFFF) {

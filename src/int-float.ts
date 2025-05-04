@@ -1,9 +1,24 @@
 import JSBI from "jsbi";
-import { ThrowFormatError } from "./format-error";
 import { assert, isInteger, isNegative } from "./internal";
+import { FormatError } from "format-error";
 
 const MAX_SAFE_INTEGER = 9007199254740991;
 const MIN_SAFE_INTEGER = -9007199254740991;
+
+// Throw value not integer error
+export function throwValueNotInteger(value: unknown): never {
+    throw new FormatError("Value '" + value + "' is not integer");
+}
+
+// Throw value not float error
+export function throwValueNotFloat(value: unknown): never {
+    throw new FormatError("Value '" + value + "' is not float");
+}
+
+// Throw to safe number error
+export function throwToSafeNumberError(value: string): never {
+    throw new FormatError(value + " cannot safely to number");
+}
 
 export abstract class NumberWrapper {
     abstract isIntType(): boolean;
@@ -42,7 +57,7 @@ export class IntWrapper extends NumberWrapper {
             this.bigInt = value.bigInt;
         }
         else {
-            ThrowFormatError.throwValueNotInteger(value);
+            throwValueNotInteger(value);
         }
     }
 
@@ -69,7 +84,7 @@ export class IntWrapper extends NumberWrapper {
     toSafeNumber(): number {
         // Make sure is in safe number range.
         if (JSBI.GT(this.bigInt, MAX_SAFE_INTEGER) || JSBI.LT(this.bigInt, MIN_SAFE_INTEGER)) {
-            ThrowFormatError.throwToSafeNumberError(this.bigInt.toString());
+            throwToSafeNumberError(this.bigInt.toString());
         }
 
         return JSBI.toNumber(this.bigInt);
@@ -99,7 +114,7 @@ export class FloatWrapper extends NumberWrapper {
             this.num = value.num;
         }
         else {
-            ThrowFormatError.throwValueNotFloat(value);
+            throwValueNotFloat(value);
         }
     }
 

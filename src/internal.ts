@@ -1,17 +1,9 @@
 import { FormatError } from "./format-error";
 
-// Assertion error class.
-export class AssertionError extends FormatError {
-    constructor(msg?: string) {
-        super("Assertion failed" + (msg === undefined ? "!" : (": " + msg)));
-        this.name = "AssertionError";
-    }
-}
-
 // Assert function for internal validation.
 export function assert(condition: boolean, msg?: string) {
     if (!condition) {
-        throw new AssertionError(msg);
+        throw new FormatError("Assertion failed" + (msg === undefined ? "!" : (": " + msg)));
     }
 }
 

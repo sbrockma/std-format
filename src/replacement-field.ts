@@ -1,5 +1,4 @@
 import { NumberWrapper } from "./int-float";
-import { ThrowFormatError } from "./format-error";
 import { FormatStringParser } from "./format-string-parser";
 import { getValidFillCharAt } from "./char-coding";
 
@@ -76,7 +75,7 @@ abstract class PresentationParser {
                 return { fieldId };
             }
             else {
-                ThrowFormatError.throwInvalidFormatSpecifiers(p);
+                p.throwInvalidFormatSpecifiers();
             }
         }
         else {
@@ -85,7 +84,7 @@ abstract class PresentationParser {
             if (digits.length > 0) {
                 let value = +digits;
                 if (type === "width" && value === 0) {
-                    ThrowFormatError.throwInvalidFormatSpecifiers(p);
+                    p.throwInvalidFormatSpecifiers();
                 }
                 return { value };
             }
@@ -123,7 +122,7 @@ export class ArrayPresentation extends PresentationParser {
 
         // Parse position should have reached end of parse str.
         if (this.parsePos !== this.parseStr.length) {
-            ThrowFormatError.throwInvalidFormatSpecifiers(p);
+            p.throwInvalidFormatSpecifiers();
         }
 
         // Solve left and right braces.
@@ -178,7 +177,7 @@ export class ElementPresentation extends PresentationParser {
 
         // Parse position should have reached end of parse str.
         if (this.parsePos !== this.parseStr.length) {
-            ThrowFormatError.throwInvalidFormatSpecifiers(p);
+            p.throwInvalidFormatSpecifiers();
         }
     }
 
@@ -196,31 +195,31 @@ export class ElementPresentation extends PresentationParser {
 
         const rejectSpecifiers = (rejectedSpecifiers: string, arg?: unknown) => {
             if (this.align !== undefined && rejectedSpecifiers.indexOf(this.align) >= 0) {
-                ThrowFormatError.throwSpecifierNotAllowedWith(p, this.align, this.type, arg);
+                p.throwSpecifierNotAllowedWith(this.align, this.type, arg);
             }
             else if (this.sign !== undefined && rejectedSpecifiers.indexOf(this.sign) >= 0) {
-                ThrowFormatError.throwSpecifierNotAllowedWith(p, this.sign, this.type, arg);
+                p.throwSpecifierNotAllowedWith(this.sign, this.type, arg);
             }
             else if (this.zeta !== undefined && rejectedSpecifiers.indexOf(this.zeta) >= 0) {
-                ThrowFormatError.throwSpecifierNotAllowedWith(p, this.zeta, this.type, arg);
+                p.throwSpecifierNotAllowedWith(this.zeta, this.type, arg);
             }
             else if (this.sharp !== undefined && rejectedSpecifiers.indexOf(this.sharp) >= 0) {
-                ThrowFormatError.throwSpecifierNotAllowedWith(p, this.sharp, this.type, arg);
+                p.throwSpecifierNotAllowedWith(this.sharp, this.type, arg);
             }
             else if (this.zero !== undefined && rejectedSpecifiers.indexOf(this.zero) >= 0) {
-                ThrowFormatError.throwSpecifierNotAllowedWith(p, this.zero, this.type, arg);
+                p.throwSpecifierNotAllowedWith(this.zero, this.type, arg);
             }
             else if (this.grouping !== undefined && rejectedSpecifiers.indexOf(this.grouping) >= 0) {
-                ThrowFormatError.throwSpecifierNotAllowedWith(p, this.grouping, this.type, arg);
+                p.throwSpecifierNotAllowedWith(this.grouping, this.type, arg);
             }
             else if (this.locale !== undefined && rejectedSpecifiers.indexOf(this.locale) >= 0) {
-                ThrowFormatError.throwSpecifierNotAllowedWith(p, this.locale, this.type, arg);
+                p.throwSpecifierNotAllowedWith(this.locale, this.type, arg);
             }
         }
 
         const rejectPrecision = () => {
             if (this.precision !== undefined) {
-                ThrowFormatError.throwPrecisionNotAllowedWith(p, this.type);
+                p.throwPrecisionNotAllowedWith(this.type);
             }
         }
 
@@ -280,7 +279,7 @@ export class ElementPresentation extends PresentationParser {
 
         // Grouping not allowed with locale.
         if (this.grouping !== undefined && this.locale !== undefined) {
-            ThrowFormatError.throwSpecifierNotAllowedWith(p, this.grouping, this.locale);
+            p.throwSpecifierNotAllowedWith(this.grouping, this.locale);
         }
     }
 

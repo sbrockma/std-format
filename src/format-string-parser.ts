@@ -2,7 +2,7 @@ import { assert, getArrayDepth, hasFormattableProperty, isArray, isInteger, isMa
 import { getStringRealLength, setStringRealLength, getSymbol, getCodePointAt } from "./char-coding";
 import { ReplacementField } from "./replacement-field";
 import { formatNumber } from "./number-formatter";
-import { ThrowFormatError } from "./format-error";
+import { FormatError } from "./format-error";
 import { IntWrapper, NumberWrapper } from "./int-float";
 import { LRUCache } from "./LRU-cache";
 
@@ -29,6 +29,19 @@ class PassToLeaf {
     constructor(readonly str: string) { }
 }
 
+// Get type of arg.
+function getTypeOfArg(arg: unknown): string {
+    if (NumberWrapper.isIntType(arg)) {
+        return "int";
+    }
+    else if (NumberWrapper.isFloatType(arg)) {
+        return "float";
+    }
+    else {
+        return typeof arg;
+    }
+}
+
 // This parsing context contains all necessary variables required in parsing.
 export class FormatStringParser {
     parseString: string;
@@ -52,6 +65,65 @@ export class FormatStringParser {
         this.automaticFieldNumber = 0;
         this.hasAutomaticFieldNumbering = false;
         this.hasManualFieldSpecification = false;
+    }
+
+    // Get error message.
+    private getErrorMessage(msg: string) {
+        if (this.errorString === this.formatString) {
+            return msg + ", '" + this.errorString + "'.";
+        }
+        else {
+            return msg + ", '" + this.errorString + "' in '" + this.formatString + "'.";
+        }
+    }
+
+    // Throw specifier is not implemented error.
+    throwSpecifierIsNotImplemented(specifier: string): never {
+        throw new FormatError(this.getErrorMessage("Specifier '" + specifier + "' is not implemented"));
+    }
+
+    // Throw invalid argument error.
+    throwCannotFormatArgumentAsType(arg: unknown, type: string): never {
+        throw new FormatError(this.getErrorMessage(
+            "Cannot format " + getTypeOfArg(arg) + " '" + String(arg) + "' argument as type '" + type + "'"));
+    }
+
+    // Throw invalid nested argument error.
+    throwInvalidNestedArgument(arg: unknown): never {
+        throw new FormatError(this.getErrorMessage("Invalid nested argument '" + String(arg) + "'"));
+    }
+
+    // Throw invalid field number error.
+    throwInvalidFieldId(fieldId: string): never {
+        throw new FormatError(this.getErrorMessage("Invalid field id '" + fieldId + "'"));
+    }
+
+    // Throw switch between auto/manual field numbering error.
+    throwSwitchBetweenAutoAndManualFieldNumbering(): never {
+        throw new FormatError(this.getErrorMessage("Switch between automatic and manual field numbering"));
+    }
+
+    // Throw encounteger single curly brace error.
+    throwEncounteredSingleCurlyBrace(): never {
+        throw new FormatError(this.getErrorMessage("Encountered single curly brace"));
+    }
+
+    // Throw invalid replacement field error.
+    throwInvalidFormatSpecifiers(): never {
+        throw new FormatError(this.getErrorMessage("Invalid format specifiers"));
+    }
+
+    // Throw precision not allowed error.
+    throwPrecisionNotAllowedWith(type: string, arg?: unknown): never {
+        throw new FormatError(this.getErrorMessage(
+            "Precision not allowed with type specifier '" + type + "'" + (arg ? " with " + getTypeOfArg(arg) + " argument" : "")));
+    }
+
+    // Throw specifier not allowed with error.
+    throwSpecifierNotAllowedWith(specifier1: string, specifier2: string, arg?: unknown): never {
+        throw new FormatError(this.getErrorMessage(
+            "Specifier '" + specifier1 + "' not allowed with specifier '" + specifier2 + "'" +
+            (arg === undefined ? "" : (" with " + getTypeOfArg(arg) + " argument"))));
     }
 
     // Formats argument.
@@ -119,7 +191,7 @@ export class FormatStringParser {
         }
 
         // Invalid argument type.
-        ThrowFormatError.throwCannotFormatArgumentAsType(this, arg, ep.type);
+        this.throwCannotFormatArgumentAsType(arg, ep.type);
     }
 
     // Formats known argument.
@@ -153,7 +225,7 @@ export class FormatStringParser {
         else if (typeof arg === "string") {
             if (ep.hasType("?")) {
                 // Here should format escape sequence string.
-                ThrowFormatError.throwSpecifierIsNotImplemented(this, ep.type);
+                this.throwSpecifierIsNotImplemented(ep.type);
             }
 
             // For string presentation types precision field indicates the maximum
@@ -236,7 +308,7 @@ export class FormatStringParser {
         }
         else {
             // Invalid argument type.
-            ThrowFormatError.throwCannotFormatArgumentAsType(this, arg, ep.type);
+            this.throwCannotFormatArgumentAsType(arg, ep.type);
         }
 
         // If arg not leaf node, then pass it forward to get correct fill, align and width.
@@ -299,7 +371,7 @@ export class FormatStringParser {
 
         // Throw exception switching between automatic and manual field numbering.
         if (this.hasAutomaticFieldNumbering && this.hasManualFieldSpecification) {
-            ThrowFormatError.throwSwitchBetweenAutoAndManualFieldNumbering(this);
+            this.throwSwitchBetweenAutoAndManualFieldNumbering();
         }
 
         if (isDigits(fieldId)) {
@@ -307,7 +379,7 @@ export class FormatStringParser {
 
             // Throw exception if field number is out of bounds of arguments array.
             if (fieldNumber < 0 || fieldNumber >= this.formatArgs.length) {
-                ThrowFormatError.throwInvalidFieldId(this, String(fieldNumber));
+                this.throwInvalidFieldId(String(fieldNumber));
             }
 
             // Return argument.
@@ -321,7 +393,7 @@ export class FormatStringParser {
                 return argsObj[fieldId];
             }
             else {
-                ThrowFormatError.throwInvalidFieldId(this, fieldId);
+                this.throwInvalidFieldId(fieldId);
             }
         }
     }
@@ -338,7 +410,7 @@ export class FormatStringParser {
             return arg;
         } else {
             // Throw invalid nested argument error.
-            ThrowFormatError.throwInvalidNestedArgument(this, arg);
+            this.throwInvalidNestedArgument(arg);
         }
     }
 
@@ -372,7 +444,7 @@ export class FormatStringParser {
         else {
             // Ecountered single '{' followed by random stuff.
             this.errorString = "{";
-            ThrowFormatError.throwEncounteredSingleCurlyBrace(this);
+            this.throwEncounteredSingleCurlyBrace();
         }
     }
 
@@ -438,7 +510,7 @@ export class FormatStringParser {
                 else if (this.parseString[0] === "}") {
                     // Encountered single '}' ff parsing string starts with '}'.
                     this.errorString = "}";
-                    ThrowFormatError.throwEncounteredSingleCurlyBrace(this);
+                    this.throwEncounteredSingleCurlyBrace();
                 }
                 else if (this.parseString[0] === "{") {
                     // If parsing string starts with '{' then add replacement field.
@@ -453,16 +525,6 @@ export class FormatStringParser {
 
             // Save format string to cache.
             FormatStringParser.formatStringCache.set(this.formatString, segments);
-        }
-    }
-
-    // Get error message.
-    getErrorMessage(msg: string) {
-        if (this.errorString === this.formatString) {
-            return msg + ", \"" + this.errorString + "\".";
-        }
-        else {
-            return msg + ", \"" + this.errorString + "\" in \"" + this.formatString + "\".";
         }
     }
 

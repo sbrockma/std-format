@@ -1,5 +1,4 @@
 import { assert, isInteger, isNegative, zeroArray } from "./internal";
-import { ThrowFormatError } from "./format-error";
 import { ElementPresentation } from "./replacement-field";
 import { FormatStringParser } from "format-string-parser";
 
@@ -27,7 +26,7 @@ export class NumberConverter {
     constructor(value: number, p: FormatStringParser, ep: ElementPresentation) {
         // Is valid?
         if (!isFinite(value) || !ep.hasType("", "eEfF%gGaA")) {
-            ThrowFormatError.throwCannotFormatArgumentAsType(p, value, ep.type);
+            p.throwCannotFormatArgumentAsType(value, ep.type);
         }
 
         // Set base
@@ -263,7 +262,7 @@ export class NumberConverter {
             this.toScientific(p);
         }
         else {
-            ThrowFormatError.throwCannotFormatArgumentAsType(p, value, ep.type);
+            p.throwCannotFormatArgumentAsType(value, ep.type);
         }
 
         if (ep.zeta === "z") {

@@ -1,7 +1,6 @@
 import { assert, isInteger, mapDigitToChar, repeatString } from "./internal";
 import { getSymbol, isValidCodePoint } from "./char-coding";
 import { ElementPresentation } from "./replacement-field";
-import { ThrowFormatError } from "./format-error";
 import { NumberConverter } from "./number-converter";
 import { getLocaleGroupingInfo } from "./set-locale";
 import { GroupingInfo } from "./grouping-info";
@@ -54,7 +53,7 @@ function toValidCodePoint(value: number | NumberWrapper, p: FormatStringParser, 
         return codePoint;
     }
     catch (e) {
-        ThrowFormatError.throwCannotFormatArgumentAsType(p, value, ep.type);
+        p.throwCannotFormatArgumentAsType(value, ep.type);
     }
 }
 
@@ -203,7 +202,7 @@ export function formatNumber(value: number | NumberWrapper, p: FormatStringParse
     }
     else {
         // Invalid argument for type
-        ThrowFormatError.throwCannotFormatArgumentAsType(p, value, ep.type);
+        p.throwCannotFormatArgumentAsType(value, ep.type);
     }
 
     // Get formatting width for number related filling.
