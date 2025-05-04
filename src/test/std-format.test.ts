@@ -1,7 +1,7 @@
 import { format, int, float, setLocale } from "../index";
 import DefaultExport from "../index";
 
-describe("Testing std-format", () => {
+describe("Testing TypeScript/JavaScript String Formatter", () => {
     function formatLocale(locale: string, fmt: string, ...args: unknown[]) {
         setLocale(locale);
         return format(fmt, ...args);
@@ -287,12 +287,17 @@ describe("Testing std-format", () => {
     });
 
     it("wider unicode symbols", () => {
-        // Fill symbol.
+        // Is valid fill char?
         expect(format("{:𝞅<8d}", 22)).toEqual("22𝞅𝞅𝞅𝞅𝞅𝞅");
         expect(format("{:𝄞^8d}", 22)).toEqual("𝄞𝄞𝄞22𝄞𝄞𝄞");
         expect(format("{:🧠>8d}", 22)).toEqual("🧠🧠🧠🧠🧠🧠22");
         expect(format("{:\uD802\uDC00^9d}", 555)).toEqual(
             "\uD802\uDC00\uD802\uDC00\uD802\uDC00555\uD802\uDC00\uD802\uDC00\uD802\uDC00");
+
+        expect(() => format("{:•<8}", 10)).not.toThrow();
+        expect(() => format("{:\uD83C\uDFFC<8}", 10)).toThrow(); // Skin tone modifier
+        expect(() => format("{:👨‍👩‍👧‍👦<8}", 10)).toThrow(); // ZWJ sequence
+        expect(() => format("{:👩‍⚕️<8}", 10)).toThrow(); // emoji + ZWJ + VS16
 
         // String with precision.
         expect(format("{:.5s}", "🐉🐉🐉🐉🐉🐉🐉🐉🐉🐉")).toEqual("🐉🐉🐉🐉🐉");
