@@ -1,4 +1,4 @@
-# std-format
+# TypeScript/JavaScript String Formatter
 
 A TypeScript/JavaScript library for string formatting, inspired by
 [C++20 std::format](https://en.cppreference.com/w/cpp/utility/format/spec) and
