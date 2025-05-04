@@ -77,11 +77,6 @@ export class FormatStringParser {
         }
     }
 
-    // Throw specifier is not implemented error.
-    throwSpecifierIsNotImplemented(specifier: string): never {
-        throw new FormatError(this.getErrorMessage("Specifier '" + specifier + "' is not implemented"));
-    }
-
     // Throw invalid argument error.
     throwCannotFormatArgumentAsType(arg: unknown, type: string): never {
         throw new FormatError(this.getErrorMessage(
@@ -114,16 +109,8 @@ export class FormatStringParser {
     }
 
     // Throw precision not allowed error.
-    throwPrecisionNotAllowedWith(type: string, arg?: unknown): never {
-        throw new FormatError(this.getErrorMessage(
-            "Precision not allowed with type specifier '" + type + "'" + (arg ? " with " + getTypeOfArg(arg) + " argument" : "")));
-    }
-
-    // Throw specifier not allowed with error.
-    throwSpecifierNotAllowedWith(specifier1: string, specifier2: string, arg?: unknown): never {
-        throw new FormatError(this.getErrorMessage(
-            "Specifier '" + specifier1 + "' not allowed with specifier '" + specifier2 + "'" +
-            (arg === undefined ? "" : (" with " + getTypeOfArg(arg) + " argument"))));
+    throwPrecisionNotAllowedWith(type: string): never {
+        throw new FormatError(this.getErrorMessage("Precision not allowed with '" + type + "' specifier"));
     }
 
     // Formats argument.
@@ -223,11 +210,6 @@ export class FormatStringParser {
             width = ep.width ?? 0;
         }
         else if (typeof arg === "string") {
-            if (ep.hasType("?")) {
-                // Here should format escape sequence string.
-                this.throwSpecifierIsNotImplemented(ep.type);
-            }
-
             // For string presentation types precision field indicates the maximum
             // field size - in other words, how many characters will be used from the field content.
             if (ep.precision !== undefined && getStringRealLength(arg) > ep.precision) {

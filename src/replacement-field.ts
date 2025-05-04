@@ -145,7 +145,7 @@ export class ElementPresentation extends PresentationParser {
     precision: number | undefined; // Not readonly, could be updated by precisionFieldId.
     readonly precisionFieldId: string | undefined;
     readonly locale: "L" | undefined;
-    readonly type: "" | "s" | "?" | "c" | "d" | "n" | "b" | "B" | "o" | "x" | "X" | "e" | "E" | "f" | "F" | "%" | "g" | "G" | "a" | "A";
+    readonly type: "" | "s" | "c" | "d" | "n" | "b" | "B" | "o" | "x" | "X" | "e" | "E" | "f" | "F" | "%" | "g" | "G" | "a" | "A";
 
     constructor(p: FormatStringParser, str: string) {
         super(str);
@@ -173,7 +173,7 @@ export class ElementPresentation extends PresentationParser {
         this.precision = precision;
         this.precisionFieldId = precisionFieldId;
         this.locale = this.parseSpecifier(p, "L");
-        this.type = this.parseSpecifier(p, "s", "?", "c", "d", "n", "b", "B", "o", "x", "X", "e", "E", "f", "F", "%", "g", "G", "a", "A") ?? "";
+        this.type = this.parseSpecifier(p, "s", "c", "d", "n", "b", "B", "o", "x", "X", "e", "E", "f", "F", "%", "g", "G", "a", "A") ?? "";
 
         // Parse position should have reached end of parse str.
         if (this.parsePos !== this.parseStr.length) {
@@ -195,25 +195,25 @@ export class ElementPresentation extends PresentationParser {
 
         const rejectSpecifiers = (rejectedSpecifiers: string, arg?: unknown) => {
             if (this.align !== undefined && rejectedSpecifiers.indexOf(this.align) >= 0) {
-                p.throwSpecifierNotAllowedWith(this.align, this.type, arg);
+                p.throwInvalidFormatSpecifiers();
             }
             else if (this.sign !== undefined && rejectedSpecifiers.indexOf(this.sign) >= 0) {
-                p.throwSpecifierNotAllowedWith(this.sign, this.type, arg);
+                p.throwInvalidFormatSpecifiers();
             }
             else if (this.zeta !== undefined && rejectedSpecifiers.indexOf(this.zeta) >= 0) {
-                p.throwSpecifierNotAllowedWith(this.zeta, this.type, arg);
+                p.throwInvalidFormatSpecifiers();
             }
             else if (this.sharp !== undefined && rejectedSpecifiers.indexOf(this.sharp) >= 0) {
-                p.throwSpecifierNotAllowedWith(this.sharp, this.type, arg);
+                p.throwInvalidFormatSpecifiers();
             }
             else if (this.zero !== undefined && rejectedSpecifiers.indexOf(this.zero) >= 0) {
-                p.throwSpecifierNotAllowedWith(this.zero, this.type, arg);
+                p.throwInvalidFormatSpecifiers();
             }
             else if (this.grouping !== undefined && rejectedSpecifiers.indexOf(this.grouping) >= 0) {
-                p.throwSpecifierNotAllowedWith(this.grouping, this.type, arg);
+                p.throwInvalidFormatSpecifiers();
             }
             else if (this.locale !== undefined && rejectedSpecifiers.indexOf(this.locale) >= 0) {
-                p.throwSpecifierNotAllowedWith(this.locale, this.type, arg);
+                p.throwInvalidFormatSpecifiers();
             }
         }
 
@@ -241,7 +241,7 @@ export class ElementPresentation extends PresentationParser {
                 }
                 break;
             }
-            case "s": case "?": {
+            case "s": {
                 // allowSpecifiers("<^>");
                 rejectSpecifiers("=-+ z#0,_L");
                 break;
@@ -279,7 +279,7 @@ export class ElementPresentation extends PresentationParser {
 
         // Grouping not allowed with locale.
         if (this.grouping !== undefined && this.locale !== undefined) {
-            p.throwSpecifierNotAllowedWith(this.grouping, this.locale);
+            p.throwInvalidFormatSpecifiers();
         }
     }
 
