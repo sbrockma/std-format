@@ -112,7 +112,8 @@ export function getValidFillCharAt(str: string, pos: number): string | undefined
         return undefined;
     }
 
-    return getSymbol(codePoint);
+    return codePoint > 0xFFFF ? str[pos] + str[pos + 1] : str[pos];
+    // return getSymbol(codePoint);
 }
 
 // Get symbol from code point.
