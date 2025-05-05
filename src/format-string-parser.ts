@@ -2,7 +2,7 @@ import { assert, getArrayDepth, hasFormattableProperty, isArray, isInteger, isMa
 import { getStringRealLength, setStringRealLength, getSymbol, getCodePointAt } from "./char-coding";
 import { ReplacementField } from "./replacement-field";
 import { formatNumber } from "./number-formatter";
-import { FormatError } from "./public";
+import { FormatError } from "./index";
 import { IntWrapper, NumberWrapper } from "./number-wrapper";
 import { LRUCache } from "./LRU-cache";
 

@@ -1,4 +1,4 @@
-import { FormatError } from "./public";
+import { FormatError } from "./index";
 import { isInteger } from "./internal";
 
 // Get symbol info (code point and symbol chars) at pos.

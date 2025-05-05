@@ -1,4 +1,4 @@
-import { FormatError } from "./public";
+import { FormatError } from "./index";
 
 // Assert function for internal validation.
 export function assert(condition: boolean, msg?: string) {

@@ -1,6 +1,6 @@
 import JSBI from "jsbi";
 import { assert, isInteger, isNegative } from "./internal";
-import { FormatError } from "./public";
+import { FormatError } from "./index";
 
 const MAX_SAFE_INTEGER = 9007199254740991;
 const MIN_SAFE_INTEGER = -9007199254740991;
