@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Report a problem with TS/JS String Formatter
+about: Report a problem with TypeScript/JavaScript String Formatter
 title: "[Bug]: "
 labels: bug
 assignees: ''
@@ -28,7 +28,7 @@ What actually happened:
 ```
 
 ## Package version
-What version of `std-format` are you using? (You can find this in your `package.json`)
+What version are you using? (You can find this in your `package.json`)
 
 ## Additional context
 Add any other information, screenshots, or notes that might help us fix the issue.
