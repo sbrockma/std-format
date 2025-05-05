@@ -24,6 +24,8 @@ export function getCodePointAt(str: string, pos: number): number | undefined {
     return first;
 }
 
+// Get grapheme at string pos.
+// A grapheme = one visual character, even if made from many code points.
 export function getGraphemeAt(str: string, pos: number): { grapheme: string, length: number } {
     const ZWJ = "\u200D";
     const VS15 = "\uFE0E";
@@ -97,6 +99,7 @@ export function isValidCodePoint(codePoint: number): boolean {
     return isInteger(codePoint) && codePoint >= 0 && codePoint <= 0x10FFFF;
 }
 
+// Get valid fill char. Fill char must be single code point.
 export function getValidFillCharAt(str: string, pos: number): string | undefined {
     let codePoint = getCodePointAt(str, pos);
 
@@ -112,8 +115,7 @@ export function getValidFillCharAt(str: string, pos: number): string | undefined
         return undefined;
     }
 
-    return codePoint > 0xFFFF ? str[pos] + str[pos + 1] : str[pos];
-    // return getSymbol(codePoint);
+    return codePoint > 0xFFFF ? str.slice(pos, pos + 2) : str[pos];
 }
 
 // Get symbol from code point.
