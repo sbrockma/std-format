@@ -1,8 +1,5 @@
 // Import
-import { format } from "./format";
-import { int, float } from "./int-float";
-import { setLocale } from "./set-locale";
-import { FormatError } from "./format-error";
+import { format, int, float, setLocale, FormatError } from "./public";
 
 /**
  * Default export.

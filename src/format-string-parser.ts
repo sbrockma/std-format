@@ -2,8 +2,8 @@ import { assert, getArrayDepth, hasFormattableProperty, isArray, isInteger, isMa
 import { getStringRealLength, setStringRealLength, getSymbol, getCodePointAt } from "./char-coding";
 import { ReplacementField } from "./replacement-field";
 import { formatNumber } from "./number-formatter";
-import { FormatError } from "./format-error";
-import { IntWrapper, NumberWrapper } from "./int-float";
+import { FormatError } from "./public";
+import { IntWrapper, NumberWrapper } from "./number-wrapper";
 import { LRUCache } from "./LRU-cache";
 
 // Replacement field regex arr. Try simple first, if fails try with nested braces.

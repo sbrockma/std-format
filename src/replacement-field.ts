@@ -1,4 +1,4 @@
-import { NumberWrapper } from "./int-float";
+import { NumberWrapper } from "./number-wrapper";
 import { FormatStringParser } from "./format-string-parser";
 import { getValidFillCharAt } from "./char-coding";
 

@@ -1,6 +1,6 @@
 import JSBI from "jsbi";
 import { assert, isInteger, isNegative } from "./internal";
-import { FormatError } from "format-error";
+import { FormatError } from "./public";
 
 const MAX_SAFE_INTEGER = 9007199254740991;
 const MIN_SAFE_INTEGER = -9007199254740991;
@@ -146,18 +146,4 @@ export class FloatWrapper extends NumberWrapper {
         assert(radix === undefined || radix === 10, "FloatWrapper cannot toString to radix = " + radix);
         return this.num.toString();
     }
-}
-
-/**
- * @public
- */
-export function int(value?: unknown): unknown {
-    return value === undefined || value === null ? value : new IntWrapper(value);
-}
-
-/**
- * @public
- */
-export function float(value?: unknown): unknown {
-    return value === undefined || value === null ? value : new FloatWrapper(value);
 }

@@ -2,9 +2,8 @@ import { assert, isInteger, mapDigitToChar, repeatString } from "./internal";
 import { getSymbol, isValidCodePoint } from "./char-coding";
 import { ElementPresentation } from "./replacement-field";
 import { NumberConverter } from "./number-converter";
-import { getLocaleGroupingInfo } from "./set-locale";
 import { GroupingInfo } from "./grouping-info";
-import { NumberWrapper } from "./int-float";
+import { NumberWrapper } from "./number-wrapper";
 import { FormatStringParser } from "format-string-parser";
 
 // Get number prefix.
@@ -33,11 +32,11 @@ function getGroupingInfo(ep: ElementPresentation): GroupingInfo {
     else if (ep.locale) {
         // The L option causes the locale-specific form to be used.
         // Use locale's grouping.
-        return getLocaleGroupingInfo();
+        return GroupingInfo.getLocaleGroupingInfo();
     }
     else if (ep.hasType("n")) {
         // Use locale's grouping.
-        return getLocaleGroupingInfo();
+        return GroupingInfo.getLocaleGroupingInfo();
     }
 
     // No grouping.

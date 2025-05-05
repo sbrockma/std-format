@@ -1,6 +1,16 @@
 import { assert } from "./internal";
 import { LRUCache } from "./LRU-cache";
 
+// Get user/system locale
+const defaultLocale = (function getUserLocale(): string | undefined {
+    try {
+        return (navigator?.languages ? navigator.languages[0] : navigator?.language) ?? Intl.DateTimeFormat().resolvedOptions().locale;
+    }
+    catch (e) {
+        return undefined;
+    }
+})() || "en-UK";
+
 // Grouping info class.
 export class GroupingInfo {
     // Grouping info constructor.
@@ -18,8 +28,11 @@ export class GroupingInfo {
     // No grouping
     static readonly noGrouping = new GroupingInfo(".", "", []);
 
+    // Locale's grouping info.
+    private static localeGroupingInfo: GroupingInfo | undefined = undefined;
+
     // Locale, grouping info cache.
-    static cache = new LRUCache<string, GroupingInfo>(100);
+    private static cache = new LRUCache<string, GroupingInfo>(100);
 
     // Get grouping info based on locale.
     static getFromLocale(locale: string): GroupingInfo {
@@ -74,6 +87,22 @@ export class GroupingInfo {
             // Return default no-grouping grouping info.
             return GroupingInfo.noGrouping;
         }
+    }
+
+    // Get locale's grouping info.
+    static getLocaleGroupingInfo(): GroupingInfo {
+        if (this.localeGroupingInfo === undefined) {
+            this.localeGroupingInfo = GroupingInfo.getFromLocale(defaultLocale);
+        }
+
+        return this.localeGroupingInfo;
+    }
+
+    static setLocale(locale: string | undefined) {
+        assert(locale === undefined || typeof locale === "string", "Invalid locale " + locale);
+
+        // Get locale group info. If locale is empty string or undefined then use default locale.
+        this.localeGroupingInfo = GroupingInfo.getFromLocale(locale || defaultLocale);
     }
 
     // Get decimal separator.
