@@ -1,13 +1,13 @@
 ---
 name: Feature Request
-about: Suggest an improvement or new feature for TS/JS String Formatter
+about: Suggest an improvement or new feature for TypeScript/JavaScript String Formatter
 title: "[Feature]: "
 labels: enhancement
 assignees: ''
 ---
 
 ## Describe the feature
-What would you like JS String Formatter to do?
+What would you like String Formatter to do?
 
 ## Use case
 Why is this feature useful? What problem would it solve for you or others?
