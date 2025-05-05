@@ -1,7 +1,7 @@
 {
     "name": "@sbrockma/std-format",
     "version": "2.0.0",
-    "author": "Stefan Brockmann <stefanprogram@hotmail.com>",
+    "author": "Stefan Program",
     "private": false,
     "license": "zlib",
     "description": "Simple string formatting library for TS/JS.",
