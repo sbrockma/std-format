@@ -1,21 +1,31 @@
 import Benchmark from "benchmark";
 import { format } from "../dist/index.esm.mjs";
 
+const tasks = [
+    {
+        name: "Format small string",
+        template: "Hello, {name}!",
+        data: { name: "World" }
+    },
+    {
+        name: "Format large string",
+        template: "{greeting}, {name}! Today is {day}.".repeat(50),
+        data: { greeting: "Hi", name: "Alice", day: "Monday" }
+    },
+    {
+        name: "Format fraction with fill and align",
+        template: "{num:*^20.5f}",
+        data: { num: Math.PI }
+    },
+];
+
 const suite = new Benchmark.Suite();
 
-const smallTemplate = "Hello, {name}!";
-const smallData = { name: "World" };
-
-const largeTemplate = "{greeting}, {name}! Today is {day}.".repeat(50);
-const largeData = { greeting: "Hi", name: "Alice", day: "Monday" };
+tasks.forEach(d => {
+    suite.add(d.name, () => format(d.template, d.data));
+});
 
 suite
-    .add("Format small string", () => {
-        format(smallTemplate, smallData);
-    })
-    .add("Format large string", () => {
-        format(largeTemplate, largeData);
-    })
     .on("cycle", (event) => {
         console.log(String(event.target));
     })
