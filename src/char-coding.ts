@@ -24,9 +24,20 @@ export function getCodePointAt(str: string, pos: number): number | undefined {
     return first;
 }
 
+// Is this code unit a complete character by itself (i.e., not the start of a surrogate pair)?
+function isSingleCodeUnit(str: string, pos: number): boolean {
+    const charCode = str.charCodeAt(pos);
+    return charCode < 0xD800 || charCode > 0xDBFF;
+}
+
 // Get grapheme at string pos.
 // A grapheme = one visual character, even if made from many code points.
 export function getGraphemeAt(str: string, pos: number): { grapheme: string, length: number } {
+    // Speed optimization for single code unit.
+    if (isSingleCodeUnit(str, pos)) {
+        return { grapheme: str[pos], length: 1 };
+    }
+
     const ZWJ = "\u200D";
     const VS15 = "\uFE0E";
     const VS16 = "\uFE0F";
@@ -69,12 +80,6 @@ export function getGraphemeAt(str: string, pos: number): { grapheme: string, len
 
     // Read base char or emoji
     result += readCodePoint();
-
-    if (result.length <= 1) {
-        // Speed optimization for common ASCII, etc. characters.
-        return { grapheme: result, length: result.length };
-    }
-
     maybeReadVSOrCombining();
     maybeReadSkinTone();
 
