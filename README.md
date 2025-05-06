@@ -184,7 +184,7 @@ Format specification for array (and set, map, object):
 
 ## Found a bug or want to request a feature?
 
-Please [open an issue](https://github.com/sbrockma/std-format/issues) with a simple
+Please [open an issue](https://github.com/sbrockma/ts-string-formatter/issues) with a simple
 input/output example — it really helps make the project better!
 
 ## v2.0.0 Notice
