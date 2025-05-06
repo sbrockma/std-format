@@ -6,10 +6,9 @@ A TypeScript/JavaScript library for string formatting, inspired by
 
 ## Disclaimer!
 
-This is a non-professional, hobby project. 
-I'm building it for fun and learning, but I'm giving it my best effort! 
-There might still be weird bugs or unexpected issues.
-So please keep that in mind when using it!
+This is a hobby project—I'm building it for fun and to learn, but I'm putting
+real effort into making it solid! That said, there might still be some bugs or
+unexpected behavior. Please keep that in mind when using it!
 
 ## Note!
 
