@@ -68,7 +68,8 @@ Now available via the unpkg CDN. Use with version @1, @2 or exact version (e.g. 
     <script src="https://unpkg.com/@sbrockma/std-format@2"></script>
     
     <script>
-        StdFormat.format("...");
+        var format = StdFormat.format;
+        format("...");
     </script>
 
 ## Declarations
