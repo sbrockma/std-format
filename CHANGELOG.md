@@ -1,4 +1,12 @@
 # Changelog
+
+## [2.0.1] - 2025-05-06
+### Fixed
+- Small unicode improvement.
+- Fill char must be single code point.
+### Changed
+- Renamed guthub repo to ts-string-formatter.
+
 ## [2.0.0] - 2025-05-02
 ### Changed
 - **Breaking**: Removed deprecated: `stdFormat()`, `stdSpecificationHint()`, `stdLocaleHint()`, `StdFormatError`.
