@@ -11,6 +11,11 @@
     npm run build:dev
     npm run build:prod
 
+## Profiling
+    cd benchmarks
+    node --prof ./benchmark.mjs
+    node --prof-process ./isolate-*.log > processed.txt
+
 ## Publish
     // Update changelog
     git log --pretty="- %s"
