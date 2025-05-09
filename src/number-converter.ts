@@ -1,4 +1,4 @@
-import { assert, isInteger, isNegative, zeroArray } from "./internal";
+import { assert, isInteger, isNegative, zeroArray } from "./utils/common";
 import { ElementPresentation } from "./replacement-field";
 import { FormatStringParser } from "format-string-parser";
 

@@ -1,6 +1,6 @@
 import { NumberWrapper } from "./number-wrapper";
 import { FormatStringParser } from "./format-string-parser";
-import { getValidFillCharAt } from "./char-coding";
+import { getValidFillCharAt } from "./utils/char-coding";
 
 /**
  * https://en.cppreference.com/w/cpp/utility/format/spec

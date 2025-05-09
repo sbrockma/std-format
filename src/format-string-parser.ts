@@ -1,10 +1,11 @@
-import { assert, getArrayDepth, hasFormattableProperty, isArray, isInteger, isMap, isRecord, isSet, convertMapToRecord, repeatString, convertSetToArray } from "./internal";
-import { getStringRealLength, setStringRealLength, getSymbol, getCodePointAt } from "./char-coding";
+import { assert, isInteger, repeatString } from "./utils/common";
+import { getArrayDepth, hasFormattableProperty, isArray, isMap, isRecord, isSet, convertMapToRecord, convertSetToArray } from "./utils/obj-types";
+import { getStringRealLength, setStringRealLength, getSymbol, getCodePointAt } from "./utils/char-coding";
 import { ReplacementField } from "./replacement-field";
 import { formatNumber } from "./number-formatter";
 import { FormatError } from "./index";
 import { IntWrapper, NumberWrapper } from "./number-wrapper";
-import { LRUCache } from "./LRU-cache";
+import { LRUCache } from "./utils/LRU-cache";
 
 // Replacement field regex arr. Try simple first, if fails try with nested braces.
 const ReplacementFieldRegExs: RegExp[] = [

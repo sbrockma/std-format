@@ -407,14 +407,6 @@ describe("Testing TypeScript/JavaScript String Formatter", () => {
         expect(format("{:08}", -Infinity)).toEqual("-0000inf");
     });
 
-    it("type specifier <none>, bool", () => {
-        expect(format("{} {}", true, false)).toEqual("true false");
-    });
-
-    it("type specifier <none>, string", () => {
-        expect(format("{}", "string")).toEqual("string");
-    });
-
     it("type specifier <default number>", () => {
         expect(format("{}", 482.1)).toEqual("482.1");
         expect(format("{}", 482.2)).toEqual("482.2");
@@ -835,14 +827,20 @@ describe("Testing TypeScript/JavaScript String Formatter", () => {
         expect(format("{:d}", new Map([["A", 65], ["B", 66]]))).toEqual("[[A, 65], [B, 66]]");
     });
 
-    it("undefined and null", () => {
-        expect(format("{}", undefined)).toEqual("undefined");
-        expect(format("{:s}", undefined)).toEqual("undefined");
-        expect(() => format("{:x}", undefined)).toThrow();
+    it("stringify", () => {
+        // string
+        expect(format("{0} {0:s}", "string")).toEqual("string string");
 
-        expect(format("{}", null)).toEqual("null");
-        expect(format("{:s}", null)).toEqual("null");
-        expect(() => format("{:x}", null)).toThrow();
+        // boolean
+        expect(format("{} {}", true, false)).toEqual("true false");
+        expect(format("{:s} {:s}", true, false)).toEqual("true false");
+
+        // undeifned and null
+        expect(format("{0} {0:s}", undefined)).toEqual("undefined undefined");
+        expect(() => format("{:d}", undefined)).toThrow();
+
+        expect(format("{0} {0:s}", null)).toEqual("null null");
+        expect(() => format("{:d}", null)).toThrow();
 
         expect(format("{}", [undefined, null])).toEqual("[undefined, null]");
         expect(format("{}", { a: undefined, b: null })).toEqual("[[a, undefined], [b, null]]");

@@ -1,5 +1,5 @@
-import { assert, isInteger, mapDigitToChar, repeatString } from "./internal";
-import { getSymbol, isValidCodePoint } from "./char-coding";
+import { assert, isInteger, mapDigitToChar, repeatString } from "./utils/common";
+import { getSymbol, isValidCodePoint } from "./utils/char-coding";
 import { ElementPresentation } from "./replacement-field";
 import { NumberConverter } from "./number-converter";
 import { GroupingInfo } from "./grouping-info";

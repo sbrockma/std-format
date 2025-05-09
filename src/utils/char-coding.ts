@@ -1,5 +1,5 @@
-import { FormatError } from "./index";
-import { isInteger } from "./internal";
+import { FormatError } from "../index";
+import { isInteger } from "./common";
 
 // Get symbol info (code point and symbol chars) at pos.
 export function getCodePointAt(str: string, pos: number): number | undefined {

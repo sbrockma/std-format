@@ -1,5 +1,5 @@
-import { assert } from "./internal";
-import { LRUCache } from "./LRU-cache";
+import { assert } from "./utils/common";
+import { LRUCache } from "./utils/LRU-cache";
 
 // Get user/system locale
 const defaultLocale = (function getUserLocale(): string | undefined {

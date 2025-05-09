@@ -1,4 +1,4 @@
-import { getCodePointAt, getGraphemeAt, getSymbol } from "../char-coding";
+import { getCodePointAt, getGraphemeAt, getSymbol } from "./char-coding";
 
 describe("Testing char coding functions", () => {
 
