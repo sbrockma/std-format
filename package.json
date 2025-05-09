@@ -55,7 +55,7 @@
             "patterns": [
                 "src"
             ],
-            "extensions": "ts,tsx",
+            "extensions": "ts",
             "quiet": false
         }
     },
