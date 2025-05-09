@@ -82,4 +82,4 @@ module.exports = (env, argv) => {
         makeConfig({ env, argv, format: "cjs", filename: "index.cjs.js", libraryType: "commonjs2" }),
         makeConfig({ env, argv, format: "umd", filename: "index.umd.min.js", libraryType: "umd", bundleJsbi: true })
     ]
-};
+}
